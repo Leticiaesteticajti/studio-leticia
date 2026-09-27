@@ -683,6 +683,7 @@ class StudioApp {
     this.populateServiceSelects();
     this.syncServicesToCloud();
     this.syncAppointmentsToCloud();
+    await this.loadPublicScheduleConfig();
   }
 
   // =========================================================================
@@ -2605,7 +2606,7 @@ class StudioApp {
   // =========================================================================
   // FLUXO PÚBLICO DE AGENDAMENTO DA CLIENTE (UNIFICADO NO MESMO LINK)
   // =========================================================================
-  initClientBooking() {
+  async initClientBooking() {
     this.selectedBookingService = null;
     this.selectedBookingDate = null;
     this.selectedBookingTime = null;
@@ -2613,6 +2614,10 @@ class StudioApp {
       '08:00', '09:00', '10:00', '11:00', 
       '13:30', '14:30', '15:30', '16:30', '17:30'
     ];
+    this.workingDays = [1, 2, 3, 4, 5, 6];
+
+    // Carrega horários e dias configurados pela Letícia
+    await this.loadPublicScheduleConfig();
 
     this.setupClientPhoneMask();
     this.setupClientDateInput();
@@ -2624,6 +2629,23 @@ class StudioApp {
       this.showClientStatusView(idFromUrl);
     } else {
       this.loadClientBookingServices();
+    }
+  }
+
+  async loadPublicScheduleConfig() {
+    try {
+      const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
+      if (cloud && cloud.getPublicScheduleConfig) {
+        const conf = await cloud.getPublicScheduleConfig();
+        if (conf && Array.isArray(conf.slots) && conf.slots.length > 0) {
+          this.standardSlots = conf.slots;
+        }
+        if (conf && Array.isArray(conf.diasSemana)) {
+          this.workingDays = conf.diasSemana;
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar configuração de horários:', e);
     }
   }
 
@@ -2796,9 +2818,176 @@ class StudioApp {
     }
   }
 
+  // =========================================================================
+  // GESTÃO DE HORÁRIOS & DIAS DE ATENDIMENTO (LETÍCIA)
+  // =========================================================================
+  async openScheduleConfigModal() {
+    const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
+    let conf = {
+      slots: ['08:00', '09:00', '10:00', '11:00', '13:30', '14:30', '15:30', '16:30', '17:30'],
+      diasSemana: [1, 2, 3, 4, 5, 6]
+    };
+    if (cloud && cloud.getPublicScheduleConfig) {
+      conf = await cloud.getPublicScheduleConfig();
+    }
+
+    this.tempScheduleSlots = [...(conf.slots || this.standardSlots || ['08:00', '09:00', '10:00', '11:00', '13:30', '14:30', '15:30', '16:30', '17:30'])];
+    this.tempWorkingDays = [...(conf.diasSemana || this.workingDays || [1, 2, 3, 4, 5, 6])];
+
+    this.renderScheduleDays();
+    this.renderScheduleChips();
+    this.openModal('modal-schedule-config');
+  }
+
+  renderScheduleDays() {
+    const container = document.getElementById('schedule-days-container');
+    if (!container) return;
+
+    const dias = [
+      { id: 1, label: 'Segunda' },
+      { id: 2, label: 'Terça' },
+      { id: 3, label: 'Quarta' },
+      { id: 4, label: 'Quinta' },
+      { id: 5, label: 'Sexta' },
+      { id: 6, label: 'Sábado' },
+      { id: 0, label: 'Domingo' }
+    ];
+
+    container.innerHTML = dias.map(d => {
+      const isActive = this.tempWorkingDays.includes(d.id);
+      return `
+        <label style="display: flex; align-items: center; gap: 8px; background: ${isActive ? 'var(--bg-card-tint)' : '#FFFFFF'}; border: 1.5px solid ${isActive ? 'var(--accent-gold)' : 'var(--border-color)'}; padding: 8px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+          <input type="checkbox" ${isActive ? 'checked' : ''} onchange="app.toggleScheduleDay(${d.id}, this.checked)" style="accent-color: var(--accent-gold); width: 16px; height: 16px;">
+          <span style="color: ${isActive ? 'var(--primary)' : 'var(--text-muted)'};">${d.label}</span>
+        </label>
+      `;
+    }).join('');
+  }
+
+  toggleScheduleDay(dayId, isChecked) {
+    if (isChecked) {
+      if (!this.tempWorkingDays.includes(dayId)) this.tempWorkingDays.push(dayId);
+    } else {
+      this.tempWorkingDays = this.tempWorkingDays.filter(id => id !== dayId);
+    }
+    this.renderScheduleDays();
+  }
+
+  renderScheduleChips() {
+    const container = document.getElementById('schedule-slots-chips');
+    if (!container) return;
+
+    this.tempScheduleSlots.sort();
+
+    if (this.tempScheduleSlots.length === 0) {
+      container.innerHTML = `
+        <div style="width: 100%; text-align: center; color: var(--danger); font-size: 0.82rem; padding: 10px;">
+          Nenhum horário cadastrado! Adicione horários abaixo.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = this.tempScheduleSlots.map(time => `
+      <div style="display: inline-flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1.5px solid var(--accent-gold); color: var(--primary); font-weight: 700; padding: 6px 12px; border-radius: 20px; font-size: 0.88rem; box-shadow: var(--shadow-sm);">
+        <span>${time}</span>
+        <button type="button" style="background: none; border: none; color: #E53E3E; cursor: pointer; font-size: 1rem; font-weight: bold; line-height: 1; padding: 0 2px;" onclick="app.removeScheduleSlot('${time}')" title="Remover horário do site">✕</button>
+      </div>
+    `).join('');
+  }
+
+  addNewScheduleSlot() {
+    const input = document.getElementById('new-slot-time-input');
+    if (!input || !input.value) {
+      alert('Por favor, selecione ou digite o horário que deseja adicionar.');
+      return;
+    }
+    const val = input.value.trim();
+    if (this.tempScheduleSlots.includes(val)) {
+      alert(`O horário ${val} já está cadastrado na grade!`);
+      return;
+    }
+    this.tempScheduleSlots.push(val);
+    this.tempScheduleSlots.sort();
+    this.renderScheduleChips();
+    input.value = '';
+    this.showToast(`Horário ${val} adicionado! Clique em Salvar para publicar.`);
+  }
+
+  removeScheduleSlot(time) {
+    this.tempScheduleSlots = this.tempScheduleSlots.filter(t => t !== time);
+    this.renderScheduleChips();
+  }
+
+  resetDefaultSlots() {
+    if (confirm('Deseja restaurar a grade para os horários padrão (08:00 às 17:30 de Segunda a Sábado)?')) {
+      this.tempScheduleSlots = ['08:00', '09:00', '10:00', '11:00', '13:30', '14:30', '15:30', '16:30', '17:30'];
+      this.tempWorkingDays = [1, 2, 3, 4, 5, 6];
+      this.renderScheduleDays();
+      this.renderScheduleChips();
+      this.showToast('Grade padrão restaurada na tela. Clique em Salvar para confirmar.');
+    }
+  }
+
+  async saveScheduleConfig() {
+    if (!this.tempScheduleSlots || this.tempScheduleSlots.length === 0) {
+      alert('A grade precisa ter pelo menos 1 horário disponível.');
+      return;
+    }
+
+    if (!this.tempWorkingDays || this.tempWorkingDays.length === 0) {
+      alert('Selecione pelo menos 1 dia da semana em que o Studio atende.');
+      return;
+    }
+
+    this.standardSlots = [...this.tempScheduleSlots].sort();
+    this.workingDays = [...this.tempWorkingDays];
+
+    const config = {
+      slots: this.standardSlots,
+      diasSemana: this.workingDays
+    };
+
+    try {
+      const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
+      if (cloud && cloud.syncScheduleConfig) {
+        await cloud.syncScheduleConfig(config);
+      }
+    } catch (e) {
+      console.warn('Erro ao sincronizar horários:', e);
+    }
+
+    this.closeModal('modal-schedule-config');
+    this.showToast('Grade de horários salva e sincronizada com sucesso! 🕒✨');
+
+    if (this.selectedBookingDate) {
+      this.renderClientBookingSlots();
+    }
+  }
+
   async renderClientBookingSlots() {
     const container = document.getElementById('time-slots-container');
     if (!container || !this.selectedBookingDate) return;
+
+    // 1. Verifica se a data selecionada cai em um dia de atendimento ativo
+    if (this.selectedBookingDate) {
+      const [ano, mes, dia] = this.selectedBookingDate.split('-').map(Number);
+      const dateObj = new Date(ano, mes - 1, dia);
+      const dayOfWeek = dateObj.getDay(); // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
+      const allowedDays = Array.isArray(this.workingDays) && this.workingDays.length > 0 ? this.workingDays : [1, 2, 3, 4, 5, 6];
+
+      if (!allowedDays.includes(dayOfWeek)) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; background: #FFF4E5; border: 1.5px solid #FFE2B8; border-radius: 8px; padding: 14px 16px; text-align: center; color: #925D11; font-size: 0.88rem;">
+            🚫 <strong>Studio Fechado nesta data</strong><br>
+            <span style="font-size: 0.8rem; color: #7B4B0C; margin-top: 4px; display: inline-block;">
+              A Letícia não realiza atendimentos neste dia da semana. Por favor, escolha outra data acima.
+            </span>
+          </div>
+        `;
+        return;
+      }
+    }
 
     let busySlots = [];
     try {
@@ -2814,6 +3003,15 @@ class StudioApp {
       '08:00', '09:00', '10:00', '11:00', 
       '13:30', '14:30', '15:30', '16:30', '17:30'
     ];
+
+    if (slots.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 14px; font-size: 0.85rem;">
+          Nenhum horário disponível para agendamento online nesta data.
+        </div>
+      `;
+      return;
+    }
 
     container.innerHTML = slots.map(time => {
       const isBusy = Array.isArray(busySlots) && busySlots.includes(time);

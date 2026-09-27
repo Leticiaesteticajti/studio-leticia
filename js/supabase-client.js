@@ -140,6 +140,87 @@ class StudioCloudService {
     }
   }
 
+  // Busca configuração de horários e dias de atendimento disponíveis
+  async getPublicScheduleConfig() {
+    const defaultConfig = {
+      slots: ['08:00', '09:00', '10:00', '11:00', '13:30', '14:30', '15:30', '16:30', '17:30'],
+      diasSemana: [1, 2, 3, 4, 5, 6] // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
+    };
+
+    if (this.isConfigured()) {
+      try {
+        const { data, error } = await this.client
+          .from('solicitacoes_agendamento')
+          .select('observacoes')
+          .eq('cliente_nome', '__STUDIO_CONFIG_HORARIOS__')
+          .limit(1);
+
+        if (!error && data && data.length > 0 && data[0].observacoes) {
+          const remoteConfig = JSON.parse(data[0].observacoes);
+          if (remoteConfig && Array.isArray(remoteConfig.slots) && remoteConfig.slots.length > 0) {
+            return remoteConfig;
+          }
+        }
+      } catch (err) {
+        console.warn('Falha ao obter horários remotos:', err);
+      }
+    }
+
+    try {
+      const local = localStorage.getItem('studio_schedule_config');
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (parsed && Array.isArray(parsed.slots)) return parsed;
+      }
+    } catch (e) {}
+
+    return defaultConfig;
+  }
+
+  // Sincroniza a configuração de horários e dias com o Supabase
+  async syncScheduleConfig(config) {
+    if (!config || !config.slots) return;
+    try {
+      localStorage.setItem('studio_schedule_config', JSON.stringify(config));
+    } catch (e) {}
+
+    if (!this.isConfigured()) return;
+    try {
+      const { data: existing } = await this.client
+        .from('solicitacoes_agendamento')
+        .select('id')
+        .eq('cliente_nome', '__STUDIO_CONFIG_HORARIOS__')
+        .limit(1);
+
+      const payload = {
+        cliente_nome: '__STUDIO_CONFIG_HORARIOS__',
+        cliente_whatsapp: '00000000000',
+        servico_id: 'schedule_config',
+        servico_nome: 'Configuração de Horários',
+        servico_preco: 0,
+        duracao_min: 0,
+        data: '2099-12-31',
+        horario: '00:00',
+        status: 'recusado',
+        observacoes: JSON.stringify(config),
+        updated_at: new Date().toISOString()
+      };
+
+      if (existing && existing.length > 0) {
+        await this.client
+          .from('solicitacoes_agendamento')
+          .update(payload)
+          .eq('id', existing[0].id);
+      } else {
+        await this.client
+          .from('solicitacoes_agendamento')
+          .insert([payload]);
+      }
+    } catch (e) {
+      console.warn('Erro ao sincronizar horários no Supabase:', e);
+    }
+  }
+
   // Bloqueia horário na nuvem quando a Letícia agenda pelo app
   async blockSlotOnCloud(agendamento) {
     if (!this.isConfigured() || !agendamento || !agendamento.data || !agendamento.horario) return;
