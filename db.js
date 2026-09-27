@@ -24,6 +24,7 @@ class LocalDatabase {
           const storeClientes = db.createObjectStore('clientes', { keyPath: 'id' });
           storeClientes.createIndex('nome', 'nome', { unique: false });
           storeClientes.createIndex('whatsapp', 'whatsapp', { unique: false });
+          storeClientes.createIndex('cpf', 'cpf', { unique: false });
         }
 
         // Tabela de Procedimentos e Serviços

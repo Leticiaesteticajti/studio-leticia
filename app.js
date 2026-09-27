@@ -1004,8 +1004,11 @@ class StudioApp {
 
   filterClients() {
     const query = (document.getElementById('client-search').value || '').toLowerCase().trim();
+    const queryClean = query.replace(/\D/g, '');
     const filtered = this.allClients.filter(c => 
-      c.nome.toLowerCase().includes(query) || (c.whatsapp && c.whatsapp.includes(query))
+      c.nome.toLowerCase().includes(query) || 
+      (c.whatsapp && c.whatsapp.includes(query)) ||
+      (c.cpf && (c.cpf.includes(query) || (queryClean && c.cpf.includes(queryClean))))
     );
 
     const container = document.getElementById('clients-list');
@@ -1031,7 +1034,7 @@ class StudioApp {
             <div class="client-avatar">${iniciais}</div>
             <div class="client-info">
               <div class="client-name">${c.nome}</div>
-              <div class="client-phone">📱 ${this.formatPhone(c.whatsapp)}</div>
+              <div class="client-phone">📱 ${this.formatPhone(c.whatsapp)} ${c.cpf ? `• 🪪 ${this.formatCPF(c.cpf)}` : ''}</div>
               ${temAlerta ? `<span class="anamnese-badge">⚠️ Anamnese com Alertas</span>` : ''}
               ${temPacote ? `<span class="app-package-tag">Pacote Ativo</span>` : ''}
             </div>
@@ -1061,12 +1064,29 @@ class StudioApp {
 
     body.innerHTML = `
       <div style="margin-bottom: 14px; background: var(--bg-card-tint); border-radius: var(--radius-md); padding: 12px 14px; border: 1px solid var(--border-light);">
-        <div style="font-size: 0.95rem; margin-bottom: 6px;">
+        <div style="margin-bottom: 8px;">
+          ${historicoCliente.length > 0 ? `
+            <span style="background: linear-gradient(135deg, #FAF2EA, #FFF8F0); border: 1px solid var(--accent-gold); color: var(--accent-gold-dark); font-size: 0.74rem; font-weight: bold; padding: 4px 10px; border-radius: 6px; display: inline-block;">
+              🌟 Cliente Fidelidade • ${historicoCliente.length} atendimento(s) concluído(s)
+            </span>
+          ` : `
+            <span style="background: #EBF8EE; border: 1px solid #C6EED0; color: #1E7E34; font-size: 0.74rem; font-weight: bold; padding: 4px 10px; border-radius: 6px; display: inline-block;">
+              🆕 Primeiro Ciclo / Cadastro Recente
+            </span>
+          `}
+        </div>
+
+        <div style="font-size: 0.95rem; margin-bottom: 4px;">
           <strong>WhatsApp:</strong> 
           <a href="https://api.whatsapp.com/send?phone=${cleanPhone}" target="_blank" style="color: var(--green-wpp-dark); text-decoration: none; font-weight: bold;">
             📱 ${this.formatPhone(client.whatsapp)} (Abrir WhatsApp)
           </a>
         </div>
+
+        <div style="font-size: 0.9rem; margin-bottom: 6px; color: var(--text-main);">
+          <strong>🪪 CPF:</strong> <span>${client.cpf ? this.formatCPF(client.cpf) : '<em style="color: var(--text-muted);">Não informado</em>'}</span>
+        </div>
+
         <div style="display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 0.85rem; color: var(--text-main); margin-top: 6px;">
           ${(client.peso || an.peso) ? `<span>⚖️ <strong>Peso:</strong> ${client.peso || an.peso} kg</span>` : ''}
           ${client.preferenciaSessao ? `<span>🎵 <strong>Sessão:</strong> ${client.preferenciaSessao}</span>` : ''}
@@ -1396,23 +1416,76 @@ class StudioApp {
   }
 
   // =========================================================================
-  // GESTÃO DE SOLICITAÇÕES ONLINE (SUPABASE)
+  // CENTRAL DE ALERTAS & NOTIFICAÇÕES (SUPABASE REALTIME)
   // =========================================================================
   async checkOnlineRequests() {
     const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
     if (!cloud) return;
     try {
       const pending = await cloud.getPendingRequests();
+      const count = pending.length;
+
+      // Alerta sonoro e visual caso o número de pedidos pendentes tenha aumentado
+      if (this._lastPendingCount !== undefined && count > this._lastPendingCount && count > 0) {
+        this.playNotificationChime();
+        this.showToast(`🔔 ${count} novo(s) agendamento(s) aguardando aprovação!`);
+        if ('Notification' in window && Notification.permission === 'granted') {
+          const ultimo = pending[0];
+          new Notification('Studio Letícia - Novo Agendamento! ✨', {
+            body: `${ultimo.cliente_nome} solicitou ${ultimo.servico_nome} para ${this.formatDate(ultimo.data)} às ${ultimo.horario}`,
+            icon: 'icons/icon-192.png'
+          });
+        }
+      }
+      this._lastPendingCount = count;
+
+      // 1. Badge do Sininho no Cabeçalho
+      const headerBadge = document.getElementById('header-notification-badge');
+      if (headerBadge) {
+        if (count > 0) {
+          headerBadge.textContent = count;
+          headerBadge.style.display = 'flex';
+        } else {
+          headerBadge.style.display = 'none';
+        }
+      }
+
+      // 2. Badge na aba do Modal
+      const modalBadge = document.getElementById('alerts-badge-tab');
+      if (modalBadge) {
+        if (count > 0) {
+          modalBadge.textContent = count;
+          modalBadge.style.display = 'inline-block';
+        } else {
+          modalBadge.style.display = 'none';
+        }
+      }
+
+      // 3. Banner da Home
       const banner = document.getElementById('online-requests-banner');
       const countEl = document.getElementById('online-requests-count');
-      
       if (banner && countEl) {
-        if (pending.length > 0) {
-          countEl.textContent = pending.length;
+        if (count > 0) {
+          countEl.textContent = count;
           banner.style.display = 'block';
         } else {
           banner.style.display = 'none';
         }
+      }
+
+      // 4. Bloco de Acesso Rápido da Home
+      const homePill = document.getElementById('home-alert-pill');
+      const dotBadge = document.getElementById('home-block-badge');
+      if (homePill) {
+        if (count > 0) {
+          homePill.textContent = `${count} pendente${count > 1 ? 's' : ''}`;
+          homePill.style.display = 'inline-block';
+        } else {
+          homePill.style.display = 'none';
+        }
+      }
+      if (dotBadge) {
+        dotBadge.style.display = count > 0 ? 'block' : 'none';
       }
     } catch (err) {
       console.warn('Erro ao verificar agendamentos online:', err);
@@ -1420,10 +1493,55 @@ class StudioApp {
   }
 
   openOnlineRequestsModal() {
+    // Pede permissão de notificação se ainda não solicitou
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     const modal = document.getElementById('modal-online-requests');
     if (modal) {
       modal.classList.add('active');
+      this.switchAlertsTab('pendentes');
+    }
+  }
+
+  switchAlertsTab(tab) {
+    const pendBtn = document.getElementById('alerts-tab-pending-btn');
+    const histBtn = document.getElementById('alerts-tab-history-btn');
+    const pendList = document.getElementById('online-requests-list');
+    const histList = document.getElementById('online-history-list');
+
+    if (tab === 'pendentes') {
+      if (pendBtn) {
+        pendBtn.style.background = 'var(--bg-card)';
+        pendBtn.style.color = 'var(--primary)';
+        pendBtn.style.boxShadow = 'var(--shadow-sm)';
+        pendBtn.style.borderColor = 'var(--border-color)';
+      }
+      if (histBtn) {
+        histBtn.style.background = 'transparent';
+        histBtn.style.color = 'var(--text-muted)';
+        histBtn.style.boxShadow = 'none';
+        histBtn.style.borderColor = 'transparent';
+      }
+      if (pendList) pendList.style.display = 'flex';
+      if (histList) histList.style.display = 'none';
       this.renderOnlineRequests();
+    } else {
+      if (histBtn) {
+        histBtn.style.background = 'var(--bg-card)';
+        histBtn.style.color = 'var(--primary)';
+        histBtn.style.boxShadow = 'var(--shadow-sm)';
+        histBtn.style.borderColor = 'var(--border-color)';
+      }
+      if (pendBtn) {
+        pendBtn.style.background = 'transparent';
+        pendBtn.style.color = 'var(--text-muted)';
+        pendBtn.style.boxShadow = 'none';
+        pendBtn.style.borderColor = 'transparent';
+      }
+      if (pendList) pendList.style.display = 'none';
+      if (histList) histList.style.display = 'flex';
+      this.renderOnlineHistory();
     }
   }
 
@@ -1431,66 +1549,184 @@ class StudioApp {
     const container = document.getElementById('online-requests-list');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando pedidos...</div>';
+    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando pedidos pendentes...</div>';
 
     const pending = await StudioCloud.getPendingRequests();
 
     if (pending.length === 0) {
       container.innerHTML = `
         <div class="card" style="text-align: center; color: var(--text-muted); padding: 30px 20px;">
-          <div style="font-size: 2rem; margin-bottom: 8px;">✨</div>
-          <div style="font-weight: 600; color: var(--text-main);">Nenhum pedido pendente</div>
-          <div style="font-size: 0.8rem; margin-top: 4px;">Quando uma cliente solicitar horário pelo seu link, ele aparecerá aqui para você aprovar!</div>
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">✨</div>
+          <div style="font-weight: 700; color: var(--text-main); font-size: 1rem;">Nenhum pedido pendente</div>
+          <div style="font-size: 0.82rem; margin-top: 6px; line-height: 1.4;">Quando uma cliente solicitar horário pelo seu link, ele aparecerá aqui com alerta sonoro e visual para você confirmar!</div>
         </div>
       `;
       this.checkOnlineRequests();
       return;
     }
 
+    const allAgendamentos = await db.getAll('agendamentos');
     const htmls = [];
+
     for (const req of pending) {
       const conflict = await this.checkTimeConflict(req.data, req.horario, req.duracao_min || 60);
       const [ano, mes, dia] = (req.data || '').split('-');
       const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
 
+      // Extrai CPF se existir
+      const rawCpf = req.cliente_cpf || (req.observacoes && req.observacoes.match(/\[CPF:\s*([0-9.\-]+)\]/i)?.[1]) || '';
+      const cleanCpf = rawCpf.replace(/\D/g, '');
+      const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
+
+      // Identificação Inteligente da Cliente no Banco
+      let matchedClient = null;
+      if (cleanCpf && cleanCpf.length === 11) {
+        matchedClient = this.allClients.find(c => c.cpf && c.cpf.replace(/\D/g, '') === cleanCpf);
+      }
+      if (!matchedClient && cleanWpp) {
+        matchedClient = this.allClients.find(c => c.whatsapp && c.whatsapp.replace(/\D/g, '') === cleanWpp);
+      }
+      if (!matchedClient && req.cliente_nome) {
+        matchedClient = this.allClients.find(c => c.nome.trim().toLowerCase() === req.cliente_nome.trim().toLowerCase());
+      }
+
+      // Conta atendimentos concluídos anteriores
+      const pastCount = matchedClient ? allAgendamentos.filter(a => a.clienteId === matchedClient.id && a.status === 'concluido').length : 0;
+
+      // Mensagem direta de WhatsApp
+      const msgWpp = encodeURIComponent(`Olá, ${req.cliente_nome}! Aqui é a Letícia do Studio Letícia sobre sua solicitação de agendamento para ${dataFormatada} às ${req.horario} (${req.servico_nome}).`);
+      const linkWpp = `https://wa.me/55${cleanWpp}?text=${msgWpp}`;
+
+      // Observação limpa (sem tag [CPF:...])
+      const obsLimpa = (req.observacoes || '').replace(/\[CPF:\s*[0-9.\-]+\]/i, '').trim();
+
       htmls.push(`
         <div style="background: var(--bg-card-tint); border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; position: relative;">
+          
+          <!-- Identificação de Perfil: Recorrente vs Nova -->
+          ${matchedClient ? `
+            <div style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #FAF2EA, #FFF8F0); border: 1px solid var(--accent-gold); border-radius: 8px; padding: 6px 10px; margin-bottom: 10px;">
+              <div style="font-size: 0.78rem; color: var(--accent-gold-dark); font-weight: 700;">
+                🌟 CLIENTE RECORRENTE • ${pastCount} atendimento(s) realizado(s)
+              </div>
+              <button type="button" class="btn-sm" style="font-size: 0.72rem; padding: 4px 8px; background: var(--primary); color: #fff; border-radius: 5px; border: none; cursor: pointer;" onclick="app.viewClientDetails('${matchedClient.id}')">
+                👁️ Ver Ficha
+              </button>
+            </div>
+          ` : `
+            <div style="display: inline-block; background: #EBF4FC; color: #1D6F93; border: 1px solid #B8E0F7; border-radius: 6px; padding: 3px 8px; font-size: 0.74rem; font-weight: 700; margin-bottom: 10px;">
+              🆕 NOVA CLIENTE • Primeiro Atendimento
+            </div>
+          `}
+
+          <!-- Dados da Cliente -->
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
             <div>
-              <div style="font-size: 1.05rem; font-weight: 700; color: var(--primary);">${this.escapeHtml(req.cliente_nome)}</div>
-              <div style="font-size: 0.8rem; color: var(--text-muted);">📱 ${this.escapeHtml(req.cliente_whatsapp)}</div>
+              <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">${this.escapeHtml(req.cliente_nome)}</div>
+              <div style="font-size: 0.82rem; color: var(--text-main); margin-top: 2px;">
+                📱 <strong>WhatsApp:</strong> ${this.formatPhone(req.cliente_whatsapp)}
+              </div>
+              ${cleanCpf ? `
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1px;">
+                  🪪 <strong>CPF:</strong> ${this.formatCPF(cleanCpf)}
+                </div>
+              ` : ''}
             </div>
             <span style="background: #FFF4E5; color: #925D11; font-size: 0.72rem; font-weight: bold; padding: 4px 8px; border-radius: 6px;">Pendente</span>
           </div>
 
-          <div style="background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 0.85rem;">
-            <div style="font-weight: 600; color: var(--text-main);">${this.escapeHtml(req.servico_nome)}</div>
+          <!-- Card do Serviço Solicitado -->
+          <div style="background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; font-size: 0.85rem;">
+            <div style="font-weight: 700; color: var(--text-main);">${this.escapeHtml(req.servico_nome)}</div>
             <div style="color: var(--text-muted); margin-top: 2px;">
               🗓️ <strong>${dataFormatada}</strong> às <strong>${req.horario}</strong> (${req.duracao_min || 60} min)
             </div>
             <div style="color: var(--primary); font-weight: bold; margin-top: 2px;">
               Valor: ${this.formatCurrency(req.servico_preco || 0)}
             </div>
-            ${req.observacoes ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px;">📝 "${this.escapeHtml(req.observacoes)}"</div>` : ''}
+            ${obsLimpa ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; background: #FAF7F2; padding: 6px; border-radius: 5px;">📝 "${this.escapeHtml(obsLimpa)}"</div>` : ''}
           </div>
 
+          <!-- Alerta de Conflito de Horário na Agenda -->
           ${conflict.hasConflict ? `
             <div style="background: #FBEBEB; border: 1px solid #F5C6C6; color: var(--danger); font-size: 0.78rem; padding: 8px 10px; border-radius: 8px; margin-bottom: 12px;">
-              ⚠️ <strong>Atenção:</strong> Você já possui um atendimento neste horário (${conflict.intervalo})!
+              ⚠️ <strong>Atenção:</strong> Você já possui agendamento neste horário (${conflict.intervalo})!
             </div>
-          ` : ''}
+          ` : `
+            <div style="background: #EBF8EE; border: 1px solid #C6EED0; color: #1E7E34; font-size: 0.78rem; padding: 6px 10px; border-radius: 8px; margin-bottom: 12px;">
+              🟢 <strong>Horário Livre</strong> na sua agenda.
+            </div>
+          `}
 
-          <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn-complete" style="flex: 2; padding: 10px; font-size: 0.85rem;" onclick="app.confirmOnlineRequest('${req.id}')">
+          <!-- Ações em 1 Toque -->
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-complete" style="flex: 2; min-width: 140px; padding: 10px; font-size: 0.85rem;" onclick="app.confirmOnlineRequest('${req.id}')">
               ✅ Confirmar Horário
             </button>
-            <button type="button" class="quick-btn" style="flex: 1; justify-content: center; color: var(--danger); border-color: rgba(185,55,40,0.3); padding: 10px; font-size: 0.85rem;" onclick="app.rejectOnlineRequest('${req.id}')">
+            <a href="${linkWpp}" target="_blank" class="quick-btn" style="flex: 1.2; min-width: 110px; text-decoration: none; justify-content: center; font-size: 0.82rem; color: var(--green-wpp-dark); border-color: rgba(37,211,102,0.4); padding: 10px;">
+              💬 WhatsApp
+            </a>
+            <button type="button" class="quick-btn" style="flex: 1; min-width: 80px; justify-content: center; color: var(--danger); border-color: rgba(185,55,40,0.3); padding: 10px; font-size: 0.85rem;" onclick="app.rejectOnlineRequest('${req.id}')">
               ❌ Recusar
             </button>
           </div>
         </div>
       `);
     }
+
+    container.innerHTML = htmls.join('');
+    this.checkOnlineRequests();
+  }
+
+  async renderOnlineHistory() {
+    const container = document.getElementById('online-history-list');
+    if (!container) return;
+
+    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando histórico...</div>';
+
+    const allRequests = await StudioCloud.getAllRequests(40);
+
+    if (allRequests.length === 0) {
+      container.innerHTML = `
+        <div class="card" style="text-align: center; color: var(--text-muted); padding: 30px 20px;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">📜</div>
+          <div style="font-weight: 600; color: var(--text-main);">Nenhum pedido no histórico</div>
+        </div>
+      `;
+      return;
+    }
+
+    const htmls = allRequests.map(req => {
+      const [ano, mes, dia] = (req.data || '').split('-');
+      const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
+      const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
+      const rawCpf = req.cliente_cpf || (req.observacoes && req.observacoes.match(/\[CPF:\s*([0-9.\-]+)\]/i)?.[1]) || '';
+
+      let statusBadge = '<span style="background: #EBF8EE; color: #1E7E34; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">Confirmado</span>';
+      if (req.status === 'recusado') {
+        statusBadge = '<span style="background: #FBEBEB; color: #C53030; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">Recusado</span>';
+      } else if (req.status === 'pendente') {
+        statusBadge = '<span style="background: #FFF4E5; color: #925D11; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">Pendente</span>';
+      }
+
+      return `
+        <div style="background: #FFFFFF; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+            <div>
+              <div style="font-weight: 700; color: var(--primary); font-size: 0.95rem;">${this.escapeHtml(req.cliente_nome)}</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted);">
+                📱 ${this.formatPhone(req.cliente_whatsapp)} ${rawCpf ? `• 🪪 ${this.formatCPF(rawCpf)}` : ''}
+              </div>
+            </div>
+            ${statusBadge}
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-main);">
+            <strong>${this.escapeHtml(req.servico_nome)}</strong> • 🗓️ ${dataFormatada} às ${req.horario} • ${this.formatCurrency(req.servico_preco || 0)}
+          </div>
+          ${req.motivo_recusa ? `<div style="font-size: 0.74rem; color: var(--danger); margin-top: 4px;">Motivo: "${this.escapeHtml(req.motivo_recusa)}"</div>` : ''}
+        </div>
+      `;
+    });
 
     container.innerHTML = htmls.join('');
   }
@@ -1501,24 +1737,48 @@ class StudioApp {
       const req = pending.find(r => r.id === requestId);
       if (!req) return;
 
+      const rawCpf = req.cliente_cpf || (req.observacoes && req.observacoes.match(/\[CPF:\s*([0-9.\-]+)\]/i)?.[1]) || '';
+      const cleanCpf = rawCpf.replace(/\D/g, '');
+      const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
+
       // 1. Atualiza status no Supabase (assim a tela da cliente muda para CONFIRMADO)
       await StudioCloud.confirmBooking(requestId);
 
-      // 2. Garante que a cliente existe no cadastro local de clientes
-      let cliente = this.allClients.find(c => {
-        const cWpp = (c.whatsapp || '').replace(/\D/g, '');
-        const rWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
-        return cWpp && rWpp && cWpp === rWpp;
-      });
+      // 2. Busca ou cria o cadastro da cliente
+      let cliente = null;
+      if (cleanCpf && cleanCpf.length === 11) {
+        cliente = this.allClients.find(c => c.cpf && c.cpf.replace(/\D/g, '') === cleanCpf);
+      }
+      if (!cliente && cleanWpp) {
+        cliente = this.allClients.find(c => c.whatsapp && c.whatsapp.replace(/\D/g, '') === cleanWpp);
+      }
+      if (!cliente && req.cliente_nome) {
+        cliente = this.allClients.find(c => c.nome.trim().toLowerCase() === req.cliente_nome.trim().toLowerCase());
+      }
 
-      if (!cliente) {
+      if (cliente) {
+        // Atualiza CPF se ela ainda não tinha no cadastro
+        if (!cliente.cpf && cleanCpf) {
+          cliente.cpf = cleanCpf;
+          await db.put('clientes', cliente);
+        }
+      } else {
         cliente = {
           id: 'cli_' + Date.now(),
           nome: req.cliente_nome,
-          whatsapp: req.cliente_whatsapp,
-          anamnese: 'Cadastrada via Agendamento Online',
-          cirurgiaRecente: 'nao',
-          pressaoHabitual: 'normal',
+          cpf: cleanCpf,
+          whatsapp: cleanWpp,
+          nascimento: '',
+          peso: '',
+          preferenciaSessao: 'Com música relaxante',
+          notas: 'Cadastrada automaticamente via Agendamento Online',
+          anamnese: {
+            queixaPrincipal: (req.observacoes || '').replace(/\[CPF:\s*[0-9.\-]+\]/i, '').trim() || 'Agendamento pelo site',
+            cirurgiaRecente: '',
+            alergias: '',
+            restricoes: '',
+            peso: ''
+          },
           pacotes: [],
           criadoEm: new Date().toISOString()
         };
@@ -1532,6 +1792,7 @@ class StudioApp {
         id: 'agd_' + Date.now(),
         clienteId: cliente.id,
         clienteNome: cliente.nome,
+        whatsapp: cliente.whatsapp,
         servicoId: req.servico_id || 'srv_1',
         servicoNome: req.servico_nome,
         valor: parseFloat(req.servico_preco) || 0,
@@ -1541,22 +1802,24 @@ class StudioApp {
         status: 'agendado',
         pago: false,
         formaPagamento: '',
-        notas: 'Agendado online pela cliente',
+        notas: (req.observacoes || '').replace(/\[CPF:\s*[0-9.\-]+\]/i, '').trim(),
         criadoEm: new Date().toISOString()
       };
 
       await db.put('agendamentos', novoAgendamento);
 
+      // Bloqueia o slot na nuvem
+      await StudioCloud.blockSlotOnCloud(novoAgendamento);
+
       this.showToast(`Agendamento de ${cliente.nome} CONFIRMADO com sucesso! 🎉`);
 
-      // 4. Monta link de WhatsApp para avisar a cliente com 1 toque
+      // 4. Oferece envio da confirmação no WhatsApp
       const [ano, mes, dia] = (req.data || '').split('-');
       const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
-      const wppNum = (req.cliente_whatsapp || '').replace(/\D/g, '');
       const msg = encodeURIComponent(`Olá, ${cliente.nome}! ✨ Passando para confirmar que seu horário no Studio Letícia foi CONFIRMADO com sucesso para ${dataFormatada} às ${req.horario} (${req.servico_nome}). Te espero com carinho! 💆‍♀️🌸`);
       
-      if (confirm('Deseja enviar a mensagem de confirmação para o WhatsApp da cliente agora?')) {
-        window.open(`https://wa.me/55${wppNum}?text=${msg}`, '_blank');
+      if (confirm('Agendamento confirmado na agenda! Deseja enviar a mensagem de confirmação para o WhatsApp da cliente agora?')) {
+        window.open(`https://wa.me/55${cleanWpp}?text=${msg}`, '_blank');
       }
 
       await this.loadTodayTab();
@@ -1569,12 +1832,22 @@ class StudioApp {
   }
 
   async rejectOnlineRequest(requestId) {
-    const motivo = prompt('Motivo da recusa (opcional, será exibido para a cliente):', 'Horário indisponível no momento.');
+    const motivo = prompt('Motivo da recusa (será exibido na tela da cliente):', 'Horário indisponível no momento.');
     if (motivo === null) return;
 
     try {
+      const pending = await StudioCloud.getPendingRequests();
+      const req = pending.find(r => r.id === requestId);
+
       await StudioCloud.rejectBooking(requestId, motivo);
       this.showToast('Solicitação recusada.');
+
+      if (req && confirm('Deseja abrir o WhatsApp da cliente para sugerir outro horário?')) {
+        const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
+        const msg = encodeURIComponent(`Olá, ${req.cliente_nome}! Aqui é a Letícia do Studio Letícia. Infelizmente o horário das ${req.horario} do dia ${this.formatDate(req.data)} já estava reservado. Podemos verificar outro dia ou horário para você?`);
+        window.open(`https://wa.me/55${cleanWpp}?text=${msg}`, '_blank');
+      }
+
       await this.renderOnlineRequests();
       this.checkOnlineRequests();
     } catch (err) {
@@ -2110,7 +2383,10 @@ class StudioApp {
     document.getElementById('client-id').value = client.id;
     document.getElementById('modal-client-title').textContent = 'Editar Cliente';
     document.getElementById('client-name').value = client.nome || '';
-    document.getElementById('client-phone').value = client.whatsapp || '';
+    document.getElementById('client-phone').value = this.formatPhone(client.whatsapp || '');
+    if (document.getElementById('client-cpf')) {
+      document.getElementById('client-cpf').value = this.formatCPF(client.cpf || '');
+    }
     document.getElementById('client-birthdate').value = client.nascimento || '';
     document.getElementById('client-peso').value = client.peso || (client.anamnese ? client.anamnese.peso : '') || '';
     document.getElementById('client-preferencia-sessao').value = client.preferenciaSessao || 'Com música relaxante';
@@ -2131,6 +2407,7 @@ class StudioApp {
       const id = document.getElementById('client-id').value || ('cli_' + Date.now());
       const nome = (document.getElementById('client-name').value || '').trim();
       const whatsapp = (document.getElementById('client-phone').value || '').trim();
+      const rawCpf = (document.getElementById('client-cpf') ? document.getElementById('client-cpf').value : '').replace(/\D/g, '');
       const nascimento = document.getElementById('client-birthdate').value;
       const peso = document.getElementById('client-peso').value;
       const preferenciaSessao = document.getElementById('client-preferencia-sessao').value;
@@ -2148,6 +2425,12 @@ class StudioApp {
         return;
       }
 
+      if (rawCpf && rawCpf.length === 11 && !this.isValidCPF(rawCpf)) {
+        alert('O CPF digitado não é válido. Por favor, verifique os números.');
+        document.getElementById('client-cpf').focus();
+        return;
+      }
+
       let existingClient = null;
       try {
         existingClient = await db.get('clientes', id);
@@ -2158,6 +2441,7 @@ class StudioApp {
       const cliente = {
         id,
         nome,
+        cpf: rawCpf,
         whatsapp: whatsapp.replace(/\D/g, ''),
         nascimento,
         peso,
@@ -2236,6 +2520,86 @@ class StudioApp {
       return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7)}`;
     }
     return phone;
+  }
+
+  maskPhone(input) {
+    if (!input) return;
+    let v = input.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 10) {
+      v = v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    } else if (v.length > 6) {
+      v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    } else if (v.length > 2) {
+      v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+    }
+    input.value = v;
+  }
+
+  formatCPF(cpf) {
+    if (!cpf) return '';
+    const clean = String(cpf).replace(/\D/g, '').slice(0, 11);
+    if (clean.length === 11) {
+      return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+    return cpf;
+  }
+
+  maskCPF(input) {
+    if (!input) return;
+    let v = input.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 9) {
+      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+    } else if (v.length > 6) {
+      v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+    } else if (v.length > 3) {
+      v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+    }
+    input.value = v;
+  }
+
+  isValidCPF(cpf) {
+    const clean = String(cpf || '').replace(/\D/g, '');
+    if (clean.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(clean)) return false;
+    let sum = 0, rest;
+    for (let i = 1; i <= 9; i++) sum += parseInt(clean.substring(i - 1, i)) * (11 - i);
+    rest = (sum * 10) % 11;
+    if (rest === 10 || rest === 11) rest = 0;
+    if (rest !== parseInt(clean.substring(9, 10))) return false;
+    sum = 0;
+    for (let i = 1; i <= 10; i++) sum += parseInt(clean.substring(i - 1, i)) * (12 - i);
+    rest = (sum * 10) % 11;
+    if (rest === 10 || rest === 11) rest = 0;
+    if (rest !== parseInt(clean.substring(10, 11))) return false;
+    return true;
+  }
+
+  playNotificationChime() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      const playTone = (freq, start, duration) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+        gain.gain.setValueAtTime(0, ctx.currentTime + start);
+        gain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + start + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + duration);
+      };
+      playTone(587.33, 0, 0.6);   // D5
+      playTone(880.00, 0.14, 0.9); // A5 (Chime harmonioso)
+    } catch (e) {
+      console.log('Audio chime info:', e);
+    }
   }
 
   // =========================================================================
@@ -2473,12 +2837,14 @@ class StudioApp {
 
   async submitClientBookingRequest() {
     const btn = document.getElementById('btn-submit');
-    const nomeInput = document.getElementById('client-name');
-    const wppInput = document.getElementById('client-whatsapp');
-    const notesInput = document.getElementById('client-notes');
+    const nomeInput = document.getElementById('booking-client-name') || document.getElementById('client-name');
+    const wppInput = document.getElementById('booking-client-whatsapp') || document.getElementById('client-whatsapp');
+    const cpfInput = document.getElementById('booking-client-cpf') || document.getElementById('client-cpf');
+    const notesInput = document.getElementById('booking-client-notes') || document.getElementById('client-notes');
 
     const nome = (nomeInput ? nomeInput.value : '').trim();
     const wpp = (wppInput ? wppInput.value : '').replace(/\D/g, '');
+    const cpf = (cpfInput ? cpfInput.value : '').replace(/\D/g, '');
     const notes = (notesInput ? notesInput.value : '').trim();
 
     if (!this.selectedBookingService) {
@@ -2508,6 +2874,18 @@ class StudioApp {
       return;
     }
 
+    if (!cpf || cpf.length !== 11) {
+      alert('Por favor, informe seu CPF completo (11 dígitos).');
+      if (cpfInput) cpfInput.focus();
+      return;
+    }
+
+    if (!this.isValidCPF(cpf)) {
+      alert('O CPF digitado não é válido. Por favor, confira os números.');
+      if (cpfInput) cpfInput.focus();
+      return;
+    }
+
     if (btn) {
       btn.disabled = true;
       btn.textContent = 'Enviando solicitação... ⏳';
@@ -2517,6 +2895,7 @@ class StudioApp {
       const requestData = {
         cliente_nome: nome,
         cliente_whatsapp: wpp,
+        cliente_cpf: cpf,
         servico_id: this.selectedBookingService.id,
         servico_nome: this.selectedBookingService.nome,
         servico_preco: this.selectedBookingService.preco,

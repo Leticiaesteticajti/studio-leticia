@@ -230,6 +230,48 @@ body {
   transform: scale(0.92);
 }
 
+.notification-bell-btn {
+  position: relative;
+}
+
+.badge-counter {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #E53E3E;
+  color: #FFFFFF;
+  font-size: 0.68rem;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 5px rgba(229, 62, 62, 0.4);
+  animation: pulseBadge 2s infinite;
+}
+
+.badge-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 9px;
+  height: 9px;
+  background: #E53E3E;
+  border-radius: 50%;
+  border: 1.5px solid #FFFFFF;
+  animation: pulseBadge 2s infinite;
+}
+
+@keyframes pulseBadge {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
 /* ==========================================================================
    CONTEÚDO PRINCIPAL (Main Body)
    ========================================================================== */
@@ -2131,18 +2173,24 @@ body {
         </div>
 
         <div class="form-group" style="margin-bottom: 12px;">
-          <label class="form-label" for="client-name">Seu Nome Completo *</label>
-          <input type="text" id="client-name" class="form-input" placeholder="Ex: Amanda Silva" required style="width: 100%; box-sizing: border-box; padding: 12px;">
+          <label class="form-label" for="booking-client-name">Seu Nome Completo *</label>
+          <input type="text" id="booking-client-name" class="form-input" placeholder="Ex: Amanda Silva" required style="width: 100%; box-sizing: border-box; padding: 12px;">
         </div>
 
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label class="form-label" for="client-whatsapp">Seu WhatsApp (com DDD) *</label>
-          <input type="tel" id="client-whatsapp" class="form-input" placeholder="(00) 00000-0000" required inputmode="numeric" style="width: 100%; box-sizing: border-box; padding: 12px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+          <div class="form-group" style="flex: 1.1;">
+            <label class="form-label" for="booking-client-whatsapp">WhatsApp (com DDD) *</label>
+            <input type="tel" id="booking-client-whatsapp" class="form-input" placeholder="(00) 00000-0000" required inputmode="numeric" oninput="app.maskPhone(this)" style="width: 100%; box-sizing: border-box; padding: 12px;">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label" for="booking-client-cpf">🪪 CPF *</label>
+            <input type="text" id="booking-client-cpf" class="form-input" placeholder="000.000.000-00" required maxlength="14" inputmode="numeric" oninput="app.maskCPF(this)" style="width: 100%; box-sizing: border-box; padding: 12px;">
+          </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="client-notes">Observações ou Dúvidas (Opcional)</label>
-          <input type="text" id="client-notes" class="form-input" placeholder="Ex: Primeira vez no studio, pós-cirúrgico..." style="width: 100%; box-sizing: border-box; padding: 12px;">
+          <label class="form-label" for="booking-client-notes">Observações ou Dúvidas (Opcional)</label>
+          <input type="text" id="booking-client-notes" class="form-input" placeholder="Ex: Primeira vez no studio, pós-cirúrgico..." style="width: 100%; box-sizing: border-box; padding: 12px;">
         </div>
 
         <button type="button" id="btn-submit" class="btn-submit-booking" onclick="app.submitClientBookingRequest()">
@@ -2197,6 +2245,10 @@ body {
         </div>
       </div>
       <div class="header-actions">
+        <button class="icon-btn gold-btn notification-bell-btn" onclick="app.openOnlineRequestsModal()" title="Central de Alertas & Notificações">
+          🔔
+          <span id="header-notification-badge" class="badge-counter" style="display: none;">0</span>
+        </button>
         <button class="icon-btn gold-btn" onclick="app.openNewAppointmentModal()" title="Novo Agendamento">➕</button>
       </div>
     </header>
@@ -2262,6 +2314,22 @@ body {
         </div>
 
         <div class="home-blocks-grid">
+          <!-- Bloco 0: Painel de Alertas & Notificações -->
+          <div class="home-block-item" onclick="app.openOnlineRequestsModal()" style="border-left: 4px solid var(--accent-gold);">
+            <div class="home-block-icon" style="background: linear-gradient(135deg, #FAF2EA, #F4E5D4); color: var(--accent-gold-dark); position: relative;">
+              🔔
+              <span id="home-block-badge" class="badge-dot" style="display: none;"></span>
+            </div>
+            <div class="home-block-texts">
+              <div class="home-block-title" style="display: flex; align-items: center; justify-content: space-between;">
+                <span>Painel de Alertas</span>
+                <span id="home-alert-pill" class="pill-count" style="display: none; background: #E53E3E; color: #fff; font-size: 0.68rem; padding: 2px 7px; border-radius: 10px; font-weight: bold;">0 pendentes</span>
+              </div>
+              <div class="home-block-subtitle">Pedidos online &amp; notificações</div>
+            </div>
+            <div class="home-block-arrow">›</div>
+          </div>
+
           <!-- Bloco 1: Agenda Completa -->
           <div class="home-block-item" onclick="app.switchTab('agenda')">
             <div class="home-block-icon icon-agenda">🗓️</div>
@@ -2750,19 +2818,24 @@ body {
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">WhatsApp (com DDD) *</label>
-              <input type="tel" id="client-phone" class="form-input" placeholder="Ex: 11999998888" required>
+              <input type="tel" id="client-phone" class="form-input" placeholder="(00) 00000-0000" required oninput="app.maskPhone(this)">
             </div>
             <div class="form-group">
-              <label class="form-label">Data de Nascimento</label>
-              <input type="date" id="client-birthdate" class="form-input">
+              <label class="form-label">🪪 CPF</label>
+              <input type="text" id="client-cpf" class="form-input" placeholder="000.000.000-00" maxlength="14" oninput="app.maskCPF(this)">
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
+              <label class="form-label">Data de Nascimento</label>
+              <input type="date" id="client-birthdate" class="form-input">
+            </div>
+            <div class="form-group">
               <label class="form-label">⚖️ Peso Atual (kg)</label>
               <input type="number" step="0.1" id="client-peso" class="form-input" placeholder="Ex: 62.5">
             </div>
+          </div>
             <div class="form-group">
               <label class="form-label">🎵 Preferência na Sessão</label>
               <select id="client-preferencia-sessao" class="form-select">
@@ -3098,21 +3171,39 @@ body {
       </div>
     </div>
 
-    <!-- MODAL: SOLICITAÇÕES DE AGENDAMENTO ONLINE -->
+    <!-- MODAL: PAINEL DE ALERTAS & NOTIFICAÇÕES -->
     <div id="modal-online-requests" class="modal-overlay">
-      <div class="modal-sheet">
+      <div class="modal-sheet" style="max-width: 540px;">
         <div class="modal-handle"></div>
         <div class="modal-header">
-          <h2 class="modal-title">🔔 Solicitações Online</h2>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">🔔</span>
+            <div>
+              <h2 class="modal-title" style="margin: 0; line-height: 1.2;">Central de Alertas</h2>
+              <span style="font-size: 0.74rem; color: var(--text-muted);">Solicitações online &amp; notificações em tempo real</span>
+            </div>
+          </div>
           <button class="btn-close" onclick="app.closeModal('modal-online-requests')">✕</button>
         </div>
 
-        <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 14px 0;">
-          Horários solicitados pelas clientes pelo seu link de agendamento:
-        </p>
+        <!-- Abas do Painel de Alertas: Pendentes / Histórico -->
+        <div style="display: flex; gap: 8px; margin: 12px 0 14px 0; background: var(--bg-card-soft); padding: 4px; border-radius: 10px;">
+          <button type="button" id="alerts-tab-pending-btn" class="quick-btn" style="flex: 1; justify-content: center; font-size: 0.82rem; padding: 8px; font-weight: 700; background: var(--bg-card); color: var(--primary); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);" onclick="app.switchAlertsTab('pendentes')">
+            🔔 Pendentes <span id="alerts-badge-tab" style="background: #E53E3E; color: #fff; font-size: 0.7rem; border-radius: 8px; padding: 1px 6px; margin-left: 4px; display: none;">0</span>
+          </button>
+          <button type="button" id="alerts-tab-history-btn" class="quick-btn" style="flex: 1; justify-content: center; font-size: 0.82rem; padding: 8px; font-weight: 600; color: var(--text-muted); background: transparent; border: 1px solid transparent;" onclick="app.switchAlertsTab('historico')">
+            📜 Histórico de Pedidos
+          </button>
+        </div>
 
+        <!-- LISTA DE PENDENTES -->
         <div id="online-requests-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 60vh; overflow-y: auto;">
           <div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando pedidos...</div>
+        </div>
+
+        <!-- LISTA DE HISTÓRICO -->
+        <div id="online-history-list" style="display: none; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto;">
+          <div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando histórico...</div>
         </div>
       </div>
     </div>

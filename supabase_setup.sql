@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.solicitacoes_agendamento (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cliente_nome TEXT NOT NULL,
     cliente_whatsapp TEXT NOT NULL,
+    cliente_cpf TEXT,
     servico_id TEXT NOT NULL,
     servico_nome TEXT NOT NULL,
     servico_preco NUMERIC(10,2) NOT NULL DEFAULT 0.00,
@@ -20,6 +21,9 @@ CREATE TABLE IF NOT EXISTS public.solicitacoes_agendamento (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Garante que a coluna de CPF exista em tabelas já criadas anteriormente
+ALTER TABLE public.solicitacoes_agendamento ADD COLUMN IF NOT EXISTS cliente_cpf TEXT;
 
 -- 2. Habilita Row Level Security (RLS) para segurança
 ALTER TABLE public.solicitacoes_agendamento ENABLE ROW LEVEL SECURITY;

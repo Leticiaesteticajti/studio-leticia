@@ -227,11 +227,17 @@ class StudioCloudService {
 
   // Cria uma nova solicitação de agendamento feita pela cliente
   async createBookingRequest(requestData) {
+    // Garante que o CPF fica preservado em observacoes como fallback de schema
+    const payload = { ...requestData };
+    if (payload.cliente_cpf && !String(payload.observacoes || '').includes('[CPF:')) {
+      payload.observacoes = `[CPF:${payload.cliente_cpf}] ${payload.observacoes || ''}`.trim();
+    }
+
     if (!this.isConfigured()) {
       // Modo Demonstração / Local (caso Supabase ainda não tenha chaves preenchidas)
       const mockId = 'demo_' + Math.random().toString(36).substring(2, 9);
       const mockItem = {
-        ...requestData,
+        ...payload,
         id: mockId,
         created_at: new Date().toISOString()
       };
@@ -244,13 +250,25 @@ class StudioCloudService {
     }
 
     try {
+      // Tenta inserir primeiro com todos os campos (inclusive cliente_cpf se existir na tabela)
       const { data, error } = await this.client
         .from('solicitacoes_agendamento')
-        .insert([requestData])
+        .insert([payload])
         .select()
         .single();
 
       if (error) {
+        // Se a coluna cliente_cpf ainda não existir no schema remoto, tenta sem a coluna
+        if (error.message && error.message.includes('cliente_cpf')) {
+          const { cliente_cpf, ...fallbackPayload } = payload;
+          const retry = await this.client
+            .from('solicitacoes_agendamento')
+            .insert([fallbackPayload])
+            .select()
+            .single();
+          if (retry.error) throw retry.error;
+          return retry.data;
+        }
         console.error('Erro ao inserir solicitação:', error);
         throw error;
       }
@@ -259,6 +277,32 @@ class StudioCloudService {
     } catch (err) {
       console.error('Erro createBookingRequest:', err);
       throw err;
+    }
+  }
+
+  // Busca todo o histórico recente de solicitações (Confirmadas, Pendentes, Recusadas)
+  async getAllRequests(limit = 40) {
+    if (!this.isConfigured()) {
+      const localList = JSON.parse(localStorage.getItem('studio_demo_requests') || '[]');
+      return localList.slice(0, limit);
+    }
+
+    try {
+      const { data, error } = await this.client
+        .from('solicitacoes_agendamento')
+        .select('*')
+        .neq('cliente_nome', '__STUDIO_CONFIG_SERVICOS__')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.warn('Erro getAllRequests:', error);
+        return [];
+      }
+      return data || [];
+    } catch (e) {
+      console.warn('Falha getAllRequests:', e);
+      return [];
     }
   }
 
