@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 chcp 65001 > nul
 title Enviar Studio Leticia para o GitHub
 cls
