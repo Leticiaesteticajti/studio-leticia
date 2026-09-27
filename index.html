@@ -1,0 +1,3138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <!-- Configurações Nativas para iPhone (iOS PWA) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Studio Letícia">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  
+  <title>Studio Letícia - Gestão & Estética</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
+  <style id="studio-core-styles">
+/* ==========================================================================
+   STUDIO LETÍCIA - ESTILO VISUAL REFINADO & PREMIUM (iOS / Mobile First)
+   Paleta nobre inspirada na Nova Logo Oficial: Bronze Nobre, Rosé Gold Metálico,
+   Linho Champagne e acabamentos aveludados de alta estética.
+   ========================================================================== */
+
+:root {
+  /* Fundo principal límpido e sofisticado com toque quente e acolhedor de linho / champagne */
+  --bg-app: #FAF7F2;
+  --bg-card: #FFFFFF;
+  --bg-card-soft: #F5EFE6;
+  --bg-card-tint: #FDFBF9;
+  
+  /* Bronze Espresso Nobre & Aveludado (Cor primária inspirada na Logo Oficial) */
+  --primary: #4D2612;
+  --primary-hover: #381A0B;
+  --primary-light: #F8F1E9;
+  --primary-glow: rgba(77, 38, 18, 0.22);
+  
+  /* Bronze e Terracota de Realce (stop-colors da Logo) */
+  --accent-bronze: #85421E;
+  --accent-bronze-light: #F6EDE6;
+
+  /* Dourado Rosé / Bronze Metálico Acetinado da Logo Oficial */
+  --accent-gold: #BE7A47;
+  --accent-gold-hover: #A36233;
+  --accent-gold-dark: #85421E;
+  --accent-gold-light: #FAF2EA;
+  --accent-gold-glow: rgba(190, 122, 71, 0.32);
+  --gold-highlight: #F2CE9F;
+  
+  /* Gradiente Dourado Bronze Oficial */
+  --bronze-grad: linear-gradient(135deg, #85421E 0%, #BE7A47 35%, #F2CE9F 50%, #C3814F 70%, #683015 100%);
+  --hero-card-grad: linear-gradient(150deg, #3A2014 0%, #24130A 100%);
+  
+  /* WhatsApp */
+  --green-wpp: #25D366;
+  --green-wpp-dark: #128C7E;
+  --green-wpp-light: #E8F8EE;
+  
+  --danger: #B93728;
+  --danger-light: #FBEBEB;
+  
+  /* Tipografia: Espresso Profundo & Acolhedor */
+  --text-main: #26160D;
+  --text-muted: #6B5244;
+  --text-light: #9B8274;
+  
+  /* Bordas Suaves em Tons Linho / Bronze Champanhe */
+  --border-color: #E8DDD2;
+  --border-light: #F2EAE1;
+  --border-gold: #E5CCA8;
+  
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  
+  --shadow-sm: 0 2px 10px rgba(56, 30, 18, 0.05);
+  --shadow-md: 0 6px 20px rgba(56, 30, 18, 0.08);
+  --shadow-lg: 0 14px 35px rgba(38, 20, 12, 0.12);
+  
+  --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, sans-serif;
+  
+  /* Ajuste de entalhe (Notch) e barra inferior do iPhone */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   MARCA D'ÁGUA TRANSLÚCIDA NO PLANO DE FUNDO
+   ========================================================================== */
+.app-watermark-bg {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 380px;
+  height: 380px;
+  background-image: url('../img/logo-transparent.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.05; /* Marca d'água sutil, sofisticada e quase transparente */
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Moldura simulando experiência nativa de app */
+#app-container {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  background-color: var(--bg-app);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.07);
+  overflow-x: hidden;
+}
+
+.main-content, .app-header, .bottom-nav {
+  position: relative;
+  z-index: 2;
+}
+
+/* ==========================================================================
+   CABEÇALHO (Header)
+   ========================================================================== */
+.app-header {
+  padding: calc(var(--safe-top) + 16px) 20px 14px 20px;
+  background: rgba(250, 247, 242, 0.95);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-img {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1.5px solid var(--accent-gold);
+  background: #FAF2EA;
+  box-shadow: 0 2px 8px rgba(77, 38, 18, 0.12);
+}
+
+.brand-info h1 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 1px;
+  line-height: 1.1;
+}
+
+.brand-info p {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent-gold-dark);
+  font-weight: 700;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn.gold-btn {
+  background: linear-gradient(135deg, #FAF2EA 0%, #F4E5D4 100%);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold-dark);
+}
+
+.icon-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+}
+
+/* ==========================================================================
+   CONTEÚDO PRINCIPAL (Main Body)
+   ========================================================================== */
+.main-content {
+  flex: 1;
+  padding: 16px 18px calc(var(--safe-bottom) + 80px) 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.tab-panel {
+  display: none;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   CARDS & COMPONENTES
+   ========================================================================== */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
+  position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   TELA INICIAL (Home / Boas-Vindas) & BLOCOS DE OPÇÕES
+   ========================================================================== */
+.home-hero-card {
+  background: linear-gradient(150deg, #3A2014 0%, #24130A 100%);
+  border: 1.5px solid rgba(190, 122, 71, 0.45);
+  border-radius: 26px;
+  padding: 22px 18px 18px 18px;
+  margin-bottom: 22px;
+  box-shadow: 0 12px 32px rgba(40, 20, 10, 0.28);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.home-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #BE7A47, #F2CE9F, #BE7A47, transparent);
+}
+
+.home-hero-brand-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.home-hero-badge-img {
+  width: 195px;
+  max-width: 80%;
+  height: auto;
+  border-radius: 20px;
+  border: 2px solid rgba(242, 206, 159, 0.55);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+  transition: transform 0.3s ease;
+  display: block;
+}
+
+.home-hero-badge-img:active {
+  transform: scale(0.97);
+}
+
+.home-hero-greeting-box {
+  margin-bottom: 16px;
+}
+
+.home-greeting {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.home-date {
+  font-size: 0.84rem;
+  color: #E2CEC0;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.home-stats-strip {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(242, 206, 159, 0.30);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+}
+
+.home-stat-pill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-stat-num {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.1;
+}
+
+.home-stat-num.gold {
+  color: #F2CE9F;
+}
+
+.home-stat-desc {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  color: #D6C2B4;
+  margin-top: 3px;
+}
+
+.home-stat-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(242, 206, 159, 0.25);
+}
+
+/* Título de Seção da Home */
+.home-section-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Grade de Blocos de Opções */
+.home-blocks-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 11px;
+  margin-bottom: 24px;
+}
+
+.home-block-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 14px 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.home-block-item:hover {
+  border-color: var(--accent-gold);
+  box-shadow: 0 6px 18px rgba(194, 164, 108, 0.20);
+  transform: translateY(-2px);
+}
+
+.home-block-item:active {
+  transform: scale(0.96);
+  background: var(--bg-card-soft);
+}
+
+.home-block-item.full-width {
+  grid-column: span 2;
+}
+
+.home-block-item.highlight {
+  background: linear-gradient(135deg, #FDFBF8 0%, #F8EFE7 100%);
+  border-color: var(--border-gold);
+}
+
+.home-block-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.icon-agenda { background: #F8EFE7; color: #85421E; }
+.icon-novo { background: #FAF2EA; color: #BE7A47; border: 1px solid var(--border-gold); }
+.icon-clientes { background: #F5EAE1; color: #6E3B1C; }
+.icon-caixa { background: #EBF7EE; color: #1E6B3A; }
+.icon-servicos { background: #FAF3EC; color: #9A4D24; }
+.icon-pacotes { background: #F4E8DC; color: #85421E; }
+.icon-ajustes { background: #F2EBE4; color: #6B5244; }
+
+.home-block-texts {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-block-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.home-block-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-block-arrow {
+  color: var(--accent-gold);
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-left: 2px;
+}
+
+/* Resumo do Dia / Banner */
+.hero-banner {
+  background: linear-gradient(135deg, #FAF7F2 0%, #EFE8DE 100%);
+  border: 1px solid #DFD5C8;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-banner::after {
+  content: '✨';
+  position: absolute;
+  right: 15px;
+  bottom: 10px;
+  font-size: 3.5rem;
+  opacity: 0.2;
+}
+
+.hero-greeting {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.hero-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 4px 0 12px 0;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.hero-stat-box {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(5px);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.hero-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.hero-stat-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.hero-stat-val.primary {
+  color: var(--primary);
+}
+
+/* Botões Rápidos de Ação */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.quick-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-btn:active {
+  transform: scale(0.96);
+  background: var(--bg-card-soft);
+}
+
+.quick-btn .btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.quick-btn.primary-action .btn-icon {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.quick-btn.green-action .btn-icon {
+  background: var(--green-wpp-light);
+  color: var(--green-wpp-dark);
+}
+
+/* ==========================================================================
+   CARDS DE AGENDAMENTO (O Coração do App)
+   ========================================================================== */
+.agenda-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.appointment-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  transition: all 0.2s;
+}
+
+.appointment-card.concluido {
+  opacity: 0.8;
+  background: #FCFBF9;
+  border-left: 4px solid var(--accent-gold);
+}
+
+.appointment-card.agendado {
+  border-left: 4px solid var(--primary);
+}
+
+.appointment-card.cancelado {
+  opacity: 0.5;
+  border-left: 4px solid var(--danger);
+}
+
+.app-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.app-time-badge {
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.status-agendado { background: #FEF3C7; color: #B45309; }
+.status-concluido { background: #D1FAE5; color: #047857; }
+.status-cancelado { background: #FEE2E2; color: #B91C1C; }
+
+.app-client-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.app-service-name {
+  font-size: 0.86rem;
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.app-details-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-light);
+  padding-top: 10px;
+  margin-top: 8px;
+}
+
+.app-price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.app-package-tag {
+  background: var(--accent-gold-light);
+  color: #925D11;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  margin-left: 6px;
+}
+
+/* Botões de Ação do Agendamento */
+.app-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-wpp {
+  background: var(--green-wpp-light);
+  color: var(--green-wpp-dark);
+  border: 1px solid rgba(37, 211, 102, 0.3);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  flex: 1;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-wpp:active {
+  transform: scale(0.96);
+  background: #D5F3DF;
+}
+
+.btn-complete {
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px var(--primary-glow);
+  transition: all 0.2s;
+}
+
+.btn-complete:active {
+  transform: scale(0.96);
+  background: var(--primary-hover);
+}
+
+/* ==========================================================================
+   LISTA DE CLIENTES & ANAMNESE
+   ========================================================================== */
+.search-box {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  color: var(--text-main);
+  outline: none;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--primary);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  color: var(--text-light);
+}
+
+.client-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 15px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.client-card:active {
+  transform: scale(0.98);
+  background: var(--bg-card-soft);
+}
+
+.client-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--primary-light), #F2D8CF);
+  color: var(--primary);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.client-info {
+  flex: 1;
+}
+
+.client-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.client-phone {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.anamnese-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  background: #FEE2E2;
+  color: #B91C1C;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   FLUXO DE CAIXA / FINANCEIRO
+   ========================================================================== */
+.finance-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.finance-box {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.finance-box.lucro {
+  grid-column: span 2;
+  background: linear-gradient(135deg, #FAF8F5 0%, #EFE8DE 100%);
+  border: 1px solid #DFD5C8;
+}
+
+.finance-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.finance-val {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.val-green { color: #2B8A3E; }
+.val-red { color: #C92A2A; }
+.val-gold { color: var(--primary); }
+
+.tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tx-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  font-size: 0.85rem;
+}
+
+.tx-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  font-size: 0.9rem;
+}
+
+.tx-in { background: #E6F4EA; color: #1E7E34; }
+.tx-out { background: #FCE8E6; color: #D93025; }
+
+/* ==========================================================================
+   BARRA DE NAVEGAÇÃO INFERIOR (Bottom Tab Bar - Estilo iOS)
+   ========================================================================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(250, 247, 242, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 8px calc(var(--safe-bottom) + 4px) 8px;
+  z-index: 90;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.nav-item .nav-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.nav-item.active {
+  color: var(--accent-bronze);
+  font-weight: 700;
+}
+
+.nav-item.active .nav-icon {
+  transform: translateY(-2px);
+  color: var(--accent-bronze);
+}
+
+/* ==========================================================================
+   MODAIS E FOLHAS SUSPENSAS (Action Sheets)
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(20, 15, 12, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-sheet {
+  background: var(--bg-card);
+  width: 100%;
+  max-width: 540px;
+  max-height: 92vh;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  padding: 20px 22px calc(var(--safe-bottom) + 24px) 22px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-overlay.active .modal-sheet {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.modal-handle {
+  width: 40px;
+  height: 5px;
+  background: #E5DCD6;
+  border-radius: var(--radius-full);
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.modal-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.btn-close {
+  background: var(--bg-card-soft);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Formulários Modernos */
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: #FAF7F4;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
+  color: var(--text-main);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 64px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--primary);
+  background: #FFFFFF;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.form-btn-submit {
+  width: 100%;
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: 0 4px 15px var(--primary-glow);
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+
+.form-btn-submit:active {
+  transform: scale(0.98);
+  background: var(--primary-hover);
+}
+
+/* Toast de Alerta */
+.toast-msg {
+  position: fixed;
+  top: calc(var(--safe-top) + 20px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-30px);
+  background: #231F20;
+  color: #FFFFFF;
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.toast-msg.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* ==========================================================================
+   CARTÕES DE NAVEGAÇÃO DE AJUSTES (Settings Nav Cards)
+   ========================================================================== */
+.settings-nav-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.settings-nav-card:active {
+  transform: scale(0.98);
+  background: var(--bg-card-soft);
+}
+
+.settings-nav-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-nav-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.settings-nav-title {
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--text-main);
+  margin-bottom: 2px;
+  word-break: break-word;
+}
+
+.settings-nav-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+/* ==========================================================================
+   CHIPS DE SUPRIMENTOS RÁPIDOS (1-Touch Chips)
+   ========================================================================== */
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+
+.chip-btn {
+  background: #F4EAE2;
+  border: 1px solid #E5D5CB;
+  color: #7A4E42;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.chip-btn:active {
+  transform: scale(0.92);
+  background: var(--primary);
+  color: white;
+}
+
+/* ==========================================================================
+   LINHA DO TEMPO DO HISTÓRICO DA CLIENTE
+   ========================================================================== */
+.history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.history-card {
+  background: #FFFFFF;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  border: 1px solid var(--border-light);
+  border-left: 4px solid var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.history-date {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.history-service {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.history-details-box {
+  background: #FAF7F4;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: #E8F8EE;
+  color: #128C7E;
+}
+
+/* ==========================================================================
+   CALENDÁRIO VISUAL INTERATIVO (Visual Monthly Calendar)
+   ========================================================================== */
+.calendar-month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.calendar-month-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+
+.cal-today-btn {
+  background: var(--bg-card-soft);
+  border: 1px solid var(--border-color);
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cal-today-btn:active {
+  transform: scale(0.95);
+  background: var(--primary-light);
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-light);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-cell {
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+  background: transparent;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.cal-cell:hover:not(.empty):not(.selected) {
+  background: var(--bg-card-soft);
+}
+
+.cal-cell:active:not(.empty) {
+  transform: scale(0.92);
+}
+
+.cal-cell.empty {
+  cursor: default;
+  pointer-events: none;
+}
+
+.cal-cell.today {
+  border: 2px solid var(--primary);
+  font-weight: 800;
+}
+
+.cal-cell.selected {
+  background: var(--primary) !important;
+  color: #FFFFFF !important;
+  font-weight: 800;
+  box-shadow: 0 4px 14px var(--primary-glow);
+}
+
+.cal-cell-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--accent-gold);
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cal-cell.selected .cal-cell-dot {
+  background: #FFFFFF;
+}
+
+.agenda-filter-btn {
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.agenda-filter-btn.active {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-color: var(--primary);
+  font-weight: 700;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+/* ==========================================================================
+   TELA DE LOGIN E AUTENTICAÇÃO (Login Screen - Estilo iOS Premium)
+   ========================================================================== */
+.login-screen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bg-app);
+  background-image: radial-gradient(circle at 50% 18%, rgba(190, 122, 71, 0.12), transparent 60%);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.login-screen-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-gold);
+  border-radius: 28px;
+  padding: 32px 24px 26px 24px;
+  box-shadow: 0 16px 45px rgba(58, 32, 20, 0.14);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: slideUpLogin 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpLogin {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background: var(--bronze-grad);
+}
+
+.login-logo-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 22px;
+  border: 2px solid var(--accent-gold);
+  box-shadow: 0 8px 24px rgba(77, 38, 18, 0.18);
+  margin-bottom: 14px;
+  background: #FAF2EA;
+  object-fit: cover;
+}
+
+.login-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.login-subtitle {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent-gold-dark);
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.login-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  border: 1px solid rgba(190, 122, 71, 0.25);
+}
+
+.login-input-group {
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.login-input-group .form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.login-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.login-input-wrapper .form-input,
+.login-input-wrapper .login-input {
+  padding-right: 44px !important;
+}
+
+.login-input-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 1.05rem;
+  color: var(--text-light);
+  pointer-events: none;
+}
+
+.login-input {
+  width: 100%;
+  padding: 12px 14px 12px 38px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  background: #FAFBF9;
+  color: var(--text-main);
+  transition: all 0.2s;
+  outline: none;
+  font-family: inherit;
+}
+
+.login-input:focus {
+  border-color: var(--accent-gold);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.login-input-wrapper .password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+}
+
+.login-remember-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 14px 0 20px 0;
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+}
+
+.login-remember-row input[type="checkbox"] {
+  accent-color: var(--accent-gold);
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+}
+
+.login-btn-submit {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  background: var(--bronze-grad);
+  border: none;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(133, 66, 30, 0.35);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.login-btn-submit:active {
+  transform: scale(0.97);
+}
+
+.login-error-msg {
+  display: none;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-light);
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.login-footer-hint {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  margin-top: 16px;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE E PROTEÇÃO CONTRA CORTES (Mobile Safe)
+   ========================================================================== */
+@media (max-width: 380px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  
+  .home-blocks-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-block-item.full-width {
+    grid-column: span 1;
+  }
+
+  .finance-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+
+
+
+  
+
+    body {
+      background: var(--bg-app, #FAF7F2);
+      color: var(--text-main, #26160D);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .booking-wrapper {
+      width: 100%;
+      max-width: 520px;
+      padding: 20px 16px 60px 16px;
+      box-sizing: border-box;
+    }
+
+    .booking-header {
+      text-align: center;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .booking-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 0 auto 10px auto;
+      display: block;
+      box-shadow: 0 4px 16px rgba(77, 38, 18, 0.15);
+      border: 2px solid var(--accent-gold, #BE7A47);
+    }
+
+    .booking-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--primary, #4D2612);
+      margin: 0 0 4px 0;
+      letter-spacing: 0.5px;
+    }
+
+    .booking-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted, #6B5244);
+      margin: 0;
+    }
+
+    .booking-step-card {
+      background: #FFFFFF;
+      border-radius: 18px;
+      border: 1px solid var(--border-color, #E8DDD2);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 14px rgba(77, 38, 18, 0.05);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .step-number {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--bronze-grad, linear-gradient(135deg, #85421E, #BE7A47));
+      color: #FFFFFF;
+      font-size: 0.8rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-title {
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: var(--primary, #4D2612);
+      margin: 0;
+    }
+
+    /* Lista de Serviços */
+    .services-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .service-option {
+      border: 1.5px solid var(--border-light, #F2EAE1);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-card-tint, #FDFBF9);
+    }
+
+    .service-option:hover {
+      border-color: var(--accent-gold, #BE7A47);
+      background: #FFFFFF;
+    }
+
+    .service-option.selected {
+      border-color: var(--primary, #4D2612);
+      background: var(--accent-gold-light, #FAF2EA);
+      box-shadow: 0 2px 8px rgba(190, 122, 71, 0.2);
+    }
+
+    .service-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-main, #26160D);
+      margin-bottom: 4px;
+    }
+
+    .service-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted, #6B5244);
+    }
+
+    .service-price {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary, #4D2612);
+      white-space: nowrap;
+      margin-left: 10px;
+    }
+
+    /* Horários */
+    .time-slots-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .time-slot-btn {
+      padding: 10px 6px;
+      text-align: center;
+      border: 1px solid var(--border-color, #E8DDD2);
+      background: var(--bg-card-tint, #FDFBF9);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main, #26160D);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .time-slot-btn:hover:not(.disabled) {
+      border-color: var(--accent-gold, #BE7A47);
+      background: #FFFFFF;
+    }
+
+    .time-slot-btn.selected {
+      background: var(--primary, #4D2612);
+      color: #FFFFFF;
+      border-color: var(--primary, #4D2612);
+    }
+
+    .time-slot-btn.disabled {
+      opacity: 0.35;
+      text-decoration: line-through;
+      cursor: not-allowed;
+      background: #ECE5DE;
+    }
+
+    .btn-submit-booking {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      background: var(--bronze-grad, linear-gradient(135deg, #85421E, #BE7A47));
+      color: #FFFFFF;
+      font-size: 1.05rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(77, 38, 18, 0.25);
+      transition: transform 0.2s, opacity 0.2s;
+      margin-top: 10px;
+    }
+
+    .btn-submit-booking:active {
+      transform: scale(0.98);
+    }
+
+    .btn-submit-booking:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Status Screen */
+    .status-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      padding: 30px 20px;
+      text-align: center;
+      border: 1px solid var(--border-color, #E8DDD2);
+      box-shadow: 0 6px 20px rgba(77, 38, 18, 0.08);
+    }
+
+    .status-icon-bubble {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      margin: 0 auto 16px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+    }
+
+    .status-pending .status-icon-bubble {
+      background: #FFF4E5;
+      color: #BE7A47;
+      border: 2px solid #F2CE9F;
+    }
+
+    .status-confirmed .status-icon-bubble {
+      background: #E8F8EE;
+      color: #25D366;
+      border: 2px solid #82E4A5;
+    }
+
+    .status-rejected .status-icon-bubble {
+      background: #FBEBEB;
+      color: #B93728;
+      border: 2px solid #F5C6C6;
+    }
+
+    .status-badge-pill {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-bottom: 14px;
+    }
+
+    .status-pending .status-badge-pill {
+      background: #FFF4E5;
+      color: #925D11;
+    }
+
+    .status-confirmed .status-badge-pill {
+      background: #E8F8EE;
+      color: #128C7E;
+    }
+
+    .status-rejected .status-badge-pill {
+      background: #FBEBEB;
+      color: #B93728;
+    }
+
+    .details-box {
+      background: var(--bg-card-tint, #FDFBF9);
+      border: 1px solid var(--border-light, #F2EAE1);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: left;
+      margin: 18px 0;
+      font-size: 0.9rem;
+    }
+
+    .details-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .details-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .details-label {
+      color: var(--text-muted, #6B5244);
+    }
+
+    .details-value {
+      font-weight: 600;
+      color: var(--text-main, #26160D);
+    }
+
+    .service-select-trigger {
+      background: var(--bg-card, #FFFFFF);
+      border: 1.5px solid var(--border-color, #E8DFD5);
+      border-radius: var(--radius-md, 12px);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(77, 38, 18, 0.05);
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .service-select-trigger:hover, .service-select-trigger:active {
+      border-color: var(--accent-gold, #BE7A47);
+      background: var(--bg-card-tint, #FDFBF9);
+    }
+    .services-dropdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 380px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+</style>
+</head>
+<body>
+
+  <!-- TELA DE LOGIN E AUTENTICAÇÃO (MODAL GLOBAL) -->
+  <div id="login-screen" class="login-screen-overlay hidden">
+    <div class="login-card" style="position: relative;">
+      <button type="button" class="password-toggle-btn" style="position: absolute; top: 14px; right: 14px; font-size: 1.1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; z-index: 10;" onclick="app.hideLoginModal()" title="Voltar ao Agendamento">✕</button>
+
+      <img src="img/logo-badge.png" alt="Studio Letícia" class="login-logo-img">
+      <h2 class="login-title">STUDIO LETÍCIA</h2>
+      <p class="login-subtitle">ESTÉTICA &amp; BEM-ESTAR</p>
+      <div class="login-badge">🔐 Acesso Restrito</div>
+
+      <form id="form-login" onsubmit="app.handleLogin(event)">
+        <div class="login-input-group">
+          <label class="form-label" for="login-cpf">CPF de Acesso</label>
+          <div class="login-input-wrapper">
+            <span class="login-input-icon">👤</span>
+            <input type="text" id="login-cpf" class="login-input" placeholder="000.000.000-00" required inputmode="numeric" autocomplete="username">
+          </div>
+        </div>
+
+        <div class="login-input-group">
+          <label class="form-label" for="login-password">Senha de Segurança</label>
+          <div class="login-input-wrapper">
+            <span class="login-input-icon">🔑</span>
+            <input type="password" id="login-password" class="login-input" placeholder="Digite sua senha" required autocomplete="current-password">
+            <button type="button" class="password-toggle-btn" onclick="app.togglePasswordVisibility('login-password', this)" title="Ver senha">👁️</button>
+          </div>
+        </div>
+
+        <label class="login-remember-row">
+          <input type="checkbox" id="login-remember" checked>
+          <span>Lembrar meu acesso neste aparelho</span>
+        </label>
+
+        <button type="submit" class="login-btn-submit">Entrar no Aplicativo ✨</button>
+
+        <div id="login-error" class="login-error-msg"></div>
+
+        <div class="login-footer-hint" style="text-align: center; color: var(--text-light); font-size: 0.75rem; margin-top: 14px;">
+          🔒 Acesso Criptografado &amp; Protegido
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST DE NOTIFICAÇÃO GLOBAL -->
+  <div id="toast" class="toast-msg">Operação realizada com sucesso!</div>
+
+  <!-- ===============================================================
+       VISÃO 1: TELA PÚBLICA DE AGENDAMENTO (PADRÃO PARA AS CLIENTES)
+       =============================================================== -->
+  <div id="client-booking-view" class="booking-wrapper" style="display: none; margin: 0 auto;">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+      <button type="button" class="btn-complete" style="background: rgba(77, 38, 18, 0.08); color: var(--primary); font-size: 0.78rem; padding: 6px 14px; border: 1px solid var(--border-color); cursor: pointer;" onclick="app.showLoginModal()">
+        🔐 Acesso da Profissional
+      </button>
+    </div>
+    
+    
+    <!-- CABEÇALHO -->
+    <header class="booking-header">
+      <img src="img/logo-badge.png" alt="Studio Letícia" class="booking-logo">
+      <h1 class="booking-title">STUDIO LETÍCIA</h1>
+      <p class="booking-subtitle">ESTÉTICA &amp; BEM-ESTAR • AGENDE SEU HORÁRIO</p>
+    </header>
+
+    <!-- TELA 1: FORMULÁRIO DE AGENDAMENTO (Exibido por padrão se não houver ?id=) -->
+    <div id="section-booking-form">
+      
+      <!-- PASSO 1: PROCEDIMENTO (LISTA SELETORA INTERATIVA) -->
+      <div class="booking-step-card">
+        <div class="step-header">
+          <div class="step-number">1</div>
+          <h2 class="step-title">Escolha o Procedimento</h2>
+        </div>
+
+        <div id="service-select-trigger" class="service-select-trigger" onclick="app.toggleClientServicesList()">
+          <div id="service-selected-display" style="flex: 1;">
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary);">💆‍♀️ Toque para escolher o procedimento...</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Veja os procedimentos e valores cadastrados</div>
+          </div>
+          <div id="service-chevron" style="font-size: 1.1rem; color: var(--accent-gold); transition: transform 0.25s ease; margin-left: 10px;">▼</div>
+        </div>
+
+        <div id="services-list-container" class="services-dropdown-list" style="display: none; margin-top: 12px;">
+          <!-- Injetado dinamicamente -->
+          <div style="text-align: center; color: var(--text-muted); padding: 15px;">Carregando procedimentos...</div>
+        </div>
+      </div>
+
+      <!-- PASSO 2: DATA E HORÁRIO -->
+      <div class="booking-step-card">
+        <div class="step-header">
+          <div class="step-number">2</div>
+          <h2 class="step-title">Escolha a Data &amp; Horário</h2>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" for="booking-date">Data do Atendimento</label>
+          <input type="date" id="booking-date" class="form-input" style="width: 100%; box-sizing: border-box; font-size: 1rem; padding: 12px;">
+        </div>
+
+        <label class="form-label">Horários Disponíveis</label>
+        <div id="time-slots-container" class="time-slots-grid">
+          <!-- Horários gerados dinamicamente -->
+          <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 10px;">
+            Selecione uma data acima para ver os horários livres.
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSO 3: SEUS DADOS (ZERO LOGIN!) -->
+      <div class="booking-step-card">
+        <div class="step-header">
+          <div class="step-number">3</div>
+          <h2 class="step-title">Seus Dados de Contato</h2>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" for="client-name">Seu Nome Completo *</label>
+          <input type="text" id="client-name" class="form-input" placeholder="Ex: Amanda Silva" required style="width: 100%; box-sizing: border-box; padding: 12px;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" for="client-whatsapp">Seu WhatsApp (com DDD) *</label>
+          <input type="tel" id="client-whatsapp" class="form-input" placeholder="(00) 00000-0000" required inputmode="numeric" style="width: 100%; box-sizing: border-box; padding: 12px;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="client-notes">Observações ou Dúvidas (Opcional)</label>
+          <input type="text" id="client-notes" class="form-input" placeholder="Ex: Primeira vez no studio, pós-cirúrgico..." style="width: 100%; box-sizing: border-box; padding: 12px;">
+        </div>
+
+        <button type="button" id="btn-submit" class="btn-submit-booking" onclick="app.submitClientBookingRequest()">
+          Solicitar Agendamento com a Letícia ✨
+        </button>
+      </div>
+
+    </div>
+
+    <!-- TELA 2: ACOMPANHAMENTO DO STATUS EM TEMPO REAL -->
+    <div id="section-status-view" style="display: none;">
+      <div id="status-card-element" class="status-card status-pending">
+        <div class="status-icon-bubble" id="status-icon">⏳</div>
+        <div class="status-badge-pill" id="status-badge">Solicitação Enviada</div>
+        <h2 id="status-headline" style="margin: 0 0 8px 0; color: var(--primary);">Aguardando Confirmação da Letícia</h2>
+        <p id="status-desc" style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">
+          A Letícia já recebeu o seu pedido de agendamento e irá confirmar em instantes. Esta tela atualiza automaticamente!
+        </p>
+
+        <div class="details-box" id="status-details">
+          <!-- Injetado dinamicamente -->
+        </div>
+
+        <div id="status-actions">
+          <!-- Botão WhatsApp para falar direto com a Letícia -->
+          <a id="btn-talk-leticia" href="#" target="_blank" class="quick-btn green-action" style="width: 100%; justify-content: center; box-sizing: border-box; padding: 12px; margin-bottom: 10px; text-decoration: none;">
+            💬 Conversar com a Letícia no WhatsApp
+          </a>
+
+          <button type="button" class="btn-primary" style="width: 100%; background: var(--bg-card-soft); color: var(--primary); border: 1px solid var(--border-color);" onclick="app.newClientBooking()">
+            Agendar Outro Horário
+          </button>
+        </div>
+      </div>
+    </div>
+
+  
+  </div>
+
+  <div id="app-container" style="display: none;">
+    
+    <!-- MARCA D'ÁGUA TRANSLÚCIDA NO PLANO DE FUNDO -->
+    <div class="app-watermark-bg" aria-hidden="true"></div>
+
+    <!-- CABEÇALHO DO APLICATIVO COM LOGO OFICIAL -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <img src="img/logo-badge.png" alt="Studio Letícia" class="brand-logo-img">
+        <div class="brand-info">
+          <h1 id="header-title">STUDIO LETÍCIA</h1>
+          <p id="header-subtitle">ESTÉTICA &amp; BEM-ESTAR</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn gold-btn" onclick="app.openNewAppointmentModal()" title="Novo Agendamento">➕</button>
+      </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL (TABS) -->
+    <main class="main-content">
+      
+      <!-- =================================================================
+           ABA 1: HOME / BOAS-VINDAS (Painel de Acessos Rápidos & Dia a Dia)
+           ================================================================= -->
+      <section id="tab-hoje" class="tab-panel active">
+        
+        <!-- Cartão Hero de Boas-Vindas com a Nova Logo em Destaque Visível -->
+        <div class="home-hero-card">
+          <!-- Logo Grande Centralizada em Destaque Premium -->
+          <div class="home-hero-brand-center">
+            <img src="img/logo-badge.png" alt="Studio Letícia - Estética & Bem-Estar" class="home-hero-badge-img">
+          </div>
+          
+          <div class="home-hero-greeting-box">
+            <div class="home-greeting" id="greeting-text">Olá, Letícia! ✨</div>
+            <div class="home-date" id="today-date-display">Carregando...</div>
+          </div>
+          
+          <!-- Mini resumo de métricas do dia com acabamento dourado e vidro -->
+          <div class="home-stats-strip">
+            <div class="home-stat-pill">
+              <span class="home-stat-num" id="today-count">0</span>
+              <span class="home-stat-desc">Atendimentos hoje</span>
+            </div>
+            <div class="home-stat-divider"></div>
+            <div class="home-stat-pill">
+              <span class="home-stat-num gold" id="today-revenue">R$ 0</span>
+              <span class="home-stat-desc">Recebido hoje</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BANNER DE AGENDAMENTOS ONLINE PENDENTES -->
+        <div id="online-requests-banner" style="display: none; background: linear-gradient(135deg, #FAF2EA, #FFFFFF); border: 1.5px solid var(--accent-gold); border-radius: var(--radius-md); padding: 14px 16px; margin: 16px 0; box-shadow: 0 4px 14px rgba(190, 122, 71, 0.15);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 1.5rem;">🔔</span>
+              <div>
+                <div style="font-weight: 700; color: var(--primary); font-size: 0.95rem;">
+                  <span id="online-requests-count">1</span> Agendamento Online Pendente!
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-muted);">
+                  Cliente solicitou horário pelo seu link.
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn-complete" style="font-size: 0.8rem; padding: 7px 14px;" onclick="app.openOnlineRequestsModal()">
+              Ver Pedidos
+            </button>
+          </div>
+        </div>
+
+        <!-- Grade de Blocos de Opções (Módulos do App) -->
+        <div class="home-section-title">
+          <span>✨ Menu de Acesso Rápido</span>
+          <span style="font-size: 0.72rem; color: var(--text-light); font-weight: normal;">Toque para abrir</span>
+        </div>
+
+        <div class="home-blocks-grid">
+          <!-- Bloco 1: Agenda Completa -->
+          <div class="home-block-item" onclick="app.switchTab('agenda')">
+            <div class="home-block-icon icon-agenda">🗓️</div>
+            <div class="home-block-texts">
+              <div class="home-block-title">Agenda</div>
+              <div class="home-block-subtitle">Calendário e horários</div>
+            </div>
+            <div class="home-block-arrow">›</div>
+          </div>
+
+          <!-- Bloco 2: Novo Agendamento -->
+          <div class="home-block-item highlight" onclick="app.openNewAppointmentModal()">
+            <div class="home-block-icon icon-novo">➕</div>
+            <div class="home-block-texts">
+              <div class="home-block-title">Novo Horário</div>
+              <div class="home-block-subtitle">Agendar cliente</div>
+            </div>
+            <div class="home-block-arrow">›</div>
+          </div>
+
+          <!-- Bloco 3: Clientes & Fichas -->
+          <div class="home-block-item" onclick="app.switchTab('clientes')">
+            <div class="home-block-icon icon-clientes">👥</div>
+            <div class="home-block-texts">
+              <div class="home-block-title">Clientes</div>
+              <div class="home-block-subtitle">Anamnese, peso &amp; histórico</div>
+            </div>
+            <div class="home-block-arrow">›</div>
+          </div>
+
+          <!-- Bloco 4: Fluxo de Caixa -->
+          <div class="home-block-item" onclick="app.switchTab('caixa')">
+            <div class="home-block-icon icon-caixa">💰</div>
+            <div class="home-block-texts">
+              <div class="home-block-title">Caixa</div>
+              <div class="home-block-subtitle">Entradas, saídas &amp; lucro</div>
+            </div>
+            <div class="home-block-arrow">›</div>
+          </div>
+
+          <!-- Bloco 5: Tabela de Preços -->
+          <div class="home-block-item" onclick="app.openPriceTableModal()">
+            <div class="home-block-icon icon-servicos">🏷️</div>
+            <div class="home-block-texts">
+              <div class="home-block-title">Tabela de Preços</div>
+              <div class="home-block-subtitle">Procedimentos e valores</div>
+            </div>
+            <div class="home-block-arrow">›</div>
+          </div>
+
+          <!-- Bloco 6: Planos e Pacotes -->
+          <div class="home-block-item" onclick="app.openPackagesCatalogModal()">
+            <div class="home-block-icon icon-pacotes">📦</div>
+            <div class="home-block-texts">
+              <div class="home-block-title">Planos &amp; Pacotes</div>
+              <div class="home-block-subtitle">Pacotes de sessões</div>
+            </div>
+            <div class="home-block-arrow">›</div>
+          </div>
+
+          <!-- Bloco 7: Configurações & Backup -->
+          <div class="home-block-item full-width" onclick="app.switchTab('ajustes')">
+            <div class="home-block-icon icon-ajustes">⚙️</div>
+            <div class="home-block-texts">
+              <div class="home-block-title">Configurações &amp; Backup</div>
+              <div class="home-block-subtitle">Cópia de segurança no WhatsApp e restauração</div>
+            </div>
+            <div class="home-block-arrow">›</div>
+          </div>
+        </div>
+
+        <!-- Lista dos Atendimentos de Hoje -->
+        <div class="card-title-row" style="margin-top: 10px;">
+          <div class="card-title">💆‍♀️ Atendimentos de Hoje</div>
+          <span style="font-size: 0.8rem; color: var(--text-muted);" id="today-pending-count"></span>
+        </div>
+
+        <div id="today-appointments-list" class="agenda-timeline">
+          <!-- Renderizado via JavaScript -->
+        </div>
+
+      </section>
+
+      <!-- =================================================================
+           ABA 2: AGENDA (Calendário Visual & Detalhamento da Data)
+           ================================================================= -->
+      <section id="tab-agenda" class="tab-panel">
+        
+        <!-- Calendário Mensal Visual -->
+        <div class="card" style="padding: 16px; margin-bottom: 16px;">
+          <!-- Controles do Mês -->
+          <div class="calendar-month-header">
+            <button class="icon-btn" onclick="app.changeCalendarMonth(-1)" title="Mês Anterior">◀</button>
+            <div class="calendar-month-title" id="cal-month-name">Mês de Ano</div>
+            <div style="display:flex; gap: 6px; align-items: center;">
+              <button class="cal-today-btn" onclick="app.goToCalendarToday()">Hoje</button>
+              <button class="icon-btn" onclick="app.changeCalendarMonth(1)" title="Próximo Mês">▶</button>
+            </div>
+          </div>
+
+          <!-- Dias da Semana -->
+          <div class="calendar-weekdays">
+            <span>DOM</span><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span>
+          </div>
+
+          <!-- Grade de Dias -->
+          <div class="calendar-days-grid" id="calendar-days-grid">
+            <!-- Renderizado dinamicamente via JS -->
+          </div>
+        </div>
+
+        <!-- Painel de Agendamentos do Dia Selecionado -->
+        <div id="calendar-selected-day-panel">
+          <div class="card-title-row" style="margin-bottom: 12px; align-items: flex-end;">
+            <div>
+              <div class="card-title" id="selected-day-title">📅 Atendimentos</div>
+              <span style="font-size: 0.78rem; color: var(--text-muted);" id="selected-day-subtitle">Selecione uma data no calendário</span>
+            </div>
+            <button class="btn-complete" style="font-size: 0.78rem; padding: 6px 12px;" onclick="app.openNewAppointmentModal(app.selectedAgendaDate)">
+              + Agendar neste dia
+            </button>
+          </div>
+
+          <!-- Filtros de Status -->
+          <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px;">
+            <button class="agenda-filter-btn active" data-status="todos" onclick="app.filterAgendaStatus('todos')">Todos</button>
+            <button class="agenda-filter-btn" data-status="agendado" onclick="app.filterAgendaStatus('agendado')">Agendados</button>
+            <button class="agenda-filter-btn" data-status="concluido" onclick="app.filterAgendaStatus('concluido')">Concluídos</button>
+          </div>
+
+          <!-- Lista de Atendimentos da Data Selecionada -->
+          <div id="agenda-appointments-list" class="agenda-timeline">
+            <!-- Renderizado via JavaScript -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- =================================================================
+           ABA 3: CLIENTES & ANAMNESE
+           ================================================================= -->
+      <section id="tab-clientes" class="tab-panel">
+        
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="client-search" class="search-input" placeholder="Buscar por nome ou WhatsApp..." oninput="app.filterClients()">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="font-size: 0.85rem; color: var(--text-muted);" id="clients-count">0 clientes cadastradas</span>
+          <button class="btn-complete" style="font-size: 0.8rem; padding: 6px 12px;" onclick="app.openNewClientModal()">+ Cadastrar</button>
+        </div>
+
+        <div id="clients-list">
+          <!-- Renderizado via JavaScript -->
+        </div>
+
+      </section>
+
+      <!-- =================================================================
+           ABA 4: FLUXO DE CAIXA
+           ================================================================= -->
+      <section id="tab-caixa" class="tab-panel">
+        
+        <div class="finance-overview">
+          <div class="finance-box">
+            <div class="finance-label">Entradas</div>
+            <div class="finance-val val-green" id="cash-income">R$ 0,00</div>
+          </div>
+          <div class="finance-box">
+            <div class="finance-label">Saídas/Gastos</div>
+            <div class="finance-val val-red" id="cash-expense">R$ 0,00</div>
+          </div>
+          <div class="finance-box lucro">
+            <div class="finance-label">Lucro Líquido no Bolso</div>
+            <div class="finance-val val-gold" id="cash-balance">R$ 0,00</div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div class="card-title">📋 Lançamentos Recentes</div>
+          <button class="btn-complete" style="background: #D93025; font-size: 0.8rem; padding: 6px 12px;" onclick="app.openNewExpenseModal()">+ Lançar Gasto</button>
+        </div>
+
+        <div id="transactions-list" class="tx-list">
+          <!-- Renderizado via JavaScript -->
+        </div>
+
+      </section>
+
+      <!-- =================================================================
+           ABA 5: AJUSTES & CONFIGURAÇÕES
+           ================================================================= -->
+      <section id="tab-ajustes" class="tab-panel">
+        
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">Configurações do Studio</h2>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Gerencie seus procedimentos, planos e segurança dos dados</p>
+        </div>
+
+        <!-- 1. Janela Tabela de Preços -->
+        <div class="settings-nav-card" onclick="app.openPriceTableModal()">
+          <div class="settings-nav-info">
+            <div class="settings-nav-icon">🏷️</div>
+            <div>
+              <div class="settings-nav-title">Tabela de Preços</div>
+              <div class="settings-nav-subtitle">Procedimentos, tempos de sessão e valores</div>
+            </div>
+          </div>
+          <div style="font-size: 1.2rem; color: var(--text-light); font-weight: bold;">›</div>
+        </div>
+
+        <!-- 2. Janela Planos & Pacotes de Tratamento -->
+        <div class="settings-nav-card" onclick="app.openPackagesCatalogModal()">
+          <div class="settings-nav-info">
+            <div class="settings-nav-icon" style="background: var(--accent-gold-light); color: #925D11;">📦</div>
+            <div>
+              <div class="settings-nav-title">Planos &amp; Pacotes de Tratamento</div>
+              <div class="settings-nav-subtitle">Planos mensais, pacotes de sessões e valores</div>
+            </div>
+          </div>
+          <div style="font-size: 1.2rem; color: var(--text-light); font-weight: bold;">›</div>
+        </div>
+
+        <!-- Usuários com Acesso ao Aplicativo -->
+        <div class="card">
+          <div class="card-title-row">
+            <div class="card-title">👥 Usuários com Acesso</div>
+            <button type="button" class="btn-complete" style="font-size: 0.78rem; padding: 6px 12px;" onclick="app.openNewUserModal()">+ Cadastrar Usuário</button>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin: 6px 0 14px 0;">
+            Pessoas autorizadas a entrar e utilizar o aplicativo:
+          </p>
+
+          <div id="setting-users-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Renderizado dinamicamente pelo app.js -->
+          </div>
+        </div>
+
+        <!-- Acesso e Senha do Aplicativo -->
+        <div class="card">
+          <div class="card-title-row">
+            <div class="card-title">🔐 Alterar Senha de Acesso</div>
+            <span class="history-pill" style="background: var(--accent-gold-light); color: var(--accent-gold-dark);">Segurança</span>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin: 6px 0 14px 0;">
+            Altere o CPF e a senha utilizados para entrar no aplicativo:
+          </p>
+
+          <form id="form-change-auth" onsubmit="app.handleChangeAuth(event)">
+            <div class="form-group">
+              <label class="form-label">CPF de Acesso (Usuário)</label>
+              <input type="text" id="setting-auth-cpf" class="form-input" placeholder="000.000.000-00" required inputmode="numeric">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Senha Atual *</label>
+              <div class="login-input-wrapper">
+                <input type="password" id="setting-auth-current-pw" class="form-input" placeholder="Digite sua senha atual" required>
+                <button type="button" class="password-toggle-btn" onclick="app.togglePasswordVisibility('setting-auth-current-pw', this)" title="Ver senha">👁️</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Nova Senha *</label>
+              <div class="login-input-wrapper">
+                <input type="password" id="setting-auth-new-pw" class="form-input" placeholder="Digite a nova senha" required>
+                <button type="button" class="password-toggle-btn" onclick="app.togglePasswordVisibility('setting-auth-new-pw', this)" title="Ver senha">👁️</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Confirmar Nova Senha *</label>
+              <div class="login-input-wrapper">
+                <input type="password" id="setting-auth-confirm-pw" class="form-input" placeholder="Confirme a nova senha" required>
+                <button type="button" class="password-toggle-btn" onclick="app.togglePasswordVisibility('setting-auth-confirm-pw', this)" title="Ver senha">👁️</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 8px;">Salvar Novo Login e Senha 🔒</button>
+          </form>
+
+          <div style="margin-top: 16px; border-top: 1px solid var(--border-light); padding-top: 14px;">
+            <button class="quick-btn" style="width: 100%; justify-content: center; color: var(--danger); border-color: rgba(185, 55, 40, 0.25);" onclick="app.logout()">
+              <div class="btn-icon" style="background: var(--danger-light); color: var(--danger);">🚪</div>
+              <div><strong>Sair / Bloquear Aplicativo</strong></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Link de Agendamento Online & Supabase -->
+        <div class="card">
+          <div class="card-title-row">
+            <div class="card-title">🌐 Agendamento Online das Clientes</div>
+            <span class="history-pill" style="background: var(--accent-gold-light); color: var(--accent-gold-dark);">Nuvem</span>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin: 6px 0 14px 0;">
+            Envie este link para suas clientes agendarem horários sozinhas:
+          </p>
+
+          <div style="background: var(--bg-card-tint); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Seu Link de Agendamento:</div>
+            <div id="booking-public-url-display" style="font-size: 0.85rem; font-weight: 600; color: var(--primary); word-break: break-all; margin-bottom: 8px;">
+              Carregando link...
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn-complete" style="flex: 1; font-size: 0.78rem; padding: 8px 10px;" onclick="app.copyBookingLink()">
+                📋 Copiar Link
+              </button>
+              <button type="button" class="quick-btn" style="flex: 1; justify-content: center; font-size: 0.78rem; padding: 8px 10px;" onclick="app.testBookingPage()">
+                ↗️ Abrir Página
+              </button>
+            </div>
+          </div>
+
+          <details style="margin-top: 10px; font-size: 0.82rem; color: var(--text-muted);">
+            <summary style="cursor: pointer; font-weight: 600; color: var(--primary); margin-bottom: 8px;">
+              ⚙️ Configuração do Banco Supabase
+            </summary>
+            <div style="background: var(--bg-card-soft); border-radius: 8px; padding: 10px; margin-top: 6px;">
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label class="form-label" style="font-size: 0.75rem;">URL do Projeto Supabase</label>
+                <input type="text" id="setting-supabase-url" class="form-input" placeholder="https://xyzcompany.supabase.co" style="font-size: 0.8rem; padding: 8px;">
+              </div>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label class="form-label" style="font-size: 0.75rem;">Chave Anon (Pública)</label>
+                <input type="text" id="setting-supabase-key" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsIn..." style="font-size: 0.8rem; padding: 8px;">
+              </div>
+              <button type="button" class="btn-primary" style="width: 100%; font-size: 0.8rem; padding: 8px;" onclick="app.saveSupabaseConfig()">
+                Salvar Chaves do Supabase ✨
+              </button>
+            </div>
+          </details>
+        </div>
+
+        <!-- Segurança & Backup -->
+        <div class="card">
+          <div class="card-title">🛡️ Backup & Segurança dos Dados</div>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin: 6px 0 14px 0;">
+            Como seus dados ficam 100% seguros no seu próprio iPhone, faça backup regularmente para nunca perder nada:
+          </p>
+
+          <button class="quick-btn" style="width: 100%; margin-bottom: 10px;" onclick="app.downloadBackup()">
+            <div class="btn-icon">💾</div>
+            <div style="text-align: left;">
+              <div>Baixar Arquivo de Backup</div>
+              <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">Salva cópia de segurança completa</span>
+            </div>
+          </button>
+
+          <button class="quick-btn green-action" style="width: 100%; margin-bottom: 10px;" onclick="app.sendBackupToWhatsApp()">
+            <div class="btn-icon">📲</div>
+            <div style="text-align: left;">
+              <div>Enviar Resumo para meu WhatsApp</div>
+              <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">Relatório rápido no seu WhatsApp</span>
+            </div>
+          </button>
+
+          <div style="margin-top: 14px; border-top: 1px solid var(--border-light); padding-top: 12px;">
+            <label class="form-label">Restaurar Backup:</label>
+            <input type="file" id="restore-file-input" accept=".json" style="font-size: 0.8rem;" onchange="app.restoreBackup(event)">
+          </div>
+        </div>
+
+        <div style="text-align: center; font-size: 0.75rem; color: var(--text-light); padding: 10px 0;">
+          Studio Letícia • Versão 1.0 (PWA Offline)
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- =================================================================
+         BARRA DE NAVEGAÇÃO INFERIOR (Estilo iOS)
+         ================================================================= -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" id="nav-btn-hoje" onclick="app.switchTab('hoje', this)">
+        <span class="nav-icon">🏠</span>
+        <span>Início</span>
+      </button>
+      <button class="nav-item" id="nav-btn-agenda" onclick="app.switchTab('agenda', this)">
+        <span class="nav-icon">🗓️</span>
+        <span>Agenda</span>
+      </button>
+      <button class="nav-item" id="nav-btn-clientes" onclick="app.switchTab('clientes', this)">
+        <span class="nav-icon">👥</span>
+        <span>Clientes</span>
+      </button>
+      <button class="nav-item" id="nav-btn-caixa" onclick="app.switchTab('caixa', this)">
+        <span class="nav-icon">💰</span>
+        <span>Caixa</span>
+      </button>
+      <button class="nav-item" id="nav-btn-ajustes" onclick="app.switchTab('ajustes', this)">
+        <span class="nav-icon">⚙️</span>
+        <span>Ajustes</span>
+      </button>
+    </nav>
+
+    <!-- =================================================================
+         MODAIS (Ações Rápidas em Folha Deslizante - Action Sheets)
+         ================================================================= -->
+    
+    <!-- Modal: Novo / Editar Agendamento -->
+    <div id="modal-appointment" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-appointment-title">Novo Agendamento</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-appointment')">✕</button>
+        </div>
+
+        <form id="form-appointment" onsubmit="app.saveAppointment(event)">
+          <input type="hidden" id="app-id">
+
+          <div class="form-group">
+            <label class="form-label">Cliente *</label>
+            <select id="app-client-select" class="form-select" required onchange="app.onAppointmentClientChange()">
+              <option value="">Selecione a cliente...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Procedimento / Serviço *</label>
+            <select id="app-service-select" class="form-select" required onchange="app.onAppointmentServiceChange()">
+              <option value="">Selecione o serviço...</option>
+            </select>
+          </div>
+
+          <!-- Opção se a cliente tiver pacote ativo -->
+          <div id="app-package-option-box" class="form-group" style="display: none; background: #FAF0E6; padding: 10px; border-radius: var(--radius-md);">
+            <label class="form-label" style="color: #925D11;">✨ Usar Sessão de Pacote Ativo?</label>
+            <select id="app-package-select" class="form-select">
+              <option value="">Não (Cobrar avulso)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Data *</label>
+              <input type="date" id="app-date" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Horário *</label>
+              <input type="time" id="app-time" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Valor Cobrado (R$)</label>
+              <input type="number" step="0.01" id="app-price" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Duração (minutos)</label>
+              <input type="number" id="app-duration" class="form-input" value="60">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Observações do Agendamento</label>
+            <input type="text" id="app-notes" class="form-input" placeholder="Ex: Focar na lombar e pernas">
+          </div>
+
+          <button type="submit" class="form-btn-submit">Salvar Agendamento</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Nova / Editar Cliente & Ficha de Anamnese -->
+    <div id="modal-client" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-client-title">Cadastrar Cliente</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-client')">✕</button>
+        </div>
+
+        <form id="form-client" onsubmit="app.saveClient(event)">
+          <input type="hidden" id="client-id">
+
+          <div class="form-group">
+            <label class="form-label">Nome Completo *</label>
+            <input type="text" id="client-name" class="form-input" placeholder="Ex: Amanda Silva" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">WhatsApp (com DDD) *</label>
+              <input type="tel" id="client-phone" class="form-input" placeholder="Ex: 11999998888" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Data de Nascimento</label>
+              <input type="date" id="client-birthdate" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">⚖️ Peso Atual (kg)</label>
+              <input type="number" step="0.1" id="client-peso" class="form-input" placeholder="Ex: 62.5">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🎵 Preferência na Sessão</label>
+              <select id="client-preferencia-sessao" class="form-select">
+                <option value="Com música relaxante">🎵 Com música relaxante</option>
+                <option value="Sem música (Silêncio total)">🤫 Sem música (Silêncio)</option>
+                <option value="Indiferente / A critério da cliente">✨ Indiferente / Livre</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Seção de Anamnese Estética / Drenagem -->
+          <div style="background: var(--bg-card-soft); padding: 14px; border-radius: var(--radius-md); margin-top: 10px; margin-bottom: 14px;">
+            <div style="font-weight: 700; font-size: 0.88rem; color: var(--primary); margin-bottom: 8px;">
+              📋 Ficha de Anamnese (Estética &amp; Drenagem)
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Queixa Principal / Objetivo:</label>
+              <textarea id="anamnese-queixa" class="form-textarea" rows="2" placeholder="Ex: Retenção de líquido nas pernas e inchaço no abdômen..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Cirurgia Recente / Pós-Operatório:</label>
+              <textarea id="anamnese-cirurgia" class="form-textarea" rows="2" placeholder="Ex: Lipoescultura realizada há 4 meses com Dr. Carlos..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Alergias a Cosméticos/Óleos:</label>
+              <textarea id="anamnese-alergias" class="form-textarea" rows="2" placeholder="Ex: Nenhuma alergia a cremes conhecida ou sensível a perfume..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Contraindicações / Alertas de Saúde:</label>
+              <textarea id="anamnese-restricoes" class="form-textarea" rows="2" placeholder="Ex: Nenhuma contraindicação médica, trombose, problemas circulatórios..."></textarea>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Observações Gerais / Preferências:</label>
+            <textarea id="client-notes" class="form-textarea" rows="2" placeholder="Ex: Gosta de atendimento no final da tarde, prefere pressão mais suave..."></textarea>
+          </div>
+
+          <button type="submit" class="form-btn-submit">Salvar Cliente</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Detalhes da Cliente & Ficha & Pacotes -->
+    <div id="modal-client-details" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title" id="details-client-name">Nome da Cliente</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-client-details')">✕</button>
+        </div>
+
+        <div id="client-details-body">
+          <!-- Renderizado via JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Concluir Atendimento e Lançar Pagamento -->
+    <div id="modal-complete-appointment" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">Encerrar Atendimento</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-complete-appointment')">✕</button>
+        </div>
+
+        <div style="background: #FAF3EE; border-radius: var(--radius-md); padding: 12px; margin-bottom: 14px; border: 1px solid #EEDCD0;">
+          <div style="font-weight: 800; color: var(--text-main); font-size: 0.95rem;" id="complete-summary-client">Amanda Silva</div>
+          <div style="font-size: 0.82rem; color: var(--primary); font-weight: 600;" id="complete-summary-service">Drenagem Linfática Corporal</div>
+        </div>
+
+        <form id="form-complete-payment" onsubmit="app.confirmCompletion(event)">
+          <input type="hidden" id="complete-app-id">
+
+          <!-- Suprimentos Gastos -->
+          <div class="form-group">
+            <label class="form-label">🧪 Suprimentos / Materiais Gastos na Sessão</label>
+            <textarea id="complete-supplies" class="form-textarea" rows="2" placeholder="Ex: 1 lençol descartável, 1 par de luvas, 40ml creme neutro..."></textarea>
+            
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Toque para adicionar rápido:</div>
+            <div class="chip-group">
+              <span class="chip-btn" onclick="app.appendSupply('1 Rolo lençol descartável')">+ Lençol</span>
+              <span class="chip-btn" onclick="app.appendSupply('1 Par de luvas')">+ Luvas</span>
+              <span class="chip-btn" onclick="app.appendSupply('40ml Creme Drenante')">+ Creme Drenante</span>
+              <span class="chip-btn" onclick="app.appendSupply('30ml Óleo Vegetal')">+ Óleo Neutro</span>
+              <span class="chip-btn" onclick="app.appendSupply('Touca descartável')">+ Touca</span>
+              <span class="chip-btn" onclick="app.appendSupply('Algodão / Gaze')">+ Algodão/Gaze</span>
+            </div>
+          </div>
+
+          <!-- Evolução Clínica / Observações -->
+          <div class="form-group">
+            <label class="form-label">📝 Evolução da Sessão / Observações Clínicas</label>
+            <textarea id="complete-evolution" class="form-textarea" rows="2" placeholder="Ex: Cliente relatou alívio imediato no inchaço das pernas, tolerou boa pressão..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Forma de Pagamento *</label>
+              <select id="complete-payment-method" class="form-select" required>
+                <option value="pix">PIX</option>
+                <option value="dinheiro">Dinheiro em Espécie</option>
+                <option value="cartao_credito">Cartão de Crédito</option>
+                <option value="cartao_debito">Cartão de Débito</option>
+                <option value="pacote">Já Pago no Pacote/Plano</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Valor Final (R$) *</label>
+              <input type="number" step="0.01" id="complete-payment-val" class="form-input" required>
+            </div>
+          </div>
+
+          <button type="submit" class="form-btn-submit" style="background: #25D366;">Encerrar e Gravar no Histórico ✨</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Lançar Gasto / Despesa do Studio -->
+    <div id="modal-expense" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">Lançar Despesa do Studio</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-expense')">✕</button>
+        </div>
+
+        <form id="form-expense" onsubmit="app.saveExpense(event)">
+          <div class="form-group">
+            <label class="form-label">Descrição do Gasto *</label>
+            <input type="text" id="expense-desc" class="form-input" placeholder="Ex: Óleo de massagem, rolo de lençol descartável..." required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Valor (R$) *</label>
+              <input type="number" step="0.01" id="expense-val" class="form-input" placeholder="0,00" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Categoria</label>
+              <select id="expense-cat" class="form-select">
+                <option value="produtos">Cremes & Óleos</option>
+                <option value="descartaveis">Descartáveis / Luvas</option>
+                <option value="studio">Aluguel / Studio</option>
+                <option value="outros">Outros Gastos</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Data do Pagamento</label>
+            <input type="date" id="expense-date" class="form-input" required>
+          </div>
+
+          <button type="submit" class="form-btn-submit" style="background: #D93025;">Salvar Despesa</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Novo Serviço -->
+    <div id="modal-service" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">Novo Procedimento</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-service')">✕</button>
+        </div>
+
+        <form id="form-service" onsubmit="app.saveService(event)">
+          <div class="form-group">
+            <label class="form-label">Nome do Procedimento *</label>
+            <input type="text" id="srv-name" class="form-input" placeholder="Ex: Drenagem Linfática Detox" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Preço Cobrado (R$) *</label>
+              <input type="number" step="0.01" id="srv-price" class="form-input" placeholder="130.00" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Duração (minutos) *</label>
+              <input type="number" id="srv-duration" class="form-input" value="60" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Categoria</label>
+            <select id="srv-cat" class="form-select">
+              <option value="Corporal">Corporal</option>
+              <option value="Facial">Facial</option>
+              <option value="Pacotes">Pacotes de Sessões</option>
+              <option value="Especial">Especial</option>
+            </select>
+          </div>
+
+          <button type="submit" class="form-btn-submit">Salvar Procedimento</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Janela Tabela de Preços -->
+    <div id="modal-price-table" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">🏷️ Tabela de Preços</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-price-table')">✕</button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <span style="font-size: 0.82rem; color: var(--text-muted);">Procedimentos e Valores:</span>
+          <button class="btn-complete" style="font-size: 0.78rem; padding: 6px 12px;" onclick="app.openNewServiceModal()">+ Novo Serviço</button>
+        </div>
+
+        <div id="price-table-full-list" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Janela Planos & Pacotes de Tratamento -->
+    <div id="modal-packages-catalog" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">📦 Planos &amp; Pacotes</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-packages-catalog')">✕</button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <span style="font-size: 0.82rem; color: var(--text-muted);">Planos cadastrados para venda:</span>
+          <button class="btn-complete" style="background: #925D11; font-size: 0.78rem; padding: 6px 12px;" onclick="app.openNewPackageModal()">+ Novo Plano/Pacote</button>
+        </div>
+
+        <div id="packages-catalog-full-list" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Cadastro de Novo Plano/Pacote -->
+    <div id="modal-new-package" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">Cadastrar Plano / Pacote</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-new-package')">✕</button>
+        </div>
+
+        <form id="form-new-package" onsubmit="app.savePackageCatalog(event)">
+          <div class="form-group">
+            <label class="form-label">Nome do Plano/Pacote *</label>
+            <input type="text" id="pkg-name" class="form-input" placeholder="Ex: Plano Mensal Drenagem (3 Sessões)" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Procedimento Incluído *</label>
+            <select id="pkg-service-select" class="form-select" required>
+              <!-- Preenchido via JS -->
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Qtd. de Sessões *</label>
+              <input type="number" id="pkg-sessions" class="form-input" value="3" min="1" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Valor Total (R$) *</label>
+              <input type="number" step="0.01" id="pkg-price" class="form-input" placeholder="340.00" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Frequência / Validade</label>
+            <input type="text" id="pkg-validity" class="form-input" placeholder="Ex: 30 dias / Mensal, 60 dias...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Descrição / Benefícios</label>
+            <input type="text" id="pkg-desc" class="form-input" placeholder="Ex: Manutenção corporal e redução de retenção">
+          </div>
+
+          <button type="submit" class="form-btn-submit" style="background: #925D11;">Salvar Plano no Catálogo</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: CADASTRAR NOVO USUÁRIO -->
+    <div id="modal-new-user" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">👥 Cadastrar Novo Usuário</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-new-user')">✕</button>
+        </div>
+
+        <form id="form-new-user" onsubmit="app.handleRegisterUser(event)">
+          <div class="form-group">
+            <label class="form-label">Nome Completo do Usuário *</label>
+            <input type="text" id="new-user-nome" class="form-input" placeholder="Ex: Letícia, Guilherme, Assistente..." required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">CPF de Acesso (Login) *</label>
+            <input type="text" id="new-user-cpf" class="form-input" placeholder="000.000.000-00" required inputmode="numeric">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Senha de Acesso (Mínimo 6 dígitos) *</label>
+            <div class="login-input-wrapper">
+              <input type="password" id="new-user-pw" class="form-input" placeholder="Digite uma senha segura" required minlength="6">
+              <button type="button" class="password-toggle-btn" onclick="app.togglePasswordVisibility('new-user-pw', this)" title="Ver senha">👁️</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Confirmar Senha *</label>
+            <div class="login-input-wrapper">
+              <input type="password" id="new-user-confirm-pw" class="form-input" placeholder="Confirme a senha" required minlength="6">
+              <button type="button" class="password-toggle-btn" onclick="app.togglePasswordVisibility('new-user-confirm-pw', this)" title="Ver senha">👁️</button>
+            </div>
+          </div>
+
+          <button type="submit" class="form-btn-submit" style="background: var(--primary); margin-top: 10px;">Liberar Acesso do Usuário ✨</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: SOLICITAÇÕES DE AGENDAMENTO ONLINE -->
+    <div id="modal-online-requests" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <h2 class="modal-title">🔔 Solicitações Online</h2>
+          <button class="btn-close" onclick="app.closeModal('modal-online-requests')">✕</button>
+        </div>
+
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 14px 0;">
+          Horários solicitados pelas clientes pelo seu link de agendamento:
+        </p>
+
+        <div id="online-requests-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 60vh; overflow-y: auto;">
+          <div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando pedidos...</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Registro do Service Worker para suporte Offline
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker registrado com sucesso!'))
+          .catch(err => console.log('Falha ao registrar Service Worker:', err));
+      });
+    }
+  </script>
+</body>
+</html>

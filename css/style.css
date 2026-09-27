@@ -1,0 +1,1672 @@
+/* ==========================================================================
+   STUDIO LETÍCIA - ESTILO VISUAL REFINADO & PREMIUM (iOS / Mobile First)
+   Paleta nobre inspirada na Nova Logo Oficial: Bronze Nobre, Rosé Gold Metálico,
+   Linho Champagne e acabamentos aveludados de alta estética.
+   ========================================================================== */
+
+:root {
+  /* Fundo principal límpido e sofisticado com toque quente e acolhedor de linho / champagne */
+  --bg-app: #FAF7F2;
+  --bg-card: #FFFFFF;
+  --bg-card-soft: #F5EFE6;
+  --bg-card-tint: #FDFBF9;
+  
+  /* Bronze Espresso Nobre & Aveludado (Cor primária inspirada na Logo Oficial) */
+  --primary: #4D2612;
+  --primary-hover: #381A0B;
+  --primary-light: #F8F1E9;
+  --primary-glow: rgba(77, 38, 18, 0.22);
+  
+  /* Bronze e Terracota de Realce (stop-colors da Logo) */
+  --accent-bronze: #85421E;
+  --accent-bronze-light: #F6EDE6;
+
+  /* Dourado Rosé / Bronze Metálico Acetinado da Logo Oficial */
+  --accent-gold: #BE7A47;
+  --accent-gold-hover: #A36233;
+  --accent-gold-dark: #85421E;
+  --accent-gold-light: #FAF2EA;
+  --accent-gold-glow: rgba(190, 122, 71, 0.32);
+  --gold-highlight: #F2CE9F;
+  
+  /* Gradiente Dourado Bronze Oficial */
+  --bronze-grad: linear-gradient(135deg, #85421E 0%, #BE7A47 35%, #F2CE9F 50%, #C3814F 70%, #683015 100%);
+  --hero-card-grad: linear-gradient(150deg, #3A2014 0%, #24130A 100%);
+  
+  /* WhatsApp */
+  --green-wpp: #25D366;
+  --green-wpp-dark: #128C7E;
+  --green-wpp-light: #E8F8EE;
+  
+  --danger: #B93728;
+  --danger-light: #FBEBEB;
+  
+  /* Tipografia: Espresso Profundo & Acolhedor */
+  --text-main: #26160D;
+  --text-muted: #6B5244;
+  --text-light: #9B8274;
+  
+  /* Bordas Suaves em Tons Linho / Bronze Champanhe */
+  --border-color: #E8DDD2;
+  --border-light: #F2EAE1;
+  --border-gold: #E5CCA8;
+  
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  
+  --shadow-sm: 0 2px 10px rgba(56, 30, 18, 0.05);
+  --shadow-md: 0 6px 20px rgba(56, 30, 18, 0.08);
+  --shadow-lg: 0 14px 35px rgba(38, 20, 12, 0.12);
+  
+  --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, sans-serif;
+  
+  /* Ajuste de entalhe (Notch) e barra inferior do iPhone */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   MARCA D'ÁGUA TRANSLÚCIDA NO PLANO DE FUNDO
+   ========================================================================== */
+.app-watermark-bg {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 380px;
+  height: 380px;
+  background-image: url('../img/logo-transparent.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.05; /* Marca d'água sutil, sofisticada e quase transparente */
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Moldura simulando experiência nativa de app */
+#app-container {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  background-color: var(--bg-app);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.07);
+  overflow-x: hidden;
+}
+
+.main-content, .app-header, .bottom-nav {
+  position: relative;
+  z-index: 2;
+}
+
+/* ==========================================================================
+   CABEÇALHO (Header)
+   ========================================================================== */
+.app-header {
+  padding: calc(var(--safe-top) + 16px) 20px 14px 20px;
+  background: rgba(250, 247, 242, 0.95);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-img {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1.5px solid var(--accent-gold);
+  background: #FAF2EA;
+  box-shadow: 0 2px 8px rgba(77, 38, 18, 0.12);
+}
+
+.brand-info h1 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 1px;
+  line-height: 1.1;
+}
+
+.brand-info p {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent-gold-dark);
+  font-weight: 700;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn.gold-btn {
+  background: linear-gradient(135deg, #FAF2EA 0%, #F4E5D4 100%);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold-dark);
+}
+
+.icon-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+}
+
+/* ==========================================================================
+   CONTEÚDO PRINCIPAL (Main Body)
+   ========================================================================== */
+.main-content {
+  flex: 1;
+  padding: 16px 18px calc(var(--safe-bottom) + 80px) 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.tab-panel {
+  display: none;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   CARDS & COMPONENTES
+   ========================================================================== */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
+  position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   TELA INICIAL (Home / Boas-Vindas) & BLOCOS DE OPÇÕES
+   ========================================================================== */
+.home-hero-card {
+  background: linear-gradient(150deg, #3A2014 0%, #24130A 100%);
+  border: 1.5px solid rgba(190, 122, 71, 0.45);
+  border-radius: 26px;
+  padding: 22px 18px 18px 18px;
+  margin-bottom: 22px;
+  box-shadow: 0 12px 32px rgba(40, 20, 10, 0.28);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.home-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #BE7A47, #F2CE9F, #BE7A47, transparent);
+}
+
+.home-hero-brand-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.home-hero-badge-img {
+  width: 195px;
+  max-width: 80%;
+  height: auto;
+  border-radius: 20px;
+  border: 2px solid rgba(242, 206, 159, 0.55);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+  transition: transform 0.3s ease;
+  display: block;
+}
+
+.home-hero-badge-img:active {
+  transform: scale(0.97);
+}
+
+.home-hero-greeting-box {
+  margin-bottom: 16px;
+}
+
+.home-greeting {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.home-date {
+  font-size: 0.84rem;
+  color: #E2CEC0;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.home-stats-strip {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(242, 206, 159, 0.30);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+}
+
+.home-stat-pill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-stat-num {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.1;
+}
+
+.home-stat-num.gold {
+  color: #F2CE9F;
+}
+
+.home-stat-desc {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  color: #D6C2B4;
+  margin-top: 3px;
+}
+
+.home-stat-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(242, 206, 159, 0.25);
+}
+
+/* Título de Seção da Home */
+.home-section-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Grade de Blocos de Opções */
+.home-blocks-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 11px;
+  margin-bottom: 24px;
+}
+
+.home-block-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 14px 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.home-block-item:hover {
+  border-color: var(--accent-gold);
+  box-shadow: 0 6px 18px rgba(194, 164, 108, 0.20);
+  transform: translateY(-2px);
+}
+
+.home-block-item:active {
+  transform: scale(0.96);
+  background: var(--bg-card-soft);
+}
+
+.home-block-item.full-width {
+  grid-column: span 2;
+}
+
+.home-block-item.highlight {
+  background: linear-gradient(135deg, #FDFBF8 0%, #F8EFE7 100%);
+  border-color: var(--border-gold);
+}
+
+.home-block-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.icon-agenda { background: #F8EFE7; color: #85421E; }
+.icon-novo { background: #FAF2EA; color: #BE7A47; border: 1px solid var(--border-gold); }
+.icon-clientes { background: #F5EAE1; color: #6E3B1C; }
+.icon-caixa { background: #EBF7EE; color: #1E6B3A; }
+.icon-servicos { background: #FAF3EC; color: #9A4D24; }
+.icon-pacotes { background: #F4E8DC; color: #85421E; }
+.icon-ajustes { background: #F2EBE4; color: #6B5244; }
+
+.home-block-texts {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-block-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.home-block-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-block-arrow {
+  color: var(--accent-gold);
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-left: 2px;
+}
+
+/* Resumo do Dia / Banner */
+.hero-banner {
+  background: linear-gradient(135deg, #FAF7F2 0%, #EFE8DE 100%);
+  border: 1px solid #DFD5C8;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-banner::after {
+  content: '✨';
+  position: absolute;
+  right: 15px;
+  bottom: 10px;
+  font-size: 3.5rem;
+  opacity: 0.2;
+}
+
+.hero-greeting {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.hero-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 4px 0 12px 0;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.hero-stat-box {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(5px);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.hero-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.hero-stat-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.hero-stat-val.primary {
+  color: var(--primary);
+}
+
+/* Botões Rápidos de Ação */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.quick-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-btn:active {
+  transform: scale(0.96);
+  background: var(--bg-card-soft);
+}
+
+.quick-btn .btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.quick-btn.primary-action .btn-icon {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.quick-btn.green-action .btn-icon {
+  background: var(--green-wpp-light);
+  color: var(--green-wpp-dark);
+}
+
+/* ==========================================================================
+   CARDS DE AGENDAMENTO (O Coração do App)
+   ========================================================================== */
+.agenda-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.appointment-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  transition: all 0.2s;
+}
+
+.appointment-card.concluido {
+  opacity: 0.8;
+  background: #FCFBF9;
+  border-left: 4px solid var(--accent-gold);
+}
+
+.appointment-card.agendado {
+  border-left: 4px solid var(--primary);
+}
+
+.appointment-card.cancelado {
+  opacity: 0.5;
+  border-left: 4px solid var(--danger);
+}
+
+.app-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.app-time-badge {
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.status-agendado { background: #FEF3C7; color: #B45309; }
+.status-concluido { background: #D1FAE5; color: #047857; }
+.status-cancelado { background: #FEE2E2; color: #B91C1C; }
+
+.app-client-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.app-service-name {
+  font-size: 0.86rem;
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.app-details-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-light);
+  padding-top: 10px;
+  margin-top: 8px;
+}
+
+.app-price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.app-package-tag {
+  background: var(--accent-gold-light);
+  color: #925D11;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  margin-left: 6px;
+}
+
+/* Botões de Ação do Agendamento */
+.app-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-wpp {
+  background: var(--green-wpp-light);
+  color: var(--green-wpp-dark);
+  border: 1px solid rgba(37, 211, 102, 0.3);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  flex: 1;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-wpp:active {
+  transform: scale(0.96);
+  background: #D5F3DF;
+}
+
+.btn-complete {
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px var(--primary-glow);
+  transition: all 0.2s;
+}
+
+.btn-complete:active {
+  transform: scale(0.96);
+  background: var(--primary-hover);
+}
+
+/* ==========================================================================
+   LISTA DE CLIENTES & ANAMNESE
+   ========================================================================== */
+.search-box {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  color: var(--text-main);
+  outline: none;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--primary);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  color: var(--text-light);
+}
+
+.client-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 15px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.client-card:active {
+  transform: scale(0.98);
+  background: var(--bg-card-soft);
+}
+
+.client-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--primary-light), #F2D8CF);
+  color: var(--primary);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.client-info {
+  flex: 1;
+}
+
+.client-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.client-phone {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.anamnese-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  background: #FEE2E2;
+  color: #B91C1C;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   FLUXO DE CAIXA / FINANCEIRO
+   ========================================================================== */
+.finance-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.finance-box {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.finance-box.lucro {
+  grid-column: span 2;
+  background: linear-gradient(135deg, #FAF8F5 0%, #EFE8DE 100%);
+  border: 1px solid #DFD5C8;
+}
+
+.finance-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.finance-val {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.val-green { color: #2B8A3E; }
+.val-red { color: #C92A2A; }
+.val-gold { color: var(--primary); }
+
+.tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tx-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  font-size: 0.85rem;
+}
+
+.tx-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  font-size: 0.9rem;
+}
+
+.tx-in { background: #E6F4EA; color: #1E7E34; }
+.tx-out { background: #FCE8E6; color: #D93025; }
+
+/* ==========================================================================
+   BARRA DE NAVEGAÇÃO INFERIOR (Bottom Tab Bar - Estilo iOS)
+   ========================================================================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(250, 247, 242, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 8px calc(var(--safe-bottom) + 4px) 8px;
+  z-index: 90;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.nav-item .nav-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.nav-item.active {
+  color: var(--accent-bronze);
+  font-weight: 700;
+}
+
+.nav-item.active .nav-icon {
+  transform: translateY(-2px);
+  color: var(--accent-bronze);
+}
+
+/* ==========================================================================
+   MODAIS E FOLHAS SUSPENSAS (Action Sheets)
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(20, 15, 12, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-sheet {
+  background: var(--bg-card);
+  width: 100%;
+  max-width: 540px;
+  max-height: 92vh;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  padding: 20px 22px calc(var(--safe-bottom) + 24px) 22px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-overlay.active .modal-sheet {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.modal-handle {
+  width: 40px;
+  height: 5px;
+  background: #E5DCD6;
+  border-radius: var(--radius-full);
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.modal-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.btn-close {
+  background: var(--bg-card-soft);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Formulários Modernos */
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: #FAF7F4;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
+  color: var(--text-main);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 64px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--primary);
+  background: #FFFFFF;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.form-btn-submit {
+  width: 100%;
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: 0 4px 15px var(--primary-glow);
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+
+.form-btn-submit:active {
+  transform: scale(0.98);
+  background: var(--primary-hover);
+}
+
+/* Toast de Alerta */
+.toast-msg {
+  position: fixed;
+  top: calc(var(--safe-top) + 20px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-30px);
+  background: #231F20;
+  color: #FFFFFF;
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.toast-msg.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* ==========================================================================
+   CARTÕES DE NAVEGAÇÃO DE AJUSTES (Settings Nav Cards)
+   ========================================================================== */
+.settings-nav-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.settings-nav-card:active {
+  transform: scale(0.98);
+  background: var(--bg-card-soft);
+}
+
+.settings-nav-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-nav-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.settings-nav-title {
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--text-main);
+  margin-bottom: 2px;
+  word-break: break-word;
+}
+
+.settings-nav-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+/* ==========================================================================
+   CHIPS DE SUPRIMENTOS RÁPIDOS (1-Touch Chips)
+   ========================================================================== */
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+
+.chip-btn {
+  background: #F4EAE2;
+  border: 1px solid #E5D5CB;
+  color: #7A4E42;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.chip-btn:active {
+  transform: scale(0.92);
+  background: var(--primary);
+  color: white;
+}
+
+/* ==========================================================================
+   LINHA DO TEMPO DO HISTÓRICO DA CLIENTE
+   ========================================================================== */
+.history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.history-card {
+  background: #FFFFFF;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  border: 1px solid var(--border-light);
+  border-left: 4px solid var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.history-date {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.history-service {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.history-details-box {
+  background: #FAF7F4;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: #E8F8EE;
+  color: #128C7E;
+}
+
+/* ==========================================================================
+   CALENDÁRIO VISUAL INTERATIVO (Visual Monthly Calendar)
+   ========================================================================== */
+.calendar-month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.calendar-month-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+
+.cal-today-btn {
+  background: var(--bg-card-soft);
+  border: 1px solid var(--border-color);
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cal-today-btn:active {
+  transform: scale(0.95);
+  background: var(--primary-light);
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-light);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-cell {
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+  background: transparent;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.cal-cell:hover:not(.empty):not(.selected) {
+  background: var(--bg-card-soft);
+}
+
+.cal-cell:active:not(.empty) {
+  transform: scale(0.92);
+}
+
+.cal-cell.empty {
+  cursor: default;
+  pointer-events: none;
+}
+
+.cal-cell.today {
+  border: 2px solid var(--primary);
+  font-weight: 800;
+}
+
+.cal-cell.selected {
+  background: var(--primary) !important;
+  color: #FFFFFF !important;
+  font-weight: 800;
+  box-shadow: 0 4px 14px var(--primary-glow);
+}
+
+.cal-cell-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--accent-gold);
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cal-cell.selected .cal-cell-dot {
+  background: #FFFFFF;
+}
+
+.agenda-filter-btn {
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.agenda-filter-btn.active {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-color: var(--primary);
+  font-weight: 700;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+/* ==========================================================================
+   TELA DE LOGIN E AUTENTICAÇÃO (Login Screen - Estilo iOS Premium)
+   ========================================================================== */
+.login-screen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bg-app);
+  background-image: radial-gradient(circle at 50% 18%, rgba(190, 122, 71, 0.12), transparent 60%);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.login-screen-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-gold);
+  border-radius: 28px;
+  padding: 32px 24px 26px 24px;
+  box-shadow: 0 16px 45px rgba(58, 32, 20, 0.14);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: slideUpLogin 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpLogin {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background: var(--bronze-grad);
+}
+
+.login-logo-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 22px;
+  border: 2px solid var(--accent-gold);
+  box-shadow: 0 8px 24px rgba(77, 38, 18, 0.18);
+  margin-bottom: 14px;
+  background: #FAF2EA;
+  object-fit: cover;
+}
+
+.login-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.login-subtitle {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent-gold-dark);
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.login-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  border: 1px solid rgba(190, 122, 71, 0.25);
+}
+
+.login-input-group {
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.login-input-group .form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.login-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.login-input-wrapper .form-input,
+.login-input-wrapper .login-input {
+  padding-right: 44px !important;
+}
+
+.login-input-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 1.05rem;
+  color: var(--text-light);
+  pointer-events: none;
+}
+
+.login-input {
+  width: 100%;
+  padding: 12px 14px 12px 38px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  background: #FAFBF9;
+  color: var(--text-main);
+  transition: all 0.2s;
+  outline: none;
+  font-family: inherit;
+}
+
+.login-input:focus {
+  border-color: var(--accent-gold);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.login-input-wrapper .password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+}
+
+.login-remember-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 14px 0 20px 0;
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+}
+
+.login-remember-row input[type="checkbox"] {
+  accent-color: var(--accent-gold);
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+}
+
+.login-btn-submit {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  background: var(--bronze-grad);
+  border: none;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(133, 66, 30, 0.35);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.login-btn-submit:active {
+  transform: scale(0.97);
+}
+
+.login-error-msg {
+  display: none;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-light);
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.login-footer-hint {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  margin-top: 16px;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE E PROTEÇÃO CONTRA CORTES (Mobile Safe)
+   ========================================================================== */
+@media (max-width: 380px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  
+  .home-blocks-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-block-item.full-width {
+    grid-column: span 1;
+  }
+
+  .finance-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+
+

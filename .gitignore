@@ -1,0 +1,7 @@
+# Arquivos binários pesados
+cloudflared.exe
+
+# Logs e temporários
+*.log
+.DS_Store
+Thumbs.db

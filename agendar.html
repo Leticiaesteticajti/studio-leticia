@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Studio Letícia - Agende seu Horário</title>
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Supabase JS Client via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      background: var(--bg-app, #FAF7F2);
+      color: var(--text-main, #26160D);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .booking-wrapper {
+      width: 100%;
+      max-width: 520px;
+      padding: 20px 16px 60px 16px;
+      box-sizing: border-box;
+    }
+
+    .booking-header {
+      text-align: center;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .booking-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 0 auto 10px auto;
+      display: block;
+      box-shadow: 0 4px 16px rgba(77, 38, 18, 0.15);
+      border: 2px solid var(--accent-gold, #BE7A47);
+    }
+
+    .booking-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--primary, #4D2612);
+      margin: 0 0 4px 0;
+      letter-spacing: 0.5px;
+    }
+
+    .booking-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted, #6B5244);
+      margin: 0;
+    }
+
+    .booking-step-card {
+      background: #FFFFFF;
+      border-radius: 18px;
+      border: 1px solid var(--border-color, #E8DDD2);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 14px rgba(77, 38, 18, 0.05);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .step-number {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--bronze-grad, linear-gradient(135deg, #85421E, #BE7A47));
+      color: #FFFFFF;
+      font-size: 0.8rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-title {
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: var(--primary, #4D2612);
+      margin: 0;
+    }
+
+    /* Lista de Serviços */
+    .services-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .service-option {
+      border: 1.5px solid var(--border-light, #F2EAE1);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-card-tint, #FDFBF9);
+    }
+
+    .service-option:hover {
+      border-color: var(--accent-gold, #BE7A47);
+      background: #FFFFFF;
+    }
+
+    .service-option.selected {
+      border-color: var(--primary, #4D2612);
+      background: var(--accent-gold-light, #FAF2EA);
+      box-shadow: 0 2px 8px rgba(190, 122, 71, 0.2);
+    }
+
+    .service-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-main, #26160D);
+      margin-bottom: 4px;
+    }
+
+    .service-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted, #6B5244);
+    }
+
+    .service-price {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary, #4D2612);
+      white-space: nowrap;
+      margin-left: 10px;
+    }
+
+    /* Horários */
+    .time-slots-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .time-slot-btn {
+      padding: 10px 6px;
+      text-align: center;
+      border: 1px solid var(--border-color, #E8DDD2);
+      background: var(--bg-card-tint, #FDFBF9);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main, #26160D);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .time-slot-btn:hover:not(.disabled) {
+      border-color: var(--accent-gold, #BE7A47);
+      background: #FFFFFF;
+    }
+
+    .time-slot-btn.selected {
+      background: var(--primary, #4D2612);
+      color: #FFFFFF;
+      border-color: var(--primary, #4D2612);
+    }
+
+    .time-slot-btn.disabled {
+      opacity: 0.35;
+      text-decoration: line-through;
+      cursor: not-allowed;
+      background: #ECE5DE;
+    }
+
+    .btn-submit-booking {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      background: var(--bronze-grad, linear-gradient(135deg, #85421E, #BE7A47));
+      color: #FFFFFF;
+      font-size: 1.05rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(77, 38, 18, 0.25);
+      transition: transform 0.2s, opacity 0.2s;
+      margin-top: 10px;
+    }
+
+    .btn-submit-booking:active {
+      transform: scale(0.98);
+    }
+
+    .btn-submit-booking:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Status Screen */
+    .status-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      padding: 30px 20px;
+      text-align: center;
+      border: 1px solid var(--border-color, #E8DDD2);
+      box-shadow: 0 6px 20px rgba(77, 38, 18, 0.08);
+    }
+
+    .status-icon-bubble {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      margin: 0 auto 16px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+    }
+
+    .status-pending .status-icon-bubble {
+      background: #FFF4E5;
+      color: #BE7A47;
+      border: 2px solid #F2CE9F;
+    }
+
+    .status-confirmed .status-icon-bubble {
+      background: #E8F8EE;
+      color: #25D366;
+      border: 2px solid #82E4A5;
+    }
+
+    .status-rejected .status-icon-bubble {
+      background: #FBEBEB;
+      color: #B93728;
+      border: 2px solid #F5C6C6;
+    }
+
+    .status-badge-pill {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-bottom: 14px;
+    }
+
+    .status-pending .status-badge-pill {
+      background: #FFF4E5;
+      color: #925D11;
+    }
+
+    .status-confirmed .status-badge-pill {
+      background: #E8F8EE;
+      color: #128C7E;
+    }
+
+    .status-rejected .status-badge-pill {
+      background: #FBEBEB;
+      color: #B93728;
+    }
+
+    .details-box {
+      background: var(--bg-card-tint, #FDFBF9);
+      border: 1px solid var(--border-light, #F2EAE1);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: left;
+      margin: 18px 0;
+      font-size: 0.9rem;
+    }
+
+    .details-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .details-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .details-label {
+      color: var(--text-muted, #6B5244);
+    }
+
+    .details-value {
+      font-weight: 600;
+      color: var(--text-main, #26160D);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="booking-wrapper">
+    
+    <!-- CABEÇALHO -->
+    <header class="booking-header">
+      <img src="img/logo-badge.png" alt="Studio Letícia" class="booking-logo">
+      <h1 class="booking-title">STUDIO LETÍCIA</h1>
+      <p class="booking-subtitle">ESTÉTICA &amp; BEM-ESTAR • AGENDE SEU HORÁRIO</p>
+    </header>
+
+    <!-- TELA 1: FORMULÁRIO DE AGENDAMENTO (Exibido por padrão se não houver ?id=) -->
+    <div id="section-booking-form">
+      
+      <!-- PASSO 1: PROCEDIMENTO -->
+      <div class="booking-step-card">
+        <div class="step-header">
+          <div class="step-number">1</div>
+          <h2 class="step-title">Escolha o Procedimento</h2>
+        </div>
+        <div id="services-list-container" class="services-grid">
+          <!-- Injetado dinamicamente -->
+          <div style="text-align: center; color: var(--text-muted); padding: 15px;">Carregando procedimentos...</div>
+        </div>
+      </div>
+
+      <!-- PASSO 2: DATA E HORÁRIO -->
+      <div class="booking-step-card">
+        <div class="step-header">
+          <div class="step-number">2</div>
+          <h2 class="step-title">Escolha a Data &amp; Horário</h2>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" for="booking-date">Data do Atendimento</label>
+          <input type="date" id="booking-date" class="form-input" style="width: 100%; box-sizing: border-box; font-size: 1rem; padding: 12px;">
+        </div>
+
+        <label class="form-label">Horários Disponíveis</label>
+        <div id="time-slots-container" class="time-slots-grid">
+          <!-- Horários gerados dinamicamente -->
+          <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 10px;">
+            Selecione uma data acima para ver os horários livres.
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSO 3: SEUS DADOS (ZERO LOGIN!) -->
+      <div class="booking-step-card">
+        <div class="step-header">
+          <div class="step-number">3</div>
+          <h2 class="step-title">Seus Dados de Contato</h2>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" for="client-name">Seu Nome Completo *</label>
+          <input type="text" id="client-name" class="form-input" placeholder="Ex: Amanda Silva" required style="width: 100%; box-sizing: border-box; padding: 12px;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" for="client-whatsapp">Seu WhatsApp (com DDD) *</label>
+          <input type="tel" id="client-whatsapp" class="form-input" placeholder="(00) 00000-0000" required inputmode="numeric" style="width: 100%; box-sizing: border-box; padding: 12px;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="client-notes">Observações ou Dúvidas (Opcional)</label>
+          <input type="text" id="client-notes" class="form-input" placeholder="Ex: Primeira vez no studio, pós-cirúrgico..." style="width: 100%; box-sizing: border-box; padding: 12px;">
+        </div>
+
+        <button type="button" id="btn-submit" class="btn-submit-booking" onclick="clientBooking.submitRequest()">
+          Solicitar Agendamento com a Letícia ✨
+        </button>
+      </div>
+
+    </div>
+
+    <!-- TELA 2: ACOMPANHAMENTO DO STATUS EM TEMPO REAL -->
+    <div id="section-status-view" style="display: none;">
+      <div id="status-card-element" class="status-card status-pending">
+        <div class="status-icon-bubble" id="status-icon">⏳</div>
+        <div class="status-badge-pill" id="status-badge">Solicitação Enviada</div>
+        <h2 id="status-headline" style="margin: 0 0 8px 0; color: var(--primary);">Aguardando Confirmação da Letícia</h2>
+        <p id="status-desc" style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">
+          A Letícia já recebeu o seu pedido de agendamento e irá confirmar em instantes. Esta tela atualiza automaticamente!
+        </p>
+
+        <div class="details-box" id="status-details">
+          <!-- Injetado dinamicamente -->
+        </div>
+
+        <div id="status-actions">
+          <!-- Botão WhatsApp para falar direto com a Letícia -->
+          <a id="btn-talk-leticia" href="#" target="_blank" class="quick-btn green-action" style="width: 100%; justify-content: center; box-sizing: border-box; padding: 12px; margin-bottom: 10px; text-decoration: none;">
+            💬 Conversar com a Letícia no WhatsApp
+          </a>
+
+          <button type="button" class="btn-primary" style="width: 100%; background: var(--bg-card-soft); color: var(--primary); border: 1px solid var(--border-color);" onclick="clientBooking.newBooking()">
+            Agendar Outro Horário
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SCRIPT DE AGENDAMENTO E INTEGRAÇÃO SUPABASE -->
+  <script src="js/supabase-client.js"></script>
+  <script>
+    class ClientBookingApp {
+      constructor() {
+        this.selectedService = null;
+        this.selectedDate = null;
+        this.selectedTime = null;
+        this.requestId = null;
+        this.statusPoller = null;
+
+        // Horários de atendimento do Studio Letícia
+        this.standardSlots = [
+          '08:00', '09:00', '10:00', '11:00', 
+          '13:30', '14:30', '15:30', '16:30', '17:30'
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => this.init());
+      }
+
+      async init() {
+        this.setupPhoneMask();
+        this.setupDateInput();
+
+        // Verifica se tem ?id= na URL (Modo Acompanhamento de Status)
+        const params = new URLSearchParams(window.location.search);
+        const idFromUrl = params.get('id');
+
+        if (idFromUrl) {
+          this.requestId = idFromUrl;
+          this.showStatusView(idFromUrl);
+        } else {
+          await this.loadServices();
+        }
+      }
+
+      setupPhoneMask() {
+        const input = document.getElementById('client-whatsapp');
+        if (!input) return;
+        input.addEventListener('input', (e) => {
+          let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+          if (v.length > 10) {
+            v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+          } else if (v.length > 5) {
+            v = v.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3');
+          } else if (v.length > 2) {
+            v = v.replace(/^(\d{2})(\d{0,5})$/, '($1) $2');
+          }
+          e.target.value = v;
+        });
+      }
+
+      setupDateInput() {
+        const input = document.getElementById('booking-date');
+        if (!input) return;
+
+        // Limita data mínima para hoje
+        const hoje = new Date().toISOString().split('T')[0];
+        input.min = hoje;
+
+        // Seleciona amanhã como padrão
+        const amanha = new Date();
+        amanha.setDate(amanha.getDate() + 1);
+        input.value = amanha.toISOString().split('T')[0];
+        this.selectedDate = input.value;
+
+        input.addEventListener('change', (e) => {
+          this.selectedDate = e.target.value;
+          this.renderTimeSlots();
+        });
+      }
+
+      async loadServices() {
+        const container = document.getElementById('services-list-container');
+        if (!container) return;
+
+        // Busca serviços configurados via Supabase ou serviços padrão
+        const services = await StudioCloud.getPublicServices();
+
+        container.innerHTML = services.map(s => `
+          <div class="service-option" onclick="clientBooking.selectService('${s.id}', '${s.nome}', ${s.preco}, ${s.duracaoMin || 60}, this)">
+            <div>
+              <div class="service-name">${s.nome}</div>
+              <div class="service-desc">⏱️ ${s.duracaoMin || 60} min • ${s.descricao || 'Atendimento personalizado'}</div>
+            </div>
+            <div class="service-price">R$ ${Number(s.preco).toFixed(2).replace('.', ',')}</div>
+          </div>
+        `).join('');
+
+        // Pré-seleciona o primeiro
+        if (services.length > 0) {
+          const first = container.querySelector('.service-option');
+          if (first) first.click();
+        }
+
+        this.renderTimeSlots();
+      }
+
+      selectService(id, nome, preco, duracaoMin, el) {
+        this.selectedService = { id, nome, preco, duracaoMin };
+        document.querySelectorAll('.service-option').forEach(opt => opt.classList.remove('selected'));
+        if (el) el.classList.add('selected');
+      }
+
+      async renderTimeSlots() {
+        const container = document.getElementById('time-slots-container');
+        if (!container || !this.selectedDate) return;
+
+        container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 10px; color: var(--text-muted);">Consultando horários livres...</div>';
+
+        // Busca horários já ocupados nesta data no Studio
+        const busySlots = await StudioCloud.getBusySlotsForDate(this.selectedDate);
+
+        container.innerHTML = this.standardSlots.map(time => {
+          const isBusy = busySlots.includes(time);
+          const isSelected = this.selectedTime === time;
+
+          return `
+            <button type="button" class="time-slot-btn ${isBusy ? 'disabled' : ''} ${isSelected ? 'selected' : ''}" 
+              ${isBusy ? 'disabled' : ''} 
+              onclick="clientBooking.selectTime('${time}', this)">
+              ${time}
+            </button>
+          `;
+        }).join('');
+      }
+
+      selectTime(time, btn) {
+        this.selectedTime = time;
+        document.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('selected'));
+        if (btn) btn.classList.add('selected');
+      }
+
+      async submitRequest() {
+        const btn = document.getElementById('btn-submit');
+        const nomeInput = document.getElementById('client-name');
+        const wppInput = document.getElementById('client-whatsapp');
+        const notesInput = document.getElementById('client-notes');
+
+        const nome = (nomeInput.value || '').trim();
+        const wpp = (wppInput.value || '').replace(/\D/g, '');
+        const notes = (notesInput.value || '').trim();
+
+        if (!this.selectedService) {
+          alert('Por favor, selecione o procedimento que deseja realizar.');
+          return;
+        }
+
+        if (!this.selectedDate) {
+          alert('Por favor, selecione a data do agendamento.');
+          return;
+        }
+
+        if (!this.selectedTime) {
+          alert('Por favor, selecione um dos horários disponíveis.');
+          return;
+        }
+
+        if (!nome) {
+          alert('Por favor, digite seu nome completo.');
+          nomeInput.focus();
+          return;
+        }
+
+        if (wpp.length < 10) {
+          alert('Por favor, informe seu WhatsApp com DDD.');
+          wppInput.focus();
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Enviando solicitação... ⏳';
+
+        try {
+          const requestData = {
+            cliente_nome: nome,
+            cliente_whatsapp: wpp,
+            servico_id: this.selectedService.id,
+            servico_nome: this.selectedService.nome,
+            servico_preco: this.selectedService.preco,
+            duracao_min: this.selectedService.duracaoMin,
+            data: this.selectedDate,
+            horario: this.selectedTime,
+            observacoes: notes,
+            status: 'pendente'
+          };
+
+          const result = await StudioCloud.createBookingRequest(requestData);
+
+          if (result && result.id) {
+            // Atualiza URL sem recarregar e abre tela de status
+            const newUrl = `${window.location.pathname}?id=${result.id}`;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+            this.showStatusView(result.id);
+          } else {
+            alert('Não foi possível enviar o agendamento. Verifique sua conexão e tente novamente.');
+            btn.disabled = false;
+            btn.textContent = 'Solicitar Agendamento com a Letícia ✨';
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Ocorreu um erro ao enviar sua solicitação. Tente novamente em instantes.');
+          btn.disabled = false;
+          btn.textContent = 'Solicitar Agendamento com a Letícia ✨';
+        }
+      }
+
+      async showStatusView(requestId) {
+        document.getElementById('section-booking-form').style.display = 'none';
+        document.getElementById('section-status-view').style.display = 'block';
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        await this.updateStatusScreen(requestId);
+
+        // Monitora em tempo real a cada 5 segundos
+        if (this.statusPoller) clearInterval(this.statusPoller);
+        this.statusPoller = setInterval(() => this.updateStatusScreen(requestId), 5000);
+      }
+
+      async updateStatusScreen(requestId) {
+        const data = await StudioCloud.getBookingRequestById(requestId);
+        if (!data) return;
+
+        const card = document.getElementById('status-card-element');
+        const icon = document.getElementById('status-icon');
+        const badge = document.getElementById('status-badge');
+        const headline = document.getElementById('status-headline');
+        const desc = document.getElementById('status-desc');
+        const details = document.getElementById('status-details');
+        const btnWpp = document.getElementById('btn-talk-leticia');
+
+        // Formata data DD/MM/AAAA
+        const [ano, mes, dia] = (data.data || '').split('-');
+        const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : data.data;
+
+        details.innerHTML = `
+          <div class="details-row">
+            <span class="details-label">Cliente:</span>
+            <span class="details-value">${data.cliente_nome}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Procedimento:</span>
+            <span class="details-value">${data.servico_nome}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Data Solicitada:</span>
+            <span class="details-value">${dataFormatada} às ${data.horario}</span>
+          </div>
+          <div class="details-row">
+            <span class="details-label">Valor:</span>
+            <span class="details-value">R$ ${Number(data.servico_preco || 0).toFixed(2).replace('.', ',')}</span>
+          </div>
+        `;
+
+        // Link de WhatsApp direto com a Letícia
+        const msgWpp = encodeURIComponent(`Olá, Letícia! Fiz um agendamento pelo seu site para ${dataFormatada} às ${data.horario} (${data.servico_nome}).`);
+        btnWpp.href = `https://wa.me/5511999999999?text=${msgWpp}`; // Substituído dinamicamente pelo número da Letícia se houver
+
+        card.className = `status-card status-${data.status || 'pendente'}`;
+
+        if (data.status === 'confirmado') {
+          icon.textContent = '🎉';
+          badge.textContent = 'CONFIRMADO COM SUCESSO';
+          headline.textContent = 'Seu Horário está Garantido! ✨';
+          desc.textContent = 'A Letícia confirmou seu agendamento no Studio. Estamos te esperando com muito carinho!';
+        } else if (data.status === 'recusado') {
+          icon.textContent = '❌';
+          badge.textContent = 'HORÁRIO INDISPONÍVEL';
+          headline.textContent = 'Horário não pôde ser confirmado';
+          desc.textContent = data.motivo_recusa || 'Este horário acabou de ser preenchido. Por favor, escolha outro dia ou fale diretamente com a Letícia pelo WhatsApp.';
+        } else {
+          icon.textContent = '⏳';
+          badge.textContent = 'SOLICITAÇÃO PENDENTE';
+          headline.textContent = 'Aguardando Confirmação da Letícia';
+          desc.textContent = 'Seu pedido foi enviado! A Letícia foi notificada e já vai aprovar seu horário. Esta tela atualiza sozinha.';
+        }
+      }
+
+      newBooking() {
+        if (this.statusPoller) clearInterval(this.statusPoller);
+        window.history.pushState({}, '', window.location.pathname);
+        document.getElementById('section-status-view').style.display = 'none';
+        document.getElementById('section-booking-form').style.display = 'block';
+        this.selectedTime = null;
+        this.renderTimeSlots();
+      }
+    }
+
+    const clientBooking = new ClientBookingApp();
+  </script>
+</body>
+</html>
