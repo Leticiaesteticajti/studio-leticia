@@ -1818,10 +1818,11 @@ body {
   min-width: 0;
 }
 
+.service-checkbox,
 .service-radio {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
   border: 2px solid #D8C8BA;
   display: flex;
   align-items: center;
@@ -1831,21 +1832,26 @@ body {
   background: #FFFFFF;
 }
 
+.service-option:hover .service-checkbox,
 .service-option:hover .service-radio {
   border-color: var(--accent-gold, #BE7A47);
 }
 
+.service-checkbox.active,
+.service-option.selected .service-checkbox,
 .service-radio.active,
 .service-option.selected .service-radio {
   border-color: var(--accent-gold, #BE7A47);
-  background: var(--accent-gold, #BE7A47);
+  background: linear-gradient(135deg, #85421E 0%, #BE7A47 100%);
 }
 
+.service-checkbox.active::after,
+.service-option.selected .service-checkbox::after,
 .service-radio.active::after,
 .service-option.selected .service-radio::after {
   content: '✓';
   color: #FFFFFF;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 800;
   line-height: 1;
 }

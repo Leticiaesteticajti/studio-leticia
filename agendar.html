@@ -186,10 +186,11 @@
       min-width: 0;
     }
 
+    .service-checkbox,
     .service-radio {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
       border: 2px solid #D8C8BA;
       display: flex;
       align-items: center;
@@ -199,20 +200,26 @@
       background: #FFFFFF;
     }
 
+    .service-option:hover .service-checkbox,
     .service-option:hover .service-radio {
       border-color: var(--accent-gold, #BE7A47);
     }
 
+    .service-checkbox.active,
+    .service-option.selected .service-checkbox,
     .service-radio.active,
     .service-option.selected .service-radio {
       border-color: var(--accent-gold, #BE7A47);
-      background: var(--accent-gold, #BE7A47);
+      background: linear-gradient(135deg, #85421E 0%, #BE7A47 100%);
     }
+
+    .service-checkbox.active::after,
+    .service-option.selected .service-checkbox::after,
     .service-radio.active::after,
     .service-option.selected .service-radio::after {
       content: '✓';
       color: #FFFFFF;
-      font-size: 0.72rem;
+      font-size: 0.82rem;
       font-weight: 800;
       line-height: 1;
     }
@@ -603,11 +610,13 @@
   <script>
     class ClientBookingApp {
       constructor() {
+        this.selectedServices = [];
         this.selectedService = null;
         this.selectedDate = null;
         this.selectedTime = null;
         this.requestId = null;
         this.statusPoller = null;
+        this.publicServices = [];
 
         // Horários de atendimento do Studio Letícia
         this.standardSlots = [
@@ -621,6 +630,7 @@
       async init() {
         this.setupPhoneMask();
         this.setupDateInput();
+        this.setupOutsideClick();
 
         // Verifica se tem ?id= na URL (Modo Acompanhamento de Status)
         const params = new URLSearchParams(window.location.search);
@@ -632,6 +642,16 @@
         } else {
           await this.loadServices();
         }
+      }
+
+      setupOutsideClick() {
+        document.addEventListener('click', (e) => {
+          const card = document.getElementById('service-select-trigger')?.closest('.booking-step-card');
+          const list = document.getElementById('services-list-container');
+          if (card && list && list.style.display !== 'none' && !card.contains(e.target)) {
+            this.closeServicesList();
+          }
+        });
       }
 
       setupPhoneMask() {
@@ -675,39 +695,132 @@
         if (!container) return;
 
         // Busca serviços configurados via Supabase ou serviços padrão
-        const services = await StudioCloud.getPublicServices();
+        const rawServices = await StudioCloud.getPublicServices();
+        const services = (rawServices || []).filter(s => !s.isPacote);
+        this.publicServices = services;
 
-        container.innerHTML = services.map(s => {
-          const isSelected = this.selectedService && this.selectedService.id === s.id;
-          return `
-            <div class="service-option ${isSelected ? 'selected' : ''}" onclick="clientBooking.selectService('${s.id}', '${s.nome}', ${s.preco}, ${s.duracaoMin || 60}, this)" data-service-id="${s.id}">
-              <div class="service-left">
-                <span class="service-radio ${isSelected ? 'active' : ''}"></span>
-                <div class="service-info">
-                  <div class="service-name-row">
-                    <span class="service-name">${s.nome}</span>
-                    <span class="service-badge">⏱️ ${s.duracaoMin || 60} min</span>
+        // Inicializa com o primeiro serviço selecionado se nenhum escolhido
+        if ((!this.selectedServices || this.selectedServices.length === 0) && services.length > 0) {
+          this.selectedServices = [services[0]];
+          this.selectedService = services[0];
+        }
+
+        container.innerHTML = `
+          <div style="padding: 10px 14px; background: rgba(190, 122, 71, 0.08); border: 1px solid rgba(190, 122, 71, 0.16); border-radius: 10px; margin-bottom: 8px; font-size: 0.82rem; color: var(--primary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+            <span>✨ <strong>Selecione 1 ou mais procedimentos</strong> desejados:</span>
+            <span id="agendar-services-counter" style="background: var(--accent-gold); color: #FFFFFF; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 0.76rem;">
+              ${this.selectedServices.length} selecionado(s)
+            </span>
+          </div>
+
+          <div class="services-items-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; padding-right: 2px;">
+            ${services.map(s => {
+              const isSelected = this.selectedServices.some(sel => sel.id === s.id);
+              return `
+                <div class="service-option ${isSelected ? 'selected' : ''}" onclick="clientBooking.toggleService('${s.id}', this)" data-service-id="${s.id}">
+                  <div class="service-left">
+                    <span class="service-checkbox ${isSelected ? 'active' : ''}"></span>
+                    <div class="service-info">
+                      <div class="service-name-row">
+                        <span class="service-name">${s.nome}</span>
+                        <span class="service-badge">⏱️ ${s.duracaoMin || 60} min</span>
+                      </div>
+                      <div class="service-desc">${s.descricao || 'Atendimento personalizado Letícia Gomes'}</div>
+                    </div>
                   </div>
-                  <div class="service-desc">${s.descricao || 'Atendimento personalizado Letícia Gomes'}</div>
+                  <div class="service-right">
+                    <div class="service-price">R$ ${Number(s.preco).toFixed(2).replace('.', ',')}</div>
+                  </div>
                 </div>
+              `;
+            }).join('')}
+          </div>
+
+          <div id="agendar-dropdown-footer" style="position: sticky; bottom: 0; background: #FFFFFF; padding: 10px 8px 4px 8px; border-top: 1px solid var(--border-light); margin-top: 8px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div id="agendar-footer-summary" style="font-size: 0.82rem; color: var(--primary);">
+              ${this.getServicesSummaryText()}
+            </div>
+            <button type="button" class="btn-complete" style="padding: 8px 16px; font-size: 0.82rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(77, 38, 18, 0.15);" onclick="clientBooking.closeServicesList(event)">
+              ✓ Concluir Seleção ⮝
+            </button>
+          </div>
+        `;
+
+        this.updateServicesDisplay();
+        this.renderTimeSlots();
+      }
+
+      getServicesSummaryText() {
+        const list = this.selectedServices || [];
+        const count = list.length;
+        if (count === 0) return '<span style="color: var(--text-muted);">Nenhum procedimento selecionado</span>';
+        const totalMin = list.reduce((acc, s) => acc + (parseInt(s.duracaoMin, 10) || 60), 0);
+        const totalPreco = list.reduce((acc, s) => acc + (parseFloat(s.preco) || 0), 0);
+        return `<strong>${count}</strong> proced. • ⏱️ <strong>${totalMin} min</strong> • 💰 <strong>R$ ${Number(totalPreco).toFixed(2).replace('.', ',')}</strong>`;
+      }
+
+      updateServicesDisplay() {
+        const display = document.getElementById('service-selected-display');
+        const counterBadge = document.getElementById('agendar-services-counter');
+        const footerSummary = document.getElementById('agendar-footer-summary');
+
+        const list = this.selectedServices || [];
+        const count = list.length;
+
+        if (counterBadge) {
+          counterBadge.textContent = `${count} selecionado(s)`;
+          counterBadge.style.background = count > 0 ? 'var(--accent-gold)' : '#A39284';
+        }
+
+        if (footerSummary) {
+          footerSummary.innerHTML = this.getServicesSummaryText();
+        }
+
+        if (!display) return;
+
+        if (count === 0) {
+          display.innerHTML = `
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary);">💆‍♀️ Toque para escolher o(s) procedimento(s)...</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Veja os procedimentos cadastrados e escolha 1 ou mais</div>
+          `;
+          return;
+        }
+
+        const totalMin = list.reduce((acc, s) => acc + (parseInt(s.duracaoMin, 10) || 60), 0);
+        const totalPreco = list.reduce((acc, s) => acc + (parseFloat(s.preco) || 0), 0);
+
+        if (count === 1) {
+          const s = list[0];
+          display.innerHTML = `
+            <div style="display: flex; flex-direction: column;">
+              <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">
+                ✨ ${s.nome}
               </div>
-              <div class="service-right">
-                <div class="service-price">R$ ${Number(s.preco).toFixed(2).replace('.', ',')}</div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="background: rgba(190, 122, 71, 0.12); color: var(--accent-gold); padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">⏱️ ${s.duracaoMin || 60} min</span>
+                <span style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">R$ ${Number(s.preco).toFixed(2).replace('.', ',')}</span>
+                <span style="color: var(--accent-gold); font-size: 0.76rem; font-weight: 600;">• (1 selecionado — toque para alterar ou adicionar mais)</span>
               </div>
             </div>
           `;
-        }).join('');
-
-        // Pré-seleciona o primeiro
-        if (services.length > 0) {
-          const first = container.querySelector('.service-option');
-          if (first) {
-            const s = services[0];
-            this.selectService(s.id, s.nome, s.preco, s.duracaoMin || 60, first, false);
-          }
+        } else {
+          const nomes = list.map(s => s.nome).join(' + ');
+          display.innerHTML = `
+            <div style="display: flex; flex-direction: column;">
+              <div style="font-size: 1.02rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+                <span>✨</span> <strong>${count} procedimentos selecionados:</strong>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--accent-bronze); font-weight: 700; margin-top: 2px; line-height: 1.35;">
+                ${nomes}
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="background: rgba(190, 122, 71, 0.15); color: var(--primary); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.76rem;">⏱️ Tempo Total: ${totalMin} min</span>
+                <span style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">💰 Total: R$ ${Number(totalPreco).toFixed(2).replace('.', ',')}</span>
+                <span style="color: var(--accent-gold); font-size: 0.76rem; font-weight: 600;">• Toque para alterar</span>
+              </div>
+            </div>
+          `;
         }
-
-        this.renderTimeSlots();
       }
 
       toggleServicesList() {
@@ -726,48 +839,60 @@
         }
       }
 
-      selectService(id, nome, preco, duracaoMin, el, autoClose = true) {
-        this.selectedService = { id, nome, preco, duracaoMin };
-        document.querySelectorAll('.service-option').forEach(opt => {
-          opt.classList.remove('selected');
-          const radio = opt.querySelector('.service-radio');
-          if (radio) radio.classList.remove('active');
-        });
-        if (el) {
-          el.classList.add('selected');
-          const radio = el.querySelector('.service-radio');
-          if (radio) radio.classList.add('active');
+      openServicesList() {
+        const list = document.getElementById('services-list-container');
+        const chevron = document.getElementById('service-chevron');
+        const trigger = document.getElementById('service-select-trigger');
+        if (!list) return;
+        list.style.display = 'flex';
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+        if (trigger) trigger.classList.add('open');
+      }
+
+      closeServicesList(e) {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const list = document.getElementById('services-list-container');
+        const chevron = document.getElementById('service-chevron');
+        const trigger = document.getElementById('service-select-trigger');
+        if (list) list.style.display = 'none';
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+        if (trigger) trigger.classList.remove('open');
+      }
+
+      toggleService(id, el) {
+        const service = (this.publicServices || []).find(s => s.id === id);
+        if (!service) return;
+
+        if (!Array.isArray(this.selectedServices)) {
+          this.selectedServices = [];
         }
 
-        // Atualiza trigger display
-        const display = document.getElementById('service-selected-display');
-        if (display) {
-          display.innerHTML = `
-            <div style="display: flex; flex-direction: column;">
-              <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">
-                ✨ ${nome}
-              </div>
-              <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span style="background: rgba(190, 122, 71, 0.12); color: var(--accent-gold); padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">⏱️ ${duracaoMin || 60} min</span>
-                <span style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">R$ ${Number(preco).toFixed(2).replace('.', ',')}</span>
-                <span style="color: var(--text-muted); font-size: 0.76rem;">• Toque para alterar</span>
-              </div>
-            </div>
-          `;
+        const idx = this.selectedServices.findIndex(s => s.id === id);
+        const itemEl = el || document.querySelector(`[data-service-id="${id}"]`);
+
+        if (idx >= 0) {
+          this.selectedServices.splice(idx, 1);
+          if (itemEl) {
+            itemEl.classList.remove('selected');
+            const box = itemEl.querySelector('.service-checkbox, .service-radio');
+            if (box) box.classList.remove('active');
+          }
+        } else {
+          this.selectedServices.push(service);
+          if (itemEl) {
+            itemEl.classList.add('selected');
+            const box = itemEl.querySelector('.service-checkbox, .service-radio');
+            if (box) box.classList.add('active');
+          }
         }
 
-        if (autoClose) {
-          setTimeout(() => {
-            const list = document.getElementById('services-list-container');
-            const chevron = document.getElementById('service-chevron');
-            const trigger = document.getElementById('service-select-trigger');
-            if (list) list.style.display = 'none';
-            if (chevron) chevron.style.transform = 'rotate(0deg)';
-            if (trigger) trigger.classList.remove('open');
-          }, 160);
-        }
-
+        this.selectedService = this.selectedServices[0] || null;
+        this.updateServicesDisplay();
         this.renderTimeSlots();
+      }
+
+      selectService(id, nome, preco, duracaoMin, el) {
+        this.toggleService(id, el);
       }
 
       async renderTimeSlots() {
@@ -809,8 +934,9 @@
         const wpp = (wppInput.value || '').replace(/\D/g, '');
         const notes = (notesInput.value || '').trim();
 
-        if (!this.selectedService) {
-          alert('Por favor, selecione o procedimento que deseja realizar.');
+        if (!this.selectedServices || this.selectedServices.length === 0) {
+          alert('Por favor, selecione ao menos um procedimento que deseja realizar.');
+          this.openServicesList();
           return;
         }
 
@@ -840,16 +966,27 @@
         btn.textContent = 'Enviando solicitação... ⏳';
 
         try {
+          const totalPreco = this.selectedServices.reduce((acc, s) => acc + (Number(s.preco) || 0), 0);
+          const totalMin = this.selectedServices.reduce((acc, s) => acc + (parseInt(s.duracaoMin, 10) || 60), 0);
+          const nomesConcatenados = this.selectedServices.map(s => s.nome).join(' + ');
+          const idsConcatenados = this.selectedServices.map(s => s.id).join(', ');
+
+          const detalheServicos = this.selectedServices.map((s, idx) => 
+            `${idx + 1}. ${s.nome} (${s.duracaoMin || 60}min - R$ ${Number(s.preco).toFixed(2).replace('.', ',')})`
+          ).join(' | ');
+
+          const obsCompleta = notes ? `${notes} [Procedimentos: ${detalheServicos}]` : `[Procedimentos: ${detalheServicos}]`;
+
           const requestData = {
             cliente_nome: nome,
             cliente_whatsapp: wpp,
-            servico_id: this.selectedService.id,
-            servico_nome: this.selectedService.nome,
-            servico_preco: this.selectedService.preco,
-            duracao_min: this.selectedService.duracaoMin,
+            servico_id: idsConcatenados,
+            servico_nome: nomesConcatenados,
+            servico_preco: totalPreco,
+            duracao_min: totalMin,
             data: this.selectedDate,
             horario: this.selectedTime,
-            observacoes: notes,
+            observacoes: obsCompleta,
             status: 'pendente'
           };
 

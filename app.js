@@ -1906,6 +1906,7 @@ class StudioApp {
     const valorFloat = parseFloat(novoPreco.replace(',', '.')) || 0;
     servico.preco = valorFloat;
     await db.put('servicos', servico);
+    await this.syncServicesToCloud();
     await this.loadInitialData();
     await this.openPriceTableModal();
     this.showToast('Preço atualizado com sucesso! ✨');
@@ -2016,6 +2017,7 @@ class StudioApp {
       isPacote: categoria === 'Pacotes'
     });
 
+    await this.syncServicesToCloud();
     this.closeModal('modal-service');
     document.getElementById('form-service').reset();
     await this.loadInitialData();
@@ -2026,6 +2028,7 @@ class StudioApp {
   async deleteService(id) {
     if (confirm('Deseja realmente remover este procedimento da tabela?')) {
       await db.delete('servicos', id);
+      await this.syncServicesToCloud();
       await this.loadInitialData();
       await this.openPriceTableModal();
       this.showToast('Procedimento excluído.');
@@ -2654,6 +2657,7 @@ class StudioApp {
   // FLUXO PÚBLICO DE AGENDAMENTO DA CLIENTE (UNIFICADO NO MESMO LINK)
   // =========================================================================
   async initClientBooking() {
+    this.selectedBookingServices = [];
     this.selectedBookingService = null;
     this.selectedBookingDate = null;
     this.selectedBookingTime = null;
@@ -2668,6 +2672,7 @@ class StudioApp {
 
     this.setupClientPhoneMask();
     this.setupClientDateInput();
+    this.setupServicesOutsideClick();
 
     const params = new URLSearchParams(window.location.search);
     const idFromUrl = params.get('id');
@@ -2818,36 +2823,129 @@ class StudioApp {
 
     this.clientPublicServices = services;
 
-    // Renderiza em linhas verticais (layout em cascata)
-    container.innerHTML = services.map(s => {
-      const isSelected = this.selectedBookingService && this.selectedBookingService.id === s.id;
-      return `
-        <div class="service-option ${isSelected ? 'selected' : ''}" onclick="app.selectClientBookingService('${s.id}', this)" data-service-id="${s.id}">
-          <div class="service-left">
-            <span class="service-radio ${isSelected ? 'active' : ''}"></span>
-            <div class="service-info">
-              <div class="service-name-row">
-                <span class="service-name">${this.escapeHtml(s.nome)}</span>
-                <span class="service-badge">⏱️ ${s.duracaoMin || 60} min</span>
+    // Inicializa seleção padrão com o primeiro procedimento se vazio
+    if ((!this.selectedBookingServices || this.selectedBookingServices.length === 0) && services.length > 0) {
+      this.selectedBookingServices = [services[0]];
+      this.selectedBookingService = services[0];
+    }
+
+    // Renderiza o cabeçalho informativo + lista vertical com checkboxes + rodapé de conclusão
+    container.innerHTML = `
+      <div style="padding: 10px 14px; background: rgba(190, 122, 71, 0.08); border: 1px solid rgba(190, 122, 71, 0.16); border-radius: 10px; margin-bottom: 8px; font-size: 0.82rem; color: var(--primary); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+        <span>✨ <strong>Selecione 1 ou mais procedimentos</strong> desejados:</span>
+        <span id="selected-services-counter" style="background: var(--accent-gold); color: #FFFFFF; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 0.76rem;">
+          ${this.selectedBookingServices.length} selecionado(s)
+        </span>
+      </div>
+
+      <div class="services-items-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; padding-right: 2px;">
+        ${services.map(s => {
+          const isSelected = this.selectedBookingServices.some(sel => sel.id === s.id);
+          return `
+            <div class="service-option ${isSelected ? 'selected' : ''}" onclick="app.toggleClientBookingService('${s.id}', this)" data-service-id="${s.id}">
+              <div class="service-left">
+                <span class="service-checkbox ${isSelected ? 'active' : ''}"></span>
+                <div class="service-info">
+                  <div class="service-name-row">
+                    <span class="service-name">${this.escapeHtml(s.nome)}</span>
+                    <span class="service-badge">⏱️ ${s.duracaoMin || 60} min</span>
+                  </div>
+                  <div class="service-desc">${this.escapeHtml(s.descricao || 'Atendimento personalizado Letícia Gomes')}</div>
+                </div>
               </div>
-              <div class="service-desc">${this.escapeHtml(s.descricao || 'Atendimento personalizado Letícia Gomes')}</div>
+              <div class="service-right">
+                <div class="service-price">${this.formatCurrency(s.preco)}</div>
+              </div>
             </div>
+          `;
+        }).join('')}
+      </div>
+
+      <div id="services-dropdown-footer" style="position: sticky; bottom: 0; background: #FFFFFF; padding: 10px 8px 4px 8px; border-top: 1px solid var(--border-light); margin-top: 8px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div id="services-footer-summary" style="font-size: 0.82rem; color: var(--primary);">
+          ${this.getServicesSummaryText()}
+        </div>
+        <button type="button" class="btn-complete" style="padding: 8px 16px; font-size: 0.82rem; border-radius: 20px; box-shadow: 0 2px 8px rgba(77, 38, 18, 0.15);" onclick="app.closeClientServicesList(event)">
+          ✓ Concluir Seleção ⮝
+        </button>
+      </div>
+    `;
+
+    this.updateServicesDisplay();
+    this.renderClientBookingSlots();
+  }
+
+  getServicesSummaryText() {
+    const list = this.selectedBookingServices || [];
+    const count = list.length;
+    if (count === 0) return '<span style="color: var(--text-muted);">Nenhum procedimento selecionado</span>';
+    const totalMin = list.reduce((acc, s) => acc + (parseInt(s.duracaoMin, 10) || 60), 0);
+    const totalPreco = list.reduce((acc, s) => acc + (parseFloat(s.preco) || 0), 0);
+    return `<strong>${count}</strong> proced. • ⏱️ <strong>${totalMin} min</strong> • 💰 <strong>${this.formatCurrency(totalPreco)}</strong>`;
+  }
+
+  updateServicesDisplay() {
+    const display = document.getElementById('service-selected-display');
+    const counterBadge = document.getElementById('selected-services-counter');
+    const footerSummary = document.getElementById('services-footer-summary');
+
+    const list = this.selectedBookingServices || [];
+    const count = list.length;
+
+    if (counterBadge) {
+      counterBadge.textContent = `${count} selecionado(s)`;
+      counterBadge.style.background = count > 0 ? 'var(--accent-gold)' : '#A39284';
+    }
+
+    if (footerSummary) {
+      footerSummary.innerHTML = this.getServicesSummaryText();
+    }
+
+    if (!display) return;
+
+    if (count === 0) {
+      display.innerHTML = `
+        <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary);">💆‍♀️ Toque para escolher o(s) procedimento(s)...</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Veja os procedimentos cadastrados e escolha 1 ou mais</div>
+      `;
+      return;
+    }
+
+    const totalMin = list.reduce((acc, s) => acc + (parseInt(s.duracaoMin, 10) || 60), 0);
+    const totalPreco = list.reduce((acc, s) => acc + (parseFloat(s.preco) || 0), 0);
+
+    if (count === 1) {
+      const s = list[0];
+      display.innerHTML = `
+        <div style="display: flex; flex-direction: column;">
+          <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">
+            ✨ ${this.escapeHtml(s.nome)}
           </div>
-          <div class="service-right">
-            <div class="service-price">${this.formatCurrency(s.preco)}</div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="background: rgba(190, 122, 71, 0.12); color: var(--accent-gold); padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">⏱️ ${s.duracaoMin || 60} min</span>
+            <span style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">${this.formatCurrency(s.preco)}</span>
+            <span style="color: var(--accent-gold); font-size: 0.76rem; font-weight: 600;">• (1 selecionado — toque para alterar ou adicionar mais)</span>
           </div>
         </div>
       `;
-    }).join('');
-
-    // Pré-seleciona o primeiro se nenhum selecionado
-    if (services.length > 0) {
-      const targetId = this.selectedBookingService ? this.selectedBookingService.id : services[0].id;
-      const targetEl = container.querySelector(`[data-service-id="${targetId}"]`) || container.querySelector('.service-option');
-      this.selectClientBookingService(targetId, targetEl, false);
+    } else {
+      const nomes = list.map(s => this.escapeHtml(s.nome)).join(' + ');
+      display.innerHTML = `
+        <div style="display: flex; flex-direction: column;">
+          <div style="font-size: 1.02rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+            <span>✨</span> <strong>${count} procedimentos selecionados:</strong>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--accent-bronze); font-weight: 700; margin-top: 2px; line-height: 1.35;">
+            ${nomes}
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="background: rgba(190, 122, 71, 0.15); color: var(--primary); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.76rem;">⏱️ Tempo Total: ${totalMin} min</span>
+            <span style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">💰 Total: ${this.formatCurrency(totalPreco)}</span>
+            <span style="color: var(--accent-gold); font-size: 0.76rem; font-weight: 600;">• Toque para alterar</span>
+          </div>
+        </div>
+      `;
     }
-
-    this.renderClientBookingSlots();
   }
 
   toggleClientServicesList() {
@@ -2866,53 +2964,72 @@ class StudioApp {
     }
   }
 
-  selectClientBookingService(id, el, autoClose = true) {
+  openClientServicesList() {
+    const list = document.getElementById('services-list-container');
+    const chevron = document.getElementById('service-chevron');
+    const trigger = document.getElementById('service-select-trigger');
+    if (!list) return;
+    list.style.display = 'flex';
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+    if (trigger) trigger.classList.add('open');
+  }
+
+  closeClientServicesList(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const list = document.getElementById('services-list-container');
+    const chevron = document.getElementById('service-chevron');
+    const trigger = document.getElementById('service-select-trigger');
+    if (list) list.style.display = 'none';
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+    if (trigger) trigger.classList.remove('open');
+  }
+
+  toggleClientBookingService(id, el) {
     const service = (this.clientPublicServices || []).find(s => s.id === id);
     if (!service) return;
-    this.selectedBookingService = service;
 
-    // Atualiza classes selected nos itens
-    document.querySelectorAll('.service-option').forEach(opt => {
-      opt.classList.remove('selected');
-      const radio = opt.querySelector('.service-radio');
-      if (radio) radio.classList.remove('active');
-    });
-    if (el) {
-      el.classList.add('selected');
-      const radio = el.querySelector('.service-radio');
-      if (radio) radio.classList.add('active');
+    if (!Array.isArray(this.selectedBookingServices)) {
+      this.selectedBookingServices = [];
     }
 
-    // Atualiza o display do botão seletor (topo da cascata)
-    const display = document.getElementById('service-selected-display');
-    if (display) {
-      display.innerHTML = `
-        <div style="display: flex; flex-direction: column;">
-          <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">
-            ✨ ${this.escapeHtml(service.nome)}
-          </div>
-          <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span style="background: rgba(190, 122, 71, 0.12); color: var(--accent-gold); padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">⏱️ ${service.duracaoMin || 60} min</span>
-            <span style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">${this.formatCurrency(service.preco)}</span>
-            <span style="color: var(--text-muted); font-size: 0.76rem;">• Toque para alterar</span>
-          </div>
-        </div>
-      `;
+    const idx = this.selectedBookingServices.findIndex(s => s.id === id);
+    const itemEl = el || document.querySelector(`[data-service-id="${id}"]`);
+
+    if (idx >= 0) {
+      this.selectedBookingServices.splice(idx, 1);
+      if (itemEl) {
+        itemEl.classList.remove('selected');
+        const box = itemEl.querySelector('.service-checkbox, .service-radio');
+        if (box) box.classList.remove('active');
+      }
+    } else {
+      this.selectedBookingServices.push(service);
+      if (itemEl) {
+        itemEl.classList.add('selected');
+        const box = itemEl.querySelector('.service-checkbox, .service-radio');
+        if (box) box.classList.add('active');
+      }
     }
 
-    if (autoClose) {
-      setTimeout(() => {
-        const list = document.getElementById('services-list-container');
-        const chevron = document.getElementById('service-chevron');
-        const trigger = document.getElementById('service-select-trigger');
-        if (list) list.style.display = 'none';
-        if (chevron) chevron.style.transform = 'rotate(0deg)';
-        if (trigger) trigger.classList.remove('open');
-      }, 160);
-    }
-
-    // Recalcula horários com base no serviço selecionado
+    this.selectedBookingService = this.selectedBookingServices[0] || null;
+    this.updateServicesDisplay();
     this.renderClientBookingSlots();
+  }
+
+  selectClientBookingService(id, el) {
+    this.toggleClientBookingService(id, el);
+  }
+
+  setupServicesOutsideClick() {
+    if (this._hasServicesOutsideClick) return;
+    this._hasServicesOutsideClick = true;
+    document.addEventListener('click', (e) => {
+      const card = document.getElementById('service-select-trigger')?.closest('.booking-step-card');
+      const list = document.getElementById('services-list-container');
+      if (card && list && list.style.display !== 'none' && !card.contains(e.target)) {
+        this.closeClientServicesList();
+      }
+    });
   }
 
   async syncServicesToCloud() {
@@ -3168,8 +3285,9 @@ class StudioApp {
     const cpf = (cpfInput ? cpfInput.value : '').replace(/\D/g, '');
     const notes = (notesInput ? notesInput.value : '').trim();
 
-    if (!this.selectedBookingService) {
-      alert('Por favor, selecione o procedimento que deseja realizar.');
+    if (!this.selectedBookingServices || this.selectedBookingServices.length === 0) {
+      alert('Por favor, selecione ao menos um procedimento que deseja realizar.');
+      this.openClientServicesList();
       return;
     }
 
@@ -3213,17 +3331,28 @@ class StudioApp {
     }
 
     try {
+      const totalPreco = this.selectedBookingServices.reduce((acc, s) => acc + (Number(s.preco) || 0), 0);
+      const totalMin = this.selectedBookingServices.reduce((acc, s) => acc + (parseInt(s.duracaoMin, 10) || 60), 0);
+      const nomesConcatenados = this.selectedBookingServices.map(s => s.nome).join(' + ');
+      const idsConcatenados = this.selectedBookingServices.map(s => s.id).join(', ');
+
+      const detalheServicos = this.selectedBookingServices.map((s, idx) => 
+        `${idx + 1}. ${s.nome} (${s.duracaoMin || 60}min - ${this.formatCurrency(s.preco)})`
+      ).join(' | ');
+
+      const obsCompleta = notes ? `${notes} [Procedimentos: ${detalheServicos}]` : `[Procedimentos: ${detalheServicos}]`;
+
       const requestData = {
         cliente_nome: nome,
         cliente_whatsapp: wpp,
         cliente_cpf: cpf,
-        servico_id: this.selectedBookingService.id,
-        servico_nome: this.selectedBookingService.nome,
-        servico_preco: this.selectedBookingService.preco,
-        duracao_min: this.selectedBookingService.duracaoMin || 60,
+        servico_id: idsConcatenados,
+        servico_nome: nomesConcatenados,
+        servico_preco: totalPreco,
+        duracao_min: totalMin,
         data: this.selectedBookingDate,
         horario: this.selectedBookingTime,
-        observacoes: notes,
+        observacoes: obsCompleta,
         status: 'pendente'
       };
 
