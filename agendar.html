@@ -617,7 +617,7 @@
   </div>
 
   <!-- SCRIPT DE AGENDAMENTO E INTEGRAÇÃO SUPABASE -->
-  <script src="js/supabase-client.js"></script>
+  <script src="js/supabase-client.js?v=31"></script>
   <script>
     class ClientBookingApp {
       constructor() {
@@ -1008,10 +1008,37 @@
           const result = await StudioCloud.createBookingRequest(requestData);
 
           if (result && result.id) {
+            const fullBookingData = {
+              ...requestData,
+              ...result,
+              id: result.id
+            };
+            try {
+              localStorage.setItem(`studio_booking_${result.id}`, JSON.stringify(fullBookingData));
+            } catch (_) {}
+
             // Atualiza URL sem recarregar e abre tela de status
             const newUrl = `${window.location.pathname}?id=${result.id}`;
             window.history.pushState({ path: newUrl }, '', newUrl);
-            this.showStatusView(result.id);
+            this.showStatusView(result.id, fullBookingData);
+
+            // Oferece aviso instantâneo no WhatsApp da Letícia
+            setTimeout(() => {
+              const [ano, mes, dia] = (fullBookingData.data || '').split('-');
+              const dataFmt = dia && mes ? `${dia}/${mes}/${ano}` : fullBookingData.data;
+              const msgWpp = encodeURIComponent(
+                `Olá, Letícia! Acabei de fazer um pré-agendamento pelo seu site:\n\n` +
+                `👤 *Cliente:* ${fullBookingData.cliente_nome}\n` +
+                `💆‍♀️ *Procedimento:* ${fullBookingData.servico_nome}\n` +
+                `🗓️ *Data:* ${dataFmt} às ${fullBookingData.horario}\n` +
+                `💰 *Valor:* R$ ${Number(fullBookingData.servico_preco || 0).toFixed(2).replace('.', ',')}\n\n` +
+                `Pode confirmar na sua agenda para mim, por favor? ✨`
+              );
+
+              if (confirm('✨ Pré-agendamento registrado com sucesso!\n\nDeseja abrir o WhatsApp da Letícia agora para avisá-la e agilizar a confirmação do seu horário?')) {
+                window.open(`https://wa.me/556493094775?text=${msgWpp}`, '_blank');
+              }
+            }, 400);
           } else {
             alert('Não foi possível enviar o agendamento. Verifique sua conexão e tente novamente.');
             btn.disabled = false;
@@ -1025,21 +1052,41 @@
         }
       }
 
-      async showStatusView(requestId) {
+      async showStatusView(requestId, initialData = null) {
         document.getElementById('section-booking-form').style.display = 'none';
         document.getElementById('section-status-view').style.display = 'block';
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        await this.updateStatusScreen(requestId);
+        await this.updateStatusScreen(requestId, initialData);
+
+        // Assinatura Realtime para atualizar status no milissegundo em que a Letícia aprova
+        if (StudioCloud && StudioCloud.subscribeToBookingStatus) {
+          if (this.statusRealtime) StudioCloud.unsubscribe(this.statusRealtime);
+          this.statusRealtime = StudioCloud.subscribeToBookingStatus(requestId, (updated) => {
+            this.updateStatusScreen(requestId, updated);
+          });
+        }
 
         // Monitora em tempo real a cada 5 segundos
         if (this.statusPoller) clearInterval(this.statusPoller);
         this.statusPoller = setInterval(() => this.updateStatusScreen(requestId), 5000);
       }
 
-      async updateStatusScreen(requestId) {
-        const data = await StudioCloud.getBookingRequestById(requestId);
+      async updateStatusScreen(requestId, providedData = null) {
+        let data = providedData;
+        if (!data && StudioCloud && StudioCloud.getBookingRequestById) {
+          data = await StudioCloud.getBookingRequestById(requestId);
+        }
+        if (!data) {
+          try {
+            const cached = localStorage.getItem('studio_booking_' + requestId);
+            if (cached) data = JSON.parse(cached);
+          } catch (_) {}
+        }
+
+        if (Array.isArray(data)) data = data[0];
+        if (data && data.data && typeof data.data === 'object' && !data.cliente_nome) data = data.data;
         if (!data) return;
 
         const card = document.getElementById('status-card-element');
@@ -1050,33 +1097,43 @@
         const details = document.getElementById('status-details');
         const btnWpp = document.getElementById('btn-talk-leticia');
 
+        const clienteNome = data.cliente_nome || data.clienteNome || 'Cliente';
+        const servicoNome = data.servico_nome || data.servicoNome || 'Procedimento';
+        const rawData = data.data || data.dataAgendamento || '';
+        const horario = data.horario || data.hora || '';
+        const preco = Number(data.servico_preco !== undefined ? data.servico_preco : (data.valor || 0));
+        const status = data.status || 'pendente';
+
         // Formata data DD/MM/AAAA
-        const [ano, mes, dia] = (data.data || '').split('-');
-        const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : data.data;
+        let dataFormatada = rawData;
+        if (rawData && rawData.includes('-')) {
+          const parts = rawData.split('-');
+          if (parts.length === 3) dataFormatada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
 
         details.innerHTML = `
           <div class="details-row">
             <span class="details-label">Cliente:</span>
-            <span class="details-value">${data.cliente_nome}</span>
+            <span class="details-value">${clienteNome}</span>
           </div>
           <div class="details-row">
             <span class="details-label">Procedimento:</span>
-            <span class="details-value">${data.servico_nome}</span>
+            <span class="details-value">${servicoNome}</span>
           </div>
           <div class="details-row">
             <span class="details-label">Data Solicitada:</span>
-            <span class="details-value">${dataFormatada} às ${data.horario}</span>
+            <span class="details-value">${dataFormatada}${horario ? ` às ${horario}` : ''}</span>
           </div>
           <div class="details-row">
             <span class="details-label">Valor:</span>
-            <span class="details-value">R$ ${Number(data.servico_preco || 0).toFixed(2).replace('.', ',')}</span>
+            <span class="details-value">R$ ${preco.toFixed(2).replace('.', ',')}</span>
           </div>
           <div class="details-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
             <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--primary); font-size: 0.86rem;">
               <span>📍</span> Endereço do Studio:
             </div>
             <div style="font-size: 0.82rem; color: var(--text-main);">
-              Rua 26, número 135 • Colmeia Park
+              Rua 26, número 135 • Colmeia Park • Jataí - GO
             </div>
             <a href="https://maps.google.com/?q=-17.858556,-51.716417" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(190, 122, 71, 0.12); color: var(--primary); border: 1px solid var(--accent-gold); padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; text-decoration: none; margin-top: 4px;">
               <span>🗺️</span> Abrir no Google Maps
@@ -1084,32 +1141,63 @@
           </div>
         `;
 
-        // Link de WhatsApp direto com a Letícia
-        const msgWpp = encodeURIComponent(`Olá, Letícia! Fiz um agendamento pelo seu site para ${dataFormatada} às ${data.horario} (${data.servico_nome}).`);
-        btnWpp.href = `https://wa.me/5511999999999?text=${msgWpp}`; // Substituído dinamicamente pelo número da Letícia se houver
+        card.className = `status-card status-${status}`;
 
-        card.className = `status-card status-${data.status || 'pendente'}`;
-
-        if (data.status === 'confirmado') {
+        if (status === 'confirmado') {
           icon.textContent = '🎉';
           badge.textContent = 'CONFIRMADO COM SUCESSO';
+          badge.style.background = 'rgba(37, 211, 102, 0.15)';
+          badge.style.color = '#155724';
           headline.textContent = 'Seu Horário está Garantido! ✨';
-          desc.textContent = 'A Letícia confirmou seu agendamento no Studio. Estamos te esperando com muito carinho!';
-        } else if (data.status === 'recusado') {
+          desc.textContent = 'A Letícia confirmou seu agendamento no Studio. Estamos te esperando com muito carinho na Rua 26, nº 135 • Colmeia Park • Jataí - GO!';
+          if (btnWpp) {
+            const msgConfirm = encodeURIComponent(`Olá, Letícia! Vi que meu agendamento para ${dataFormatada} às ${horario} foi confirmado. Obrigada! ✨`);
+            btnWpp.href = `https://wa.me/556493094775?text=${msgConfirm}`;
+            btnWpp.innerHTML = '💬 Conversar com a Letícia no WhatsApp';
+            btnWpp.style.background = '#25D366';
+            btnWpp.style.color = '#FFFFFF';
+            btnWpp.style.fontWeight = '700';
+          }
+        } else if (status === 'recusado') {
           icon.textContent = '❌';
           badge.textContent = 'HORÁRIO INDISPONÍVEL';
+          badge.style.background = 'rgba(220, 53, 69, 0.15)';
+          badge.style.color = '#721c24';
           headline.textContent = 'Horário não pôde ser confirmado';
-          desc.textContent = data.motivo_recusa || 'Este horário acabou de ser preenchido. Por favor, escolha outro dia ou fale diretamente com a Letícia pelo WhatsApp.';
+          desc.textContent = data.motivo_recusa || 'Este horário acabou de ser preenchido ou está indisponível. Por favor, escolha outro dia ou fale diretamente com a Letícia pelo WhatsApp.';
+          if (btnWpp) {
+            const msgRecusa = encodeURIComponent(`Olá, Letícia! Tentei agendar para ${dataFormatada} às ${horario} mas estava indisponível. Podemos verificar outro horário?`);
+            btnWpp.href = `https://wa.me/556493094775?text=${msgRecusa}`;
+            btnWpp.innerHTML = '💬 Falar com a Letícia no WhatsApp';
+          }
         } else {
           icon.textContent = '⏳';
-          badge.textContent = 'SOLICITAÇÃO PENDENTE';
+          badge.textContent = 'PRÉ-AGENDAMENTO SOLICITADO';
+          badge.style.background = 'rgba(190, 122, 71, 0.15)';
+          badge.style.color = 'var(--primary)';
           headline.textContent = 'Aguardando Confirmação da Letícia';
-          desc.textContent = 'Seu pedido foi enviado! A Letícia foi notificada e já vai aprovar seu horário. Esta tela atualiza sozinha.';
+          desc.textContent = 'Seu pedido foi registrado no sistema! O agendamento é FINALIZADO assim que a Letícia aprova na agenda. Você pode avisá-la no WhatsApp para aprovação imediata ou aguardar a confirmação automática nesta tela.';
+          if (btnWpp) {
+            const msgAviso = encodeURIComponent(
+              `Olá, Letícia! Fiz um pré-agendamento pelo seu site:\n\n` +
+              `👤 *Cliente:* ${clienteNome}\n` +
+              `💆‍♀️ *Procedimento:* ${servicoNome}\n` +
+              `🗓️ *Data:* ${dataFormatada} às ${horario}\n` +
+              `💰 *Valor:* R$ ${preco.toFixed(2).replace('.', ',')}\n\n` +
+              `Pode confirmar na sua agenda para mim, por favor? ✨`
+            );
+            btnWpp.href = `https://wa.me/556493094775?text=${msgAviso}`;
+            btnWpp.innerHTML = '📲 Avisar a Letícia no WhatsApp (Aprovação Mais Rápida)';
+            btnWpp.style.background = '#25D366';
+            btnWpp.style.color = '#FFFFFF';
+            btnWpp.style.fontWeight = '800';
+          }
         }
       }
 
       newBooking() {
         if (this.statusPoller) clearInterval(this.statusPoller);
+        if (StudioCloud && this.statusRealtime) StudioCloud.unsubscribe(this.statusRealtime);
         window.history.pushState({}, '', window.location.pathname);
         document.getElementById('section-status-view').style.display = 'none';
         document.getElementById('section-booking-form').style.display = 'block';

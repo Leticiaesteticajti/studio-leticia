@@ -326,6 +326,9 @@ class StudioCloudService {
       const localList = JSON.parse(localStorage.getItem('studio_demo_requests') || '[]');
       localList.push(mockItem);
       localStorage.setItem('studio_demo_requests', JSON.stringify(localList));
+      try {
+        localStorage.setItem('studio_booking_' + mockId, JSON.stringify(mockItem));
+      } catch (_) {}
 
       return mockItem;
     }
@@ -348,13 +351,21 @@ class StudioCloudService {
             .select()
             .single();
           if (retry.error) throw retry.error;
-          return retry.data;
+          const resData = Array.isArray(retry.data) ? retry.data[0] : retry.data;
+          try {
+            localStorage.setItem('studio_booking_' + resData.id, JSON.stringify(resData));
+          } catch (_) {}
+          return resData;
         }
         console.error('Erro ao inserir solicitação:', error);
         throw error;
       }
 
-      return data;
+      const resData = Array.isArray(data) ? data[0] : data;
+      try {
+        localStorage.setItem('studio_booking_' + resData.id, JSON.stringify(resData));
+      } catch (_) {}
+      return resData;
     } catch (err) {
       console.error('Erro createBookingRequest:', err);
       throw err;
@@ -387,11 +398,19 @@ class StudioCloudService {
     }
   }
 
-  // Acompanhamento do status pelo link da cliente (GET por ID)
+  // Acompanhamento do status pelo link da cliente (GET por ID) com robustez
   async getBookingRequestById(id) {
+    if (!id) return null;
+
+    let localItem = null;
+    try {
+      const cached = localStorage.getItem('studio_booking_' + id);
+      if (cached) localItem = JSON.parse(cached);
+    } catch (_) {}
+
     if (!this.isConfigured()) {
       const localList = JSON.parse(localStorage.getItem('studio_demo_requests') || '[]');
-      return localList.find(item => item.id === id) || null;
+      return localList.find(item => item.id === id) || localItem || null;
     }
 
     try {
@@ -399,12 +418,101 @@ class StudioCloudService {
         .from('solicitacoes_agendamento')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
-      if (error) return null;
-      return data;
+      if (error) {
+        console.warn('Erro getBookingRequestById:', error);
+        const retry = await this.client
+          .from('solicitacoes_agendamento')
+          .select('*')
+          .eq('id', id)
+          .limit(1);
+        if (retry.data && retry.data.length > 0) return retry.data[0];
+        return localItem;
+      }
+
+      if (data) {
+        let cleanData = Array.isArray(data) ? data[0] : data;
+        if (cleanData && cleanData.data && typeof cleanData.data === 'object' && !cleanData.cliente_nome) {
+          cleanData = cleanData.data;
+        }
+        try {
+          localStorage.setItem('studio_booking_' + id, JSON.stringify(cleanData));
+        } catch (_) {}
+        return cleanData;
+      }
+
+      return localItem;
     } catch (e) {
+      console.warn('Exceção getBookingRequestById:', e);
+      return localItem;
+    }
+  }
+
+  // Assinatura Realtime para a Letícia receber novos pedidos instantaneamente
+  subscribeToNewBookings(callback) {
+    if (!this.client || typeof this.client.channel !== 'function') return null;
+    try {
+      const channel = this.client
+        .channel('realtime_novas_solicitacoes_' + Date.now())
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'solicitacoes_agendamento' },
+          (payload) => {
+            if (payload && payload.new) {
+              callback(payload.new);
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('📡 Realtime de agendamentos conectado com sucesso!');
+          }
+        });
+      return channel;
+    } catch (e) {
+      console.warn('Falha ao conectar Realtime de novos agendamentos:', e);
       return null;
+    }
+  }
+
+  // Assinatura Realtime para a tela da cliente atualizar no milissegundo em que a Letícia aprova
+  subscribeToBookingStatus(requestId, callback) {
+    if (!this.client || !requestId || typeof this.client.channel !== 'function') return null;
+    try {
+      const channel = this.client
+        .channel('realtime_status_solicitacao_' + requestId)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'solicitacoes_agendamento',
+            filter: `id=eq.${requestId}`
+          },
+          (payload) => {
+            if (payload && payload.new) {
+              callback(payload.new);
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('📡 Realtime de status da solicitação conectado com sucesso!');
+          }
+        });
+      return channel;
+    } catch (e) {
+      console.warn('Falha ao conectar Realtime de status:', e);
+      return null;
+    }
+  }
+
+  unsubscribe(channel) {
+    if (this.client && channel && typeof this.client.removeChannel === 'function') {
+      try {
+        this.client.removeChannel(channel);
+      } catch (_) {}
     }
   }
 

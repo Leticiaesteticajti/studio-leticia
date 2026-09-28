@@ -38,8 +38,7 @@ class StudioApp {
       this.setupEventListeners();
       await this.loadInitialData();
       await this.loadTodayTab();
-      this.checkOnlineRequests();
-      setInterval(() => this.checkOnlineRequests(), 20000);
+      await this.startNotificationSystem();
     } else {
       this.showClientBookingView();
       if (wantsAdmin) {
@@ -481,6 +480,7 @@ class StudioApp {
       await this.loadInitialData();
       await this.loadTodayTab();
     }
+    await this.startNotificationSystem();
   }
 
   showLoginError(msg) {
@@ -1428,23 +1428,105 @@ class StudioApp {
   // =========================================================================
   // CENTRAL DE ALERTAS & NOTIFICAÇÕES (SUPABASE REALTIME)
   // =========================================================================
-  async checkOnlineRequests() {
+  async startNotificationSystem() {
+    this.requestNotificationPermission();
+
+    const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
+    if (cloud && cloud.subscribeToNewBookings) {
+      if (this._realtimeBookingsChannel) {
+        cloud.unsubscribe(this._realtimeBookingsChannel);
+      }
+      this._realtimeBookingsChannel = cloud.subscribeToNewBookings((newReq) => {
+        this.handleIncomingOnlineBooking(newReq);
+      });
+    }
+
+    // Checagem imediata inicial
+    await this.checkOnlineRequests(true);
+
+    // Polling redundante a cada 15 segundos
+    if (this._onlinePoller) clearInterval(this._onlinePoller);
+    this._onlinePoller = setInterval(() => this.checkOnlineRequests(false), 15000);
+  }
+
+  requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      try {
+        Notification.requestPermission().then((perm) => {
+          if (perm === 'granted') {
+            console.log('🔔 Permissão de notificação concedida no navegador!');
+          }
+        });
+      } catch (_) {}
+    }
+  }
+
+  async handleIncomingOnlineBooking(newReq) {
+    if (!newReq || newReq.cliente_nome === '__STUDIO_CONFIG_SERVICOS__') return;
+
+    this.playNotificationChime();
+    this.flashTabTitle('🔔 Novo Agendamento Recebido!');
+
+    const [ano, mes, dia] = (newReq.data || '').split('-');
+    const dataFmt = dia && mes ? `${dia}/${mes}/${ano}` : newReq.data;
+
+    this.showToast(`🔔 Novo pedido de ${newReq.cliente_nome}: ${newReq.servico_nome} (${dataFmt} às ${newReq.horario})!`);
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        const notif = new Notification('Studio Letícia - Novo Agendamento! ✨', {
+          body: `${newReq.cliente_nome} solicitou ${newReq.servico_nome} para ${dataFmt} às ${newReq.horario}. Toque para abrir!`,
+          icon: 'icons/icon-192.png',
+          badge: 'icons/icon-192.png',
+          tag: 'novo-agd-' + newReq.id
+        });
+        notif.onclick = () => {
+          window.focus();
+          this.openOnlineRequestsModal();
+        };
+      } catch (err) {
+        console.warn('Erro ao disparar Notification:', err);
+      }
+    }
+
+    const modal = document.getElementById('modal-online-requests');
+    if (modal && modal.classList.contains('active')) {
+      await this.renderOnlineRequests();
+    }
+
+    await this.checkOnlineRequests(false);
+  }
+
+  async checkOnlineRequests(isInitial = false) {
     const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
     if (!cloud) return;
     try {
       const pending = await cloud.getPendingRequests();
       const count = pending.length;
 
-      // Alerta sonoro e visual caso o número de pedidos pendentes tenha aumentado
-      if (this._lastPendingCount !== undefined && count > this._lastPendingCount && count > 0) {
+      // Alerta sonoro e visual caso o número de pedidos pendentes tenha aumentado ou na inicialização
+      if (isInitial && count > 0) {
+        this.showToast(`🔔 Atenção: Você tem ${count} agendamento(s) pendente(s) aguardando aprovação!`);
         this.playNotificationChime();
+        this.flashTabTitle(`🔔 (${count}) Pedidos Pendentes`);
+      } else if (!isInitial && this._lastPendingCount !== undefined && count > this._lastPendingCount && count > 0) {
+        this.playNotificationChime();
+        this.flashTabTitle(`🔔 (${count}) Novo Agendamento!`);
         this.showToast(`🔔 ${count} novo(s) agendamento(s) aguardando aprovação!`);
         if ('Notification' in window && Notification.permission === 'granted') {
           const ultimo = pending[0];
-          new Notification('Studio Letícia - Novo Agendamento! ✨', {
-            body: `${ultimo.cliente_nome} solicitou ${ultimo.servico_nome} para ${this.formatDate(ultimo.data)} às ${ultimo.horario}`,
-            icon: 'icons/icon-192.png'
-          });
+          const [ano, mes, dia] = (ultimo.data || '').split('-');
+          const dataFmt = dia && mes ? `${dia}/${mes}/${ano}` : ultimo.data;
+          try {
+            const notif = new Notification('Studio Letícia - Novo Agendamento! ✨', {
+              body: `${ultimo.cliente_nome} solicitou ${ultimo.servico_nome} para ${dataFmt} às ${ultimo.horario}`,
+              icon: 'icons/icon-192.png'
+            });
+            notif.onclick = () => {
+              window.focus();
+              this.openOnlineRequestsModal();
+            };
+          } catch (_) {}
         }
       }
       this._lastPendingCount = count;
@@ -1503,10 +1585,7 @@ class StudioApp {
   }
 
   openOnlineRequestsModal() {
-    // Pede permissão de notificação se ainda não solicitou
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
+    this.requestNotificationPermission();
     const modal = document.getElementById('modal-online-requests');
     if (modal) {
       modal.classList.add('active');
@@ -2627,11 +2706,14 @@ class StudioApp {
 
   playNotificationChime() {
     try {
+      if ('vibrate' in navigator) {
+        navigator.vibrate([250, 100, 250]);
+      }
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
       if (ctx.state === 'suspended') {
-        ctx.resume();
+        ctx.resume().catch(() => {});
       }
       const playTone = (freq, start, duration) => {
         const osc = ctx.createOscillator();
@@ -2639,18 +2721,41 @@ class StudioApp {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
         gain.gain.setValueAtTime(0, ctx.currentTime + start);
-        gain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + start + 0.03);
+        gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + start + 0.03);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(ctx.currentTime + start);
         osc.stop(ctx.currentTime + start + duration);
       };
-      playTone(587.33, 0, 0.6);   // D5
-      playTone(880.00, 0.14, 0.9); // A5 (Chime harmonioso)
+      playTone(587.33, 0, 0.5);    // D5
+      playTone(880.00, 0.12, 0.8);  // A5
+      playTone(1174.66, 0.26, 1.0); // D6 (Tríade ascendente de alto destaque)
     } catch (e) {
       console.log('Audio chime info:', e);
     }
+  }
+
+  flashTabTitle(msg) {
+    if (this._titleFlasher) clearInterval(this._titleFlasher);
+    const originalTitle = document.title;
+    let toggle = false;
+    let count = 0;
+    this._titleFlasher = setInterval(() => {
+      document.title = toggle ? msg : originalTitle;
+      toggle = !toggle;
+      count++;
+      if (count > 25) {
+        clearInterval(this._titleFlasher);
+        document.title = originalTitle;
+      }
+    }, 700);
+    window.addEventListener('focus', () => {
+      if (this._titleFlasher) {
+        clearInterval(this._titleFlasher);
+        document.title = originalTitle;
+      }
+    }, { once: true });
   }
 
   // =========================================================================
@@ -3367,9 +3472,42 @@ class StudioApp {
       const result = await cloud.createBookingRequest(requestData);
 
       if (result && result.id) {
+        const fullBookingData = {
+          ...requestData,
+          ...result,
+          id: result.id
+        };
+        try {
+          localStorage.setItem(`studio_booking_${result.id}`, JSON.stringify(fullBookingData));
+        } catch (_) {}
+
         const newUrl = `${window.location.pathname}?id=${result.id}`;
         window.history.pushState({ path: newUrl }, '', newUrl);
-        this.showClientStatusView(result.id);
+        this.showClientStatusView(result.id, fullBookingData);
+
+        // Oferece aviso instantâneo pelo WhatsApp para aprovação mais rápida
+        setTimeout(async () => {
+          try {
+            const config = (await db.get('config', 'app_config')) || {};
+            let studioNum = (config.whatsappStudio || config.studioPhone || '6493094775').replace(/\D/g, '');
+            if (!studioNum.startsWith('55')) studioNum = '55' + studioNum;
+
+            const [ano, mes, dia] = (fullBookingData.data || '').split('-');
+            const dataFmt = dia && mes ? `${dia}/${mes}/${ano}` : fullBookingData.data;
+            const msgWpp = encodeURIComponent(
+              `Olá, Letícia! Acabei de fazer um pré-agendamento pelo seu site:\n\n` +
+              `👤 *Cliente:* ${fullBookingData.cliente_nome}\n` +
+              `💆‍♀️ *Procedimento:* ${fullBookingData.servico_nome}\n` +
+              `🗓️ *Data:* ${dataFmt} às ${fullBookingData.horario}\n` +
+              `💰 *Valor:* R$ ${Number(fullBookingData.servico_preco || 0).toFixed(2).replace('.', ',')}\n\n` +
+              `Pode confirmar na sua agenda para mim, por favor? ✨`
+            );
+
+            if (confirm('✨ Pré-agendamento registrado com sucesso!\n\nDeseja abrir o WhatsApp da Letícia agora para avisá-la e agilizar a confirmação do seu horário?')) {
+              window.open(`https://wa.me/${studioNum}?text=${msgWpp}`, '_blank');
+            }
+          } catch (_) {}
+        }, 400);
       } else {
         alert('Não foi possível enviar o agendamento. Verifique sua conexão e tente novamente.');
         if (btn) {
@@ -3387,7 +3525,7 @@ class StudioApp {
     }
   }
 
-  async showClientStatusView(requestId) {
+  async showClientStatusView(requestId, initialData = null) {
     const formSection = document.getElementById('section-booking-form');
     const statusSection = document.getElementById('section-status-view');
     if (formSection) formSection.style.display = 'none';
@@ -3395,16 +3533,38 @@ class StudioApp {
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    await this.updateClientStatusScreen(requestId);
+    // Renderiza imediatamente com dados iniciais se disponíveis
+    await this.updateClientStatusScreen(requestId, initialData);
+
+    // Conecta Realtime para atualizar status no milissegundo em que a Letícia aprova
+    const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
+    if (cloud && cloud.subscribeToBookingStatus) {
+      if (this.clientStatusRealtime) cloud.unsubscribe(this.clientStatusRealtime);
+      this.clientStatusRealtime = cloud.subscribeToBookingStatus(requestId, (updated) => {
+        this.updateClientStatusScreen(requestId, updated);
+      });
+    }
 
     if (this.clientStatusPoller) clearInterval(this.clientStatusPoller);
     this.clientStatusPoller = setInterval(() => this.updateClientStatusScreen(requestId), 5000);
   }
 
-  async updateClientStatusScreen(requestId) {
+  async updateClientStatusScreen(requestId, providedData = null) {
     const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
-    if (!cloud) return;
-    const data = await cloud.getBookingRequestById(requestId);
+
+    let data = providedData;
+    if (!data && cloud && cloud.getBookingRequestById) {
+      data = await cloud.getBookingRequestById(requestId);
+    }
+    if (!data) {
+      try {
+        const cached = localStorage.getItem('studio_booking_' + requestId);
+        if (cached) data = JSON.parse(cached);
+      } catch (_) {}
+    }
+
+    if (Array.isArray(data)) data = data[0];
+    if (data && data.data && typeof data.data === 'object' && !data.cliente_nome) data = data.data;
     if (!data) return;
 
     const card = document.getElementById('status-card-element');
@@ -3415,33 +3575,43 @@ class StudioApp {
     const details = document.getElementById('status-details');
     const btnWpp = document.getElementById('btn-talk-leticia');
 
-    const [ano, mes, dia] = (data.data || '').split('-');
-    const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : data.data;
+    const clienteNome = data.cliente_nome || data.clienteNome || 'Cliente';
+    const servicoNome = data.servico_nome || data.servicoNome || 'Procedimento';
+    const rawData = data.data || data.dataAgendamento || '';
+    const horario = data.horario || data.hora || '';
+    const preco = Number(data.servico_preco !== undefined ? data.servico_preco : (data.valor || 0));
+    const status = data.status || 'pendente';
+
+    let dataFormatada = rawData;
+    if (rawData && rawData.includes('-')) {
+      const parts = rawData.split('-');
+      if (parts.length === 3) dataFormatada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
 
     if (details) {
       details.innerHTML = `
         <div class="details-row">
           <span class="details-label">Cliente:</span>
-          <span class="details-value">${this.escapeHtml(data.cliente_nome)}</span>
+          <span class="details-value">${this.escapeHtml(clienteNome)}</span>
         </div>
         <div class="details-row">
           <span class="details-label">Procedimento:</span>
-          <span class="details-value">${this.escapeHtml(data.servico_nome)}</span>
+          <span class="details-value">${this.escapeHtml(servicoNome)}</span>
         </div>
         <div class="details-row">
           <span class="details-label">Data Solicitada:</span>
-          <span class="details-value">${dataFormatada} às ${data.horario}</span>
+          <span class="details-value">${dataFormatada}${horario ? ` às ${horario}` : ''}</span>
         </div>
         <div class="details-row">
           <span class="details-label">Valor:</span>
-          <span class="details-value">R$ ${Number(data.servico_preco || 0).toFixed(2).replace('.', ',')}</span>
+          <span class="details-value">R$ ${preco.toFixed(2).replace('.', ',')}</span>
         </div>
         <div class="details-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
           <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--primary); font-size: 0.86rem;">
             <span>📍</span> Endereço do Studio:
           </div>
           <div style="font-size: 0.82rem; color: var(--text-main);">
-            Rua 26, número 135 • Colmeia Park
+            Rua 26, número 135 • Colmeia Park • Jataí - GO
           </div>
           <a href="https://maps.google.com/?q=-17.858556,-51.716417" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(190, 122, 71, 0.12); color: var(--primary); border: 1px solid var(--accent-gold); padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; text-decoration: none; margin-top: 4px;">
             <span>🗺️</span> Abrir no Google Maps
@@ -3450,36 +3620,77 @@ class StudioApp {
       `;
     }
 
-    if (btnWpp) {
-      const msgWpp = encodeURIComponent(`Olá, Letícia! Fiz um agendamento pelo seu site para ${dataFormatada} às ${data.horario} (${data.servico_nome}).`);
-      const config = (await db.get('config', 'app_config')) || {};
-      let studioNum = (config.whatsappStudio || config.studioPhone || '6493094775').replace(/\D/g, '');
-      if (!studioNum.startsWith('55')) studioNum = '55' + studioNum;
-      btnWpp.href = `https://wa.me/${studioNum}?text=${msgWpp}`;
-    }
+    const config = (await db.get('config', 'app_config')) || {};
+    let studioNum = (config.whatsappStudio || config.studioPhone || '6493094775').replace(/\D/g, '');
+    if (!studioNum.startsWith('55')) studioNum = '55' + studioNum;
 
-    if (card) card.className = `status-card status-${data.status || 'pendente'}`;
+    if (card) card.className = `status-card status-${status}`;
 
-    if (data.status === 'confirmado') {
+    if (status === 'confirmado') {
       if (icon) icon.textContent = '🎉';
-      if (badge) badge.textContent = 'CONFIRMADO COM SUCESSO';
+      if (badge) {
+        badge.textContent = 'CONFIRMADO COM SUCESSO';
+        badge.style.background = 'rgba(37, 211, 102, 0.15)';
+        badge.style.color = '#155724';
+      }
       if (headline) headline.textContent = 'Seu Horário está Garantido! ✨';
-      if (desc) desc.textContent = 'A Letícia confirmou seu agendamento no Studio. Estamos te esperando com muito carinho na Rua 26, nº 135 • Colmeia Park • Jataí - GO!';
-    } else if (data.status === 'recusado') {
+      if (desc) desc.textContent = 'A Letícia confirmou seu agendamento no Studio! Estamos te esperando com muito carinho na Rua 26, nº 135 • Colmeia Park • Jataí - GO.';
+      if (btnWpp) {
+        const msgConfirm = encodeURIComponent(`Olá, Letícia! Vi que meu agendamento para ${dataFormatada} às ${horario} foi confirmado. Obrigada! ✨`);
+        btnWpp.href = `https://wa.me/${studioNum}?text=${msgConfirm}`;
+        btnWpp.innerHTML = '💬 Conversar com a Letícia no WhatsApp';
+        btnWpp.style.background = '#25D366';
+        btnWpp.style.color = '#FFFFFF';
+        btnWpp.style.fontWeight = '700';
+      }
+    } else if (status === 'recusado') {
       if (icon) icon.textContent = '❌';
-      if (badge) badge.textContent = 'HORÁRIO INDISPONÍVEL';
+      if (badge) {
+        badge.textContent = 'HORÁRIO INDISPONÍVEL';
+        badge.style.background = 'rgba(220, 53, 69, 0.15)';
+        badge.style.color = '#721c24';
+      }
       if (headline) headline.textContent = 'Horário não pôde ser confirmado';
-      if (desc) desc.textContent = data.motivo_recusa || 'Este horário acabou de ser preenchido. Por favor, escolha outro dia ou fale diretamente com a Letícia pelo WhatsApp.';
+      if (desc) desc.textContent = data.motivo_recusa || 'Este horário acabou de ser preenchido ou está indisponível. Por favor, escolha outro dia ou fale diretamente com a Letícia pelo WhatsApp.';
+      if (btnWpp) {
+        const msgRecusa = encodeURIComponent(`Olá, Letícia! Tentei agendar para ${dataFormatada} às ${horario} mas estava indisponível. Podemos verificar outro horário?`);
+        btnWpp.href = `https://wa.me/${studioNum}?text=${msgRecusa}`;
+        btnWpp.innerHTML = '💬 Falar com a Letícia no WhatsApp';
+        btnWpp.style.background = 'var(--bg-card-soft)';
+        btnWpp.style.color = 'var(--primary)';
+        btnWpp.style.fontWeight = '700';
+      }
     } else {
       if (icon) icon.textContent = '⏳';
-      if (badge) badge.textContent = 'SOLICITAÇÃO PENDENTE';
+      if (badge) {
+        badge.textContent = 'PRÉ-AGENDAMENTO SOLICITADO';
+        badge.style.background = 'rgba(190, 122, 71, 0.15)';
+        badge.style.color = 'var(--primary)';
+      }
       if (headline) headline.textContent = 'Aguardando Confirmação da Letícia';
-      if (desc) desc.textContent = 'Seu pedido foi enviado! A Letícia foi notificada e já vai aprovar seu horário. Esta tela atualiza sozinha.';
+      if (desc) desc.textContent = 'Seu pedido foi registrado no sistema! O agendamento é FINALIZADO assim que a Letícia aprova na agenda. Você pode avisá-la no WhatsApp para aprovação imediata ou aguardar a confirmação automática nesta tela.';
+      if (btnWpp) {
+        const msgAviso = encodeURIComponent(
+          `Olá, Letícia! Fiz um pré-agendamento pelo seu site:\n\n` +
+          `👤 *Cliente:* ${clienteNome}\n` +
+          `💆‍♀️ *Procedimento:* ${servicoNome}\n` +
+          `🗓️ *Data:* ${dataFormatada} às ${horario}\n` +
+          `💰 *Valor:* R$ ${preco.toFixed(2).replace('.', ',')}\n\n` +
+          `Pode confirmar na sua agenda para mim, por favor? ✨`
+        );
+        btnWpp.href = `https://wa.me/${studioNum}?text=${msgAviso}`;
+        btnWpp.innerHTML = '📲 Avisar a Letícia no WhatsApp (Aprovação Mais Rápida)';
+        btnWpp.style.background = '#25D366';
+        btnWpp.style.color = '#FFFFFF';
+        btnWpp.style.fontWeight = '800';
+      }
     }
   }
 
   newClientBooking() {
     if (this.clientStatusPoller) clearInterval(this.clientStatusPoller);
+    const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
+    if (cloud && this.clientStatusRealtime) cloud.unsubscribe(this.clientStatusRealtime);
     window.history.pushState({}, '', window.location.pathname);
     const statusSection = document.getElementById('section-status-view');
     const formSection = document.getElementById('section-booking-form');
