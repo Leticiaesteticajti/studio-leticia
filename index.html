@@ -15,8 +15,8 @@
   <title>Studio Letícia - Gestão & Estética</title>
   
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=36">
-  <link rel="stylesheet" href="style.css?v=36">
+  <link rel="stylesheet" href="css/style.css?v=37">
+  <link rel="stylesheet" href="style.css?v=37">
   <style id="studio-core-styles">
 /* ==========================================================================
    STUDIO LETÍCIA - ESTILO VISUAL REFINADO & PREMIUM (iOS / Mobile First)
@@ -3297,6 +3297,181 @@ body {
       </div>
     </div>
 
+    <!-- MODAL: ATIVAR PLANO / MONTE SEU PLANO (PLANO LIVRE) PARA A CLIENTE -->
+    <div id="modal-client-add-package" class="modal-overlay">
+      <div class="modal-sheet" style="max-width: 540px;">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">✨</span>
+            <div>
+              <h2 class="modal-title" style="margin: 0; line-height: 1.2;">Ativar Plano / Pacote</h2>
+              <span style="font-size: 0.74rem; color: var(--text-muted);" id="custom-pkg-client-header">Para a cliente</span>
+            </div>
+          </div>
+          <button class="btn-close" onclick="app.closeModal('modal-client-add-package')">✕</button>
+        </div>
+
+        <input type="hidden" id="custom-pkg-client-id" value="">
+
+        <!-- Switcher de Abas: Monte seu Plano (Livre) vs Do Catálogo -->
+        <div style="display: flex; gap: 8px; margin: 10px 0 14px 0; background: var(--bg-card-soft); padding: 4px; border-radius: 10px;">
+          <button type="button" id="tab-btn-custom-pkg-builder" class="quick-btn" style="flex: 1; justify-content: center; font-size: 0.82rem; padding: 8px; font-weight: 700; background: var(--bg-card); color: var(--primary); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);" onclick="app.switchClientPlanTab('builder')">
+            🎨 Monte seu Plano (Livre)
+          </button>
+          <button type="button" id="tab-btn-custom-pkg-catalog" class="quick-btn" style="flex: 1; justify-content: center; font-size: 0.82rem; padding: 8px; font-weight: 600; color: var(--text-muted); background: transparent; border: 1px solid transparent;" onclick="app.switchClientPlanTab('catalog')">
+            📦 Escolher do Catálogo
+          </button>
+        </div>
+
+        <!-- ABA 1: CONSTRUTOR LIVRE (MONTE SEU PLANO) -->
+        <div id="tab-content-custom-pkg-builder" style="display: flex; flex-direction: column; gap: 12px; max-height: 65vh; overflow-y: auto; padding-right: 2px;">
+          <div style="font-size: 0.8rem; color: var(--text-muted); background: #FAF7F2; padding: 8px 12px; border-radius: 8px; border: 1px dashed var(--border-color);">
+            💡 <strong>Plano Sob Medida:</strong> Selecione os procedimentos e defina as sessões com os botões <strong>+</strong> e <strong>-</strong>. O app calcula o valor e sugere descontos automaticamente!
+          </div>
+
+          <!-- Lista de Procedimentos com Steppers -->
+          <div class="form-group" style="margin-bottom: 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="form-label" style="margin-bottom: 0;">Escolha os Procedimentos:</label>
+              <span id="custom-pkg-total-sessions-badge" style="font-size: 0.76rem; font-weight: 700; color: var(--primary); background: rgba(190, 122, 71, 0.12); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--accent-gold);">0 sessões</span>
+            </div>
+            <div id="custom-pkg-services-stepper-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px; padding: 8px; background: var(--bg-card-tint); -webkit-overflow-scrolling: touch;">
+              <!-- Preenchido via JS com cards de serviço e steppers [+] [-] -->
+            </div>
+          </div>
+
+          <!-- Card de Resumo de Preço e Desconto -->
+          <div style="background: linear-gradient(135deg, #FFFDFB, #FAF4ED); border: 1.5px solid var(--accent-gold); border-radius: 10px; padding: 12px 14px; box-shadow: var(--shadow-sm);">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold-dark); margin-bottom: 6px;">
+              📊 RESUMO DO PROTOCOLO PERSONALIZADO
+            </div>
+            
+            <div id="custom-pkg-summary-composition" style="font-size: 0.84rem; font-weight: 600; color: var(--text-main); margin-bottom: 8px;">
+              Nenhum procedimento selecionado.
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px dashed var(--border-color); padding-top: 8px; font-size: 0.82rem;">
+              <span style="color: var(--text-muted);">Soma Avulsa (Tabela):</span>
+              <strong id="custom-pkg-original-total" style="color: var(--text-muted); text-decoration: line-through;">R$ 0,00</strong>
+            </div>
+
+            <!-- Atalhos de Desconto -->
+            <div style="margin: 8px 0;">
+              <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">Atalhos de Desconto:</span>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+                <button type="button" class="btn-sm" style="font-size: 0.74rem; padding: 3px 8px;" onclick="app.applyCustomPlanDiscount(0.05)">5% OFF</button>
+                <button type="button" class="btn-sm" style="font-size: 0.74rem; padding: 3px 8px;" onclick="app.applyCustomPlanDiscount(0.10)">10% OFF</button>
+                <button type="button" class="btn-sm" style="font-size: 0.74rem; padding: 3px 8px;" onclick="app.applyCustomPlanDiscount(0.15)">15% OFF</button>
+                <button type="button" class="btn-sm" style="font-size: 0.74rem; padding: 3px 8px;" onclick="app.applyCustomPlanDiscount(0.20)">20% OFF</button>
+                <button type="button" class="btn-sm" style="font-size: 0.74rem; padding: 3px 8px; background: transparent; border: 1px solid var(--border-color); color: var(--text-main);" onclick="app.applyCustomPlanDiscount(0)">Tabela Cheia</button>
+              </div>
+            </div>
+
+            <!-- Campo de Valor Final Fechado -->
+            <div class="form-row" style="margin-top: 8px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="custom-pkg-final-price" style="font-size: 0.82rem; font-weight: 700; color: var(--primary);">Valor Final Fechado com a Cliente (R$) *</label>
+                <input type="number" step="0.01" id="custom-pkg-final-price" class="form-input" placeholder="0.00" oninput="app.recalculateCustomPlanSavings()" style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">
+              </div>
+            </div>
+
+            <div id="custom-pkg-savings-badge" style="font-size: 0.78rem; color: #1E7E34; font-weight: 700; margin-top: 6px; display: none;">
+              🎉 Economia da cliente: R$ 0,00 (0% de desconto)
+            </div>
+          </div>
+
+          <!-- Nome do Plano e Validade -->
+          <div class="form-group" style="margin-bottom: 4px;">
+            <label class="form-label" for="custom-pkg-name">Nome do Protocolo / Plano *</label>
+            <input type="text" id="custom-pkg-name" class="form-input" placeholder="Ex: Protocolo Personalizado Detox 5x" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 4px;">
+            <label class="form-label" for="custom-pkg-validity">Validade do Protocolo</label>
+            <select id="custom-pkg-validity" class="form-input">
+              <option value="30 dias">30 dias</option>
+              <option value="60 dias" selected>60 dias (Recomendado)</option>
+              <option value="90 dias">90 dias</option>
+              <option value="120 dias">120 dias</option>
+              <option value="Sem validade">Sem validade</option>
+            </select>
+          </div>
+
+          <!-- Lançamento no Fluxo de Caixa -->
+          <div style="background: var(--bg-card-soft); border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px; margin-top: 4px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; margin: 0; font-size: 0.84rem; font-weight: 600;">
+              <input type="checkbox" id="custom-pkg-log-cashflow" checked style="accent-color: var(--primary); width: 17px; height: 17px;" onchange="document.getElementById('custom-pkg-cashflow-details').style.display = this.checked ? 'block' : 'none'">
+              <span>💰 Registrar entrada no Fluxo de Caixa</span>
+            </label>
+
+            <div id="custom-pkg-cashflow-details" style="margin-top: 8px;">
+              <div class="form-row">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.78rem;">Forma de Pagamento</label>
+                  <select id="custom-pkg-payment-method" class="form-input">
+                    <option value="pix" selected>PIX</option>
+                    <option value="cartao_credito">Cartão de Crédito</option>
+                    <option value="cartao_debito">Cartão de Débito</option>
+                    <option value="dinheiro">Dinheiro</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.78rem;">Condição</label>
+                  <select id="custom-pkg-installments" class="form-input">
+                    <option value="1x" selected>À vista</option>
+                    <option value="2x">2x Parcelado</option>
+                    <option value="3x">3x Parcelado</option>
+                    <option value="4x">4x Parcelado</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn-complete" style="padding: 12px; font-weight: 700; font-size: 0.92rem; margin-top: 4px;" onclick="app.saveCustomClientPlan()">
+            ✨ Ativar Plano Livre na Ficha da Cliente
+          </button>
+        </div>
+
+        <!-- ABA 2: ESCOLHER DO CATÁLOGO -->
+        <div id="tab-content-custom-pkg-catalog" style="display: none; flex-direction: column; gap: 12px; max-height: 65vh; overflow-y: auto; padding-right: 2px;">
+          <div style="font-size: 0.8rem; color: var(--text-muted); background: #FAF7F2; padding: 8px 12px; border-radius: 8px; border: 1px dashed var(--border-color);">
+            📦 Escolha um dos planos pré-cadastrados no catálogo para ativar na ficha da cliente:
+          </div>
+
+          <div id="custom-pkg-catalog-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Preenchido via JS com os planos do catálogo -->
+          </div>
+
+          <!-- Opções financeiras do Catálogo -->
+          <div id="custom-pkg-catalog-checkout" style="display: none; background: var(--bg-card-soft); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; margin-top: 4px;">
+            <div style="font-weight: 700; color: var(--primary); font-size: 0.88rem; margin-bottom: 6px;" id="custom-pkg-catalog-sel-name">Plano Selecionado</div>
+            <div class="form-group" style="margin-bottom: 8px;">
+              <label class="form-label" for="custom-pkg-catalog-price" style="font-size: 0.8rem;">Valor a Cobrar (R$):</label>
+              <input type="number" step="0.01" id="custom-pkg-catalog-price" class="form-input" style="font-weight: 700; font-size: 1rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 8px;">
+              <label class="form-label" style="font-size: 0.8rem;">Forma de Pagamento:</label>
+              <select id="custom-pkg-catalog-payment-method" class="form-input">
+                <option value="pix" selected>PIX</option>
+                <option value="cartao_credito">Cartão de Crédito</option>
+                <option value="cartao_debito">Cartão de Débito</option>
+                <option value="dinheiro">Dinheiro</option>
+              </select>
+            </div>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; margin: 6px 0 10px 0; font-size: 0.82rem;">
+              <input type="checkbox" id="custom-pkg-catalog-log-cashflow" checked style="accent-color: var(--primary); width: 16px; height: 16px;">
+              <span>Lançar entrada no Fluxo de Caixa</span>
+            </label>
+            <button type="button" class="btn-complete" style="width: 100%; padding: 10px; font-weight: 700;" onclick="app.saveCatalogClientPlan()">
+              📦 Confirmar &amp; Ativar Plano
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal: Concluir Atendimento e Lançar Pagamento -->
     <div id="modal-complete-appointment" class="modal-overlay">
       <div class="modal-sheet">
@@ -3904,9 +4079,9 @@ body {
 
   <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-client.js?v=36"></script>
-  <script src="js/db.js?v=36"></script>
-  <script src="js/app.js?v=36"></script>
+  <script src="js/supabase-client.js?v=37"></script>
+  <script src="js/db.js?v=37"></script>
+  <script src="js/app.js?v=37"></script>
   <script>
     // Registro do Service Worker para suporte Offline
     if ('serviceWorker' in navigator) {

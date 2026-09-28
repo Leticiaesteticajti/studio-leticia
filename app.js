@@ -1119,24 +1119,67 @@ class StudioApp {
       <!-- Pacotes de Sessões -->
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-title-row">
-          <div style="font-weight: 700; font-size: 0.95rem;">📦 Pacotes de Sessões</div>
-          <button class="btn-complete" style="font-size: 0.75rem; padding: 4px 8px;" onclick="app.promptAddPackage('${client.id}')">+ Novo Pacote</button>
+          <div style="font-weight: 700; font-size: 0.95rem;">📦 Planos &amp; Pacotes de Sessões</div>
+          <button class="btn-complete" style="font-size: 0.75rem; padding: 5px 10px;" onclick="app.openAddClientPackageModal('${client.id}')">✨ Ativar / Montar Plano</button>
         </div>
         <div id="client-packages-list">
-          ${(client.pacotes && client.pacotes.length > 0) ? client.pacotes.map(p => `
-            <div style="background: #FDF9F5; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px; margin-bottom: 6px;">
-              <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">${p.servicoNome}</div>
-              ${Array.isArray(p.itens) && p.itens.length > 0 
-                ? `<div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">💆‍♀️ Composição: ${p.itens.map(i => `${i.sessoes}x ${i.nome}`).join(' + ')}</div>` 
-                : (Array.isArray(p.servicosNomes) && p.servicosNomes.length > 1 ? `<div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">💆‍♀️ Inclui: ${p.servicosNomes.join(', ')}</div>` : '')}
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 0.8rem;">
-                <span style="color: #925D11; font-weight: 700;">Realizadas: ${p.sessoesFeitas} de ${p.totalSessoes}</span>
-                <span class="app-status-badge ${p.sessoesFeitas >= p.totalSessoes ? 'status-concluido' : 'status-agendado'}">
-                  ${p.sessoesFeitas >= p.totalSessoes ? 'Finalizado' : 'Em Andamento'}
-                </span>
+          ${(client.pacotes && client.pacotes.length > 0) ? client.pacotes.map(p => {
+            const isLivre = p.isPlanoLivre || p.tipo === 'plano_livre';
+            const pctFeito = Math.round(((p.sessoesFeitas || 0) / (p.totalSessoes || 1)) * 100);
+            return `
+              <div style="background: ${isLivre ? 'linear-gradient(135deg, #FFFDFB, #FAF4ED)' : '#FDF9F5'}; border: 1.5px solid ${isLivre ? 'var(--accent-gold)' : 'var(--border-light)'}; border-radius: 10px; padding: 12px; margin-bottom: 8px; box-shadow: var(--shadow-sm);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                  <div>
+                    <div style="font-weight: 800; font-size: 0.92rem; color: var(--text-main);">${this.escapeHtml(p.servicoNome)}</div>
+                    ${isLivre ? `<span style="font-size: 0.68rem; font-weight: 800; color: #8F4B3C; background: #FFE0B2; padding: 1px 6px; border-radius: 4px; display: inline-block; margin-top: 2px;">✨ PLANO LIVRE PERSONALIZADO</span>` : ''}
+                  </div>
+                  <span class="app-status-badge ${p.sessoesFeitas >= p.totalSessoes ? 'status-concluido' : 'status-agendado'}">
+                    ${p.sessoesFeitas >= p.totalSessoes ? 'Finalizado' : 'Em Andamento'}
+                  </span>
+                </div>
+
+                <!-- Detalhamento por procedimento -->
+                ${Array.isArray(p.itens) && p.itens.length > 0 ? `
+                  <div style="margin: 8px 0; background: rgba(255,255,255,0.7); border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 4px;">
+                    ${p.itens.map(i => `
+                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                        <span style="font-weight: 600; color: var(--text-main);">💆‍♀️ ${this.escapeHtml(i.nome)}</span>
+                        <span style="color: var(--primary); font-weight: 700;">${i.feitas || 0} de ${i.sessoes} feitas</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : (Array.isArray(p.servicosNomes) && p.servicosNomes.length > 1 ? `
+                  <div style="font-size: 0.76rem; color: var(--text-muted); margin: 4px 0;">💆‍♀️ Inclui: ${p.servicosNomes.join(', ')}</div>
+                ` : '')}
+
+                <!-- Barra de Progresso Geral -->
+                <div style="margin: 8px 0 6px 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 700; color: #925D11; margin-bottom: 3px;">
+                    <span>Sessões Totais: ${p.sessoesFeitas} de ${p.totalSessoes}</span>
+                    <span>${pctFeito}%</span>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.06); border-radius: 10px; height: 6px; overflow: hidden;">
+                    <div style="background: var(--primary); width: ${pctFeito}%; height: 100%; border-radius: 10px; transition: width 0.3s ease;"></div>
+                  </div>
+                </div>
+
+                <!-- Rodapé com Ações -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; border-top: 1px dashed var(--border-light); padding-top: 6px;">
+                  <span style="font-size: 0.76rem; color: var(--text-muted);">
+                    💰 Investimento: <strong>${this.formatCurrency(p.valorTotal || 0)}</strong>
+                  </span>
+                  <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn-sm" style="font-size: 0.72rem; padding: 4px 8px; background: #25D366; color: #fff; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 4px;" onclick="app.sendPackageReceiptWhatsApp('${client.id}', '${p.id}')">
+                      💬 Carteirinha WhatsApp
+                    </button>
+                    <button type="button" class="btn-sm" style="font-size: 0.72rem; padding: 4px 8px; background: transparent; color: var(--danger); border: 1px solid rgba(185,55,40,0.3); border-radius: 5px; cursor: pointer;" onclick="app.removeClientPackage('${client.id}', '${p.id}')" title="Excluir Plano">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          `).join('') : '<div style="font-size: 0.82rem; color: var(--text-muted);">Nenhum pacote contratado.</div>'}
+            `;
+          }).join('') : '<div style="font-size: 0.82rem; color: var(--text-muted); padding: 6px 0;">Nenhum plano contratado para esta cliente. Clique em "+ Ativar / Montar Plano" acima para iniciar.</div>'}
         </div>
       </div>
 
@@ -1212,67 +1255,315 @@ class StudioApp {
   }
 
   async promptAddPackage(clientId) {
+    return this.openAddClientPackageModal(clientId);
+  }
+
+  // =========================================================================
+  // MONTE SEU PLANO (PLANO LIVRE) & ATIVAÇÃO DE PACOTES PARA CLIENTES
+  // =========================================================================
+  async openAddClientPackageModal(clientId) {
     const client = await db.get('clientes', clientId);
     if (!client) return;
 
-    // Se houver planos cadastrados no catálogo, oferece seleção
-    const catalogo = await db.getAll('catalogo_pacotes');
-    let nomePacote = 'Pacote Drenagem 5 Sessões';
-    let totalSessoes = 5;
-    let valorTotal = 580.00;
+    this._activePackageClientId = clientId;
+    const inputClientId = document.getElementById('custom-pkg-client-id');
+    if (inputClientId) inputClientId.value = clientId;
 
-    let servicosNomes = [];
-    let itens = [];
+    const headerClient = document.getElementById('custom-pkg-client-header');
+    if (headerClient) headerClient.textContent = `Para ${client.nome}`;
 
-    if (catalogo.length > 0) {
-      const opcoes = catalogo.map((p, idx) => {
-        let procs = '';
-        if (Array.isArray(p.itens) && p.itens.length > 0) {
-          procs = p.itens.map(i => `${i.sessoes}x ${i.nome}`).join(' + ');
-        } else if (Array.isArray(p.servicosNomes) && p.servicosNomes.length > 0) {
-          procs = p.servicosNomes.join(' + ');
-        } else {
-          procs = p.servicoNome || '';
-        }
-        return `${idx + 1}: ${p.nome} (${p.qtdSessoes} sessões: ${procs} - ${this.formatCurrency(p.preco)})`;
-      }).join('\n');
+    // Carrega serviços avulsos da clínica
+    this.allServices = await db.getAll('servicos');
+    const avulsos = (this.allServices || []).filter(s => !s.isPacote);
 
-      const escolha = prompt(`Escolha um plano do catálogo pelo número ou digite 0 para criar avulso:\n\n${opcoes}\n0: Criar plano avulso`);
-      
-      const idxEscolhido = parseInt(escolha, 10) - 1;
-      if (idxEscolhido >= 0 && idxEscolhido < catalogo.length) {
-        const pSel = catalogo[idxEscolhido];
-        nomePacote = pSel.nome;
-        totalSessoes = pSel.qtdSessoes;
-        valorTotal = pSel.preco;
-        servicosNomes = Array.isArray(pSel.servicosNomes) && pSel.servicosNomes.length > 0
-          ? pSel.servicosNomes
-          : (pSel.servicoNome ? [pSel.servicoNome] : [pSel.nome]);
-        itens = Array.isArray(pSel.itens) ? pSel.itens : [];
-      } else if (escolha === '0') {
-        nomePacote = prompt('Nome do Pacote:', 'Pacote Drenagem 5 Sessões') || nomePacote;
-        totalSessoes = parseInt(prompt('Quantidade total de sessões:', '5'), 10) || 5;
-        valorTotal = parseFloat(prompt('Valor total do pacote (R$):', '580.00')) || 0;
-        servicosNomes = [nomePacote];
+    // Inicializa seleções do plano livre
+    this._customPlanSelections = {};
+    avulsos.forEach(s => {
+      this._customPlanSelections[s.id] = 0;
+    });
+
+    // Renderiza lista de serviços com steppers [+] [-]
+    const stepperContainer = document.getElementById('custom-pkg-services-stepper-list');
+    if (stepperContainer) {
+      if (avulsos.length === 0) {
+        stepperContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 12px; font-size: 0.82rem;">Nenhum procedimento avulso cadastrado.</div>';
       } else {
-        return;
+        stepperContainer.innerHTML = avulsos.map(s => `
+          <div id="custom-plan-card-${s.id}" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1.5px solid var(--border-color); border-radius: 8px; padding: 10px 12px; transition: all 0.2s ease;">
+            <div style="flex: 1; min-width: 0; padding-right: 8px;">
+              <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${this.escapeHtml(s.nome)}
+              </div>
+              <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">
+                ${s.categoria || 'Geral'} • ${s.duracaoMin || 60} min • <strong style="color: var(--primary);">${this.formatCurrency(s.preco || 0)}</strong>
+              </div>
+            </div>
+
+            <!-- Stepper +/- -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              <button type="button" class="btn-sm" style="width: 32px; height: 32px; font-size: 1.1rem; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 6px; padding: 0; background: var(--bg-card-soft); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer;" onclick="app.changeCustomPlanQty('${s.id}', -1)">
+                −
+              </button>
+              <span id="custom-qty-${s.id}" style="font-size: 0.95rem; font-weight: 800; min-width: 20px; text-align: center; color: var(--primary);">
+                0
+              </span>
+              <button type="button" class="btn-sm" style="width: 32px; height: 32px; font-size: 1.1rem; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 6px; padding: 0; background: var(--primary); border: 1px solid var(--primary); color: #FFFFFF; cursor: pointer;" onclick="app.changeCustomPlanQty('${s.id}', 1)">
+                +
+              </button>
+            </div>
+          </div>
+        `).join('');
       }
+    }
+
+    // Reseta campos do resumo
+    this.updateCustomPlanSummary();
+
+    // Carrega planos pré-cadastrados do catálogo
+    const catalogo = await db.getAll('catalogo_pacotes');
+    const catalogContainer = document.getElementById('custom-pkg-catalog-list');
+    const checkoutBox = document.getElementById('custom-pkg-catalog-checkout');
+    if (checkoutBox) checkoutBox.style.display = 'none';
+
+    if (catalogContainer) {
+      if (catalogo.length === 0) {
+        catalogContainer.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 0.85rem;">
+            Nenhum plano cadastrado no catálogo ainda. Use a aba "Monte seu Plano" para criar um protocolo livre sob medida!
+          </div>
+        `;
+      } else {
+        catalogContainer.innerHTML = catalogo.map(p => {
+          let procs = '';
+          if (Array.isArray(p.itens) && p.itens.length > 0) {
+            procs = p.itens.map(i => `${i.sessoes}x ${i.nome}`).join(' + ');
+          } else if (Array.isArray(p.servicosNomes) && p.servicosNomes.length > 0) {
+            procs = p.servicosNomes.join(' + ');
+          } else {
+            procs = p.servicoNome || '';
+          }
+          return `
+            <div id="catalog-opt-${p.id}" class="card" style="cursor: pointer; border: 1.5px solid var(--border-color); padding: 12px; margin-bottom: 4px; transition: all 0.2s;" onclick="app.selectCatalogPlanForClient('${p.id}')">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <div style="font-weight: 700; color: var(--primary); font-size: 0.95rem;">${this.escapeHtml(p.nome)}</div>
+                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">
+                    💆‍♀️ Composição: <strong>${this.escapeHtml(procs)}</strong>
+                  </div>
+                  <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">
+                    🗓️ ${p.qtdSessoes} sessões ${p.validade ? `• Validade: ${p.validade}` : ''}
+                  </div>
+                </div>
+                <div style="font-size: 1rem; font-weight: 800; color: var(--accent-gold-dark);">
+                  ${this.formatCurrency(p.preco || 0)}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // Abre a aba "builder" por padrão
+    this.switchClientPlanTab('builder');
+    this.openModal('modal-client-add-package');
+  }
+
+  switchClientPlanTab(tab) {
+    const btnBuilder = document.getElementById('tab-btn-custom-pkg-builder');
+    const btnCatalog = document.getElementById('tab-btn-custom-pkg-catalog');
+    const contentBuilder = document.getElementById('tab-content-custom-pkg-builder');
+    const contentCatalog = document.getElementById('tab-content-custom-pkg-catalog');
+
+    if (tab === 'builder') {
+      if (btnBuilder) {
+        btnBuilder.style.background = 'var(--bg-card)';
+        btnBuilder.style.color = 'var(--primary)';
+        btnBuilder.style.boxShadow = 'var(--shadow-sm)';
+        btnBuilder.style.borderColor = 'var(--border-color)';
+      }
+      if (btnCatalog) {
+        btnCatalog.style.background = 'transparent';
+        btnCatalog.style.color = 'var(--text-muted)';
+        btnCatalog.style.boxShadow = 'none';
+        btnCatalog.style.borderColor = 'transparent';
+      }
+      if (contentBuilder) contentBuilder.style.display = 'flex';
+      if (contentCatalog) contentCatalog.style.display = 'none';
     } else {
-      nomePacote = prompt('Nome do Pacote (ex: Pacote Drenagem 5x):', 'Pacote Drenagem 5 Sessões');
-      if (!nomePacote) return;
-      totalSessoes = parseInt(prompt('Quantidade total de sessões:', '5'), 10) || 5;
-      valorTotal = parseFloat(prompt('Valor total do pacote (R$):', '580.00')) || 0;
-      servicosNomes = [nomePacote];
+      if (btnCatalog) {
+        btnCatalog.style.background = 'var(--bg-card)';
+        btnCatalog.style.color = 'var(--primary)';
+        btnCatalog.style.boxShadow = 'var(--shadow-sm)';
+        btnCatalog.style.borderColor = 'var(--border-color)';
+      }
+      if (btnBuilder) {
+        btnBuilder.style.background = 'transparent';
+        btnBuilder.style.color = 'var(--text-muted)';
+        btnBuilder.style.boxShadow = 'none';
+        btnBuilder.style.borderColor = 'transparent';
+      }
+      if (contentBuilder) contentBuilder.style.display = 'none';
+      if (contentCatalog) contentCatalog.style.display = 'flex';
+    }
+  }
+
+  changeCustomPlanQty(serviceId, delta) {
+    if (!this._customPlanSelections) this._customPlanSelections = {};
+    const current = this._customPlanSelections[serviceId] || 0;
+    const next = Math.max(0, current + delta);
+    this._customPlanSelections[serviceId] = next;
+
+    const el = document.getElementById(`custom-qty-${serviceId}`);
+    if (el) el.textContent = next;
+
+    const card = document.getElementById(`custom-plan-card-${serviceId}`);
+    if (card) {
+      if (next > 0) {
+        card.style.borderColor = 'var(--primary)';
+        card.style.background = 'rgba(190, 122, 71, 0.05)';
+      } else {
+        card.style.borderColor = 'var(--border-color)';
+        card.style.background = '#FFFFFF';
+      }
+    }
+
+    this.updateCustomPlanSummary();
+  }
+
+  updateCustomPlanSummary() {
+    const avulsos = (this.allServices || []).filter(s => !s.isPacote);
+    let totalSessions = 0;
+    let originalTotal = 0;
+    const items = [];
+
+    for (const [srvId, qty] of Object.entries(this._customPlanSelections || {})) {
+      if (qty > 0) {
+        const srv = avulsos.find(s => s.id === srvId);
+        if (srv) {
+          totalSessions += qty;
+          originalTotal += (srv.preco || 0) * qty;
+          items.push(`${qty}x ${srv.nome}`);
+        }
+      }
+    }
+
+    this._customPlanTotalAvulso = originalTotal;
+    this._customPlanTotalSessions = totalSessions;
+
+    // Badge de sessões
+    const badge = document.getElementById('custom-pkg-total-sessions-badge');
+    if (badge) badge.textContent = `${totalSessions} sessão(ões)`;
+
+    // Composição
+    const compEl = document.getElementById('custom-pkg-summary-composition');
+    if (compEl) {
+      compEl.textContent = items.length > 0 ? items.join(' + ') : 'Nenhum procedimento selecionado.';
+    }
+
+    // Valor de tabela cheia
+    const origEl = document.getElementById('custom-pkg-original-total');
+    if (origEl) origEl.textContent = this.formatCurrency(originalTotal);
+
+    // Sugere nome automático
+    const nameInput = document.getElementById('custom-pkg-name');
+    if (nameInput) {
+      if (items.length === 0) {
+        nameInput.value = '';
+      } else if (!nameInput.value || nameInput.value.startsWith('Protocolo Sob Medida') || nameInput.value.startsWith('Plano Livre')) {
+        nameInput.value = `Protocolo Sob Medida (${totalSessions} Sessões)`;
+      }
+    }
+
+    // Se o valor final ainda não foi editado manualmente, sugere o valor original
+    const priceInput = document.getElementById('custom-pkg-final-price');
+    if (priceInput && (!priceInput.value || priceInput.dataset.autoFilled === 'true' || priceInput.value === '0.00')) {
+      priceInput.value = originalTotal > 0 ? originalTotal.toFixed(2) : '';
+      priceInput.dataset.autoFilled = 'true';
+    }
+
+    this.recalculateCustomPlanSavings();
+  }
+
+  applyCustomPlanDiscount(discountRate) {
+    const originalTotal = this._customPlanTotalAvulso || 0;
+    const discounted = Math.round(originalTotal * (1 - discountRate) * 100) / 100;
+    const priceInput = document.getElementById('custom-pkg-final-price');
+    if (priceInput) {
+      priceInput.value = discounted > 0 ? discounted.toFixed(2) : '';
+      priceInput.dataset.autoFilled = 'false';
+    }
+    this.recalculateCustomPlanSavings();
+  }
+
+  recalculateCustomPlanSavings() {
+    const originalTotal = this._customPlanTotalAvulso || 0;
+    const priceInput = document.getElementById('custom-pkg-final-price');
+    const finalPrice = parseFloat(priceInput ? priceInput.value : 0) || 0;
+    const badge = document.getElementById('custom-pkg-savings-badge');
+
+    if (badge) {
+      if (originalTotal > 0 && finalPrice > 0 && finalPrice < originalTotal) {
+        const economy = originalTotal - finalPrice;
+        const pct = Math.round((economy / originalTotal) * 100);
+        badge.textContent = `🎉 Economia da cliente: ${this.formatCurrency(economy)} (${pct}% de desconto)`;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  }
+
+  async saveCustomClientPlan() {
+    const clientId = this._activePackageClientId;
+    if (!clientId) return;
+
+    const client = await db.get('clientes', clientId);
+    if (!client) return;
+
+    const totalSessions = this._customPlanTotalSessions || 0;
+    if (totalSessions <= 0) {
+      this.showToast('Selecione pelo menos 1 procedimento com o botão + para montar o plano.');
+      return;
+    }
+
+    const nomePlano = (document.getElementById('custom-pkg-name').value || '').trim() || `Protocolo Sob Medida (${totalSessions}x)`;
+    const valorFinal = parseFloat(document.getElementById('custom-pkg-final-price').value) || 0;
+    const validade = document.getElementById('custom-pkg-validity').value;
+    const logCashflow = document.getElementById('custom-pkg-log-cashflow').checked;
+    const paymentMethod = document.getElementById('custom-pkg-payment-method').value;
+    const installments = document.getElementById('custom-pkg-installments').value;
+
+    const avulsos = (this.allServices || []).filter(s => !s.isPacote);
+    const items = [];
+
+    for (const [srvId, qty] of Object.entries(this._customPlanSelections || {})) {
+      if (qty > 0) {
+        const srv = avulsos.find(s => s.id === srvId);
+        if (srv) {
+          items.push({
+            id: srv.id,
+            nome: srv.nome,
+            sessoes: qty,
+            feitas: 0,
+            precoUnitario: srv.preco || 0
+          });
+        }
+      }
     }
 
     const novoPacote = {
       id: 'pct_' + Date.now(),
-      servicoNome: nomePacote,
-      servicosNomes: servicosNomes,
-      itens: itens,
-      totalSessoes: totalSessoes,
+      tipo: 'plano_livre',
+      isPlanoLivre: true,
+      servicoNome: nomePlano,
+      itens: items,
+      servicosNomes: items.map(i => i.nome),
+      totalSessoes: totalSessions,
       sessoesFeitas: 0,
-      valorTotal: valorTotal,
+      valorTotal: valorFinal,
+      valorAvulso: this._customPlanTotalAvulso || valorFinal,
+      validade: validade,
       status: 'ativo',
       criadoEm: new Date().toISOString()
     };
@@ -1281,24 +1572,172 @@ class StudioApp {
     client.pacotes.push(novoPacote);
     await db.put('clientes', client);
 
-    // Lança a venda do pacote no caixa se desejar
-    const lancarCaixa = confirm('Deseja registrar essa entrada de ' + this.formatCurrency(valorTotal) + ' no Fluxo de Caixa agora?');
-    if (lancarCaixa && valorTotal > 0) {
+    // Registro no Caixa
+    if (logCashflow && valorFinal > 0) {
       await db.put('transacoes', {
         id: 'tx_' + Date.now(),
         tipo: 'entrada',
-        descricao: `Venda de ${nomePacote} - ${client.nome}`,
+        descricao: `Venda ${nomePlano} (${installments}) - ${client.nome}`,
         categoria: 'pacote',
-        valor: valorTotal,
+        valor: valorFinal,
         data: new Date().toISOString().split('T')[0],
-        formaPagamento: 'pix',
+        formaPagamento: paymentMethod,
         criadoEm: new Date().toISOString()
       });
     }
 
-    this.showToast('Plano ativado para a cliente! ✨');
-    this.viewClientDetails(clientId);
-    this.loadTodayTab();
+    this.closeModal('modal-client-add-package');
+    this.showToast(`✨ Plano Livre ativado com sucesso para ${client.nome}!`);
+    await this.viewClientDetails(clientId);
+    await this.loadTodayTab();
+
+    // Feedback com atalho para WhatsApp da cliente
+    this.offerSendCustomPlanReceipt(client, novoPacote);
+  }
+
+  async selectCatalogPlanForClient(catalogId) {
+    const pkg = await db.get('catalogo_pacotes', catalogId);
+    if (!pkg) return;
+
+    this._selectedCatalogPlan = pkg;
+
+    // Destaca visualmente o card selecionado
+    const cards = document.querySelectorAll('#custom-pkg-catalog-list > div');
+    cards.forEach(c => {
+      c.style.borderColor = 'var(--border-color)';
+      c.style.background = '#FFFFFF';
+    });
+    const selCard = document.getElementById(`catalog-opt-${catalogId}`);
+    if (selCard) {
+      selCard.style.borderColor = 'var(--primary)';
+      selCard.style.background = 'rgba(190, 122, 71, 0.08)';
+    }
+
+    const checkoutBox = document.getElementById('custom-pkg-catalog-checkout');
+    if (checkoutBox) {
+      checkoutBox.style.display = 'block';
+      document.getElementById('custom-pkg-catalog-sel-name').textContent = `Plano: ${pkg.nome} (${pkg.qtdSessoes} sessões)`;
+      document.getElementById('custom-pkg-catalog-price').value = (pkg.preco || 0).toFixed(2);
+      checkoutBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  async saveCatalogClientPlan() {
+    const clientId = this._activePackageClientId;
+    const pkg = this._selectedCatalogPlan;
+    if (!clientId || !pkg) return;
+
+    const client = await db.get('clientes', clientId);
+    if (!client) return;
+
+    const valorFinal = parseFloat(document.getElementById('custom-pkg-catalog-price').value) || (pkg.preco || 0);
+    const paymentMethod = document.getElementById('custom-pkg-catalog-payment-method').value;
+    const logCashflow = document.getElementById('custom-pkg-catalog-log-cashflow').checked;
+
+    let servicosNomes = [];
+    let itens = [];
+
+    if (Array.isArray(pkg.itens) && pkg.itens.length > 0) {
+      itens = pkg.itens.map(i => ({ ...i, feitas: 0 }));
+      servicosNomes = pkg.itens.map(i => i.nome);
+    } else if (Array.isArray(pkg.servicosNomes) && pkg.servicosNomes.length > 0) {
+      servicosNomes = pkg.servicosNomes;
+      itens = servicosNomes.map(nome => ({ nome, sessoes: 1, feitas: 0 }));
+    } else {
+      servicosNomes = [pkg.servicoNome || pkg.nome];
+      itens = [{ nome: pkg.servicoNome || pkg.nome, sessoes: pkg.qtdSessoes || 1, feitas: 0 }];
+    }
+
+    const novoPacote = {
+      id: 'pct_' + Date.now(),
+      tipo: 'catalogo',
+      servicoNome: pkg.nome,
+      servicosNomes: servicosNomes,
+      itens: itens,
+      totalSessoes: pkg.qtdSessoes || 1,
+      sessoesFeitas: 0,
+      valorTotal: valorFinal,
+      validade: pkg.validade || '60 dias',
+      status: 'ativo',
+      criadoEm: new Date().toISOString()
+    };
+
+    if (!client.pacotes) client.pacotes = [];
+    client.pacotes.push(novoPacote);
+    await db.put('clientes', client);
+
+    if (logCashflow && valorFinal > 0) {
+      await db.put('transacoes', {
+        id: 'tx_' + Date.now(),
+        tipo: 'entrada',
+        descricao: `Venda ${pkg.nome} - ${client.nome}`,
+        categoria: 'pacote',
+        valor: valorFinal,
+        data: new Date().toISOString().split('T')[0],
+        formaPagamento: paymentMethod,
+        criadoEm: new Date().toISOString()
+      });
+    }
+
+    this.closeModal('modal-client-add-package');
+    this.showToast(`✨ Plano ativado com sucesso para ${client.nome}!`);
+    await this.viewClientDetails(clientId);
+    await this.loadTodayTab();
+
+    this.offerSendCustomPlanReceipt(client, novoPacote);
+  }
+
+  async removeClientPackage(clientId, packageId) {
+    if (!confirm('Deseja realmente remover este plano da ficha da cliente?')) return;
+    const client = await db.get('clientes', clientId);
+    if (!client || !client.pacotes) return;
+    client.pacotes = client.pacotes.filter(p => p.id !== packageId);
+    await db.put('clientes', client);
+    this.showToast('Plano removido.');
+    await this.viewClientDetails(clientId);
+  }
+
+  async sendPackageReceiptWhatsApp(clientId, packageId) {
+    const client = await db.get('clientes', clientId);
+    if (!client || !client.pacotes) return;
+    const pacote = client.pacotes.find(p => p.id === packageId);
+    if (!pacote) return;
+    this.offerSendCustomPlanReceipt(client, pacote);
+  }
+
+  offerSendCustomPlanReceipt(client, pacote) {
+    const cleanWpp = (client.whatsapp || '').replace(/\D/g, '');
+    let composicao = '';
+    if (Array.isArray(pacote.itens) && pacote.itens.length > 0) {
+      composicao = pacote.itens.map(i => `• ${i.sessoes}x ${i.nome} (${i.feitas || 0}/${i.sessoes} realizadas)`).join('\n');
+    } else {
+      composicao = `• ${pacote.totalSessoes}x ${pacote.servicoNome}`;
+    }
+
+    const ecoText = pacote.valorAvulso && pacote.valorAvulso > pacote.valorTotal
+      ? `\n🎉 Economia de ${this.formatCurrency(pacote.valorAvulso - pacote.valorTotal)}!`
+      : '';
+
+    const msg = encodeURIComponent(
+      `Olá, ${client.nome}! ✨\n` +
+      `Seu *${pacote.servicoNome}* está ATIVO no Studio Letícia!\n\n` +
+      `💆‍♀️ *Composição do seu Protocolo:*\n${composicao}\n\n` +
+      `🗓️ *Total:* ${pacote.totalSessoes} sessões\n` +
+      `⏳ *Validade:* ${pacote.validade || '60 dias'}\n` +
+      `💰 *Investimento:* ${this.formatCurrency(pacote.valorTotal)}${ecoText}\n\n` +
+      `Sua primeira sessão já pode ser agendada. Estamos te esperando com muito carinho! 💆‍♀️🌸\n\n` +
+      `📍 Endereço: Rua 26, nº 135 - Colmeia Park • Jataí - GO`
+    );
+
+    const linkWpp = `https://wa.me/55${cleanWpp}?text=${msg}`;
+
+    this.showBookingActionFeedback({
+      icon: '🎉',
+      title: 'Plano Ativado com Sucesso!',
+      message: `O <strong>${this.escapeHtml(pacote.servicoNome)}</strong> de ${pacote.totalSessoes} sessões foi adicionado à ficha de <strong>${this.escapeHtml(client.nome)}</strong>. Toque abaixo para enviar a carteirinha digital no WhatsApp dela!`,
+      wppLink: linkWpp,
+      wppLabel: 'Enviar Carteirinha no WhatsApp'
+    });
   }
 
   // =========================================================================
@@ -3147,6 +3586,16 @@ class StudioApp {
           const pacote = cliente.pacotes.find(p => p.id === app.pacoteId);
           if (pacote) {
             pacote.sessoesFeitas = Math.min(pacote.totalSessoes, (pacote.sessoesFeitas || 0) + 1);
+            if (Array.isArray(pacote.itens) && pacote.itens.length > 0) {
+              const matchedItem = pacote.itens.find(i => 
+                i.nome === app.servicoNome || 
+                (i.id && i.id === app.servicoId) ||
+                (app.servicoNome && app.servicoNome.toLowerCase().includes((i.nome || '').toLowerCase()))
+              );
+              if (matchedItem) {
+                matchedItem.feitas = Math.min(matchedItem.sessoes, (matchedItem.feitas || 0) + 1);
+              }
+            }
             await db.put('clientes', cliente);
           }
         }
