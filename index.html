@@ -15,8 +15,8 @@
   <title>Studio Letícia - Gestão & Estética</title>
   
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=32">
-  <link rel="stylesheet" href="style.css?v=32">
+  <link rel="stylesheet" href="css/style.css?v=33">
+  <link rel="stylesheet" href="style.css?v=33">
   <style id="studio-core-styles">
 /* ==========================================================================
    STUDIO LETÍCIA - ESTILO VISUAL REFINADO & PREMIUM (iOS / Mobile First)
@@ -3486,21 +3486,39 @@ body {
       <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-header">
-          <h2 class="modal-title">Cadastrar Plano / Pacote</h2>
+          <h2 class="modal-title" id="modal-new-package-title">Cadastrar Plano / Pacote</h2>
           <button class="btn-close" onclick="app.closeModal('modal-new-package')">✕</button>
         </div>
 
         <form id="form-new-package" onsubmit="app.savePackageCatalog(event)">
+          <input type="hidden" id="pkg-edit-id" value="">
+
           <div class="form-group">
             <label class="form-label">Nome do Plano/Pacote *</label>
-            <input type="text" id="pkg-name" class="form-input" placeholder="Ex: Plano Mensal Drenagem (3 Sessões)" required>
+            <input type="text" id="pkg-name" class="form-input" placeholder="Ex: Plano Mensal Drenagem + Modeladora (5 Sessões)" required>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Procedimento Incluído *</label>
-            <select id="pkg-service-select" class="form-select" required>
-              <!-- Preenchido via JS -->
-            </select>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="form-label" style="margin-bottom: 0;">Procedimentos Incluídos *</label>
+              <span id="pkg-services-count" style="font-size: 0.76rem; font-weight: 700; color: var(--primary); background: rgba(77, 38, 18, 0.08); padding: 2px 8px; border-radius: 12px; border: 1px solid var(--border-color);">0 selecionado(s)</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px;">
+              Selecione um ou mais procedimentos que fazem parte deste plano:
+            </div>
+            
+            <div id="pkg-services-checkboxes" style="max-height: 220px; overflow-y: auto; border: 1.5px solid var(--border-color); border-radius: 10px; padding: 8px; background: var(--bg-card-tint); display: flex; flex-direction: column; gap: 6px; -webkit-overflow-scrolling: touch;">
+              <!-- Preenchido via JS com lista de procedimentos selecionáveis -->
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+              <span style="font-size: 0.74rem; color: var(--text-muted);">💡 Você pode marcar mais de um</span>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" style="font-size: 0.75rem; color: var(--primary); background: none; border: none; cursor: pointer; text-decoration: underline; font-weight: 600;" onclick="app.toggleAllPkgServices(true)">Marcar Todos</button>
+                <span style="color: var(--border-color);">•</span>
+                <button type="button" style="font-size: 0.75rem; color: var(--text-muted); background: none; border: none; cursor: pointer; text-decoration: underline;" onclick="app.toggleAllPkgServices(false)">Desmarcar</button>
+              </div>
+            </div>
           </div>
 
           <div class="form-row">
@@ -3524,7 +3542,7 @@ body {
             <input type="text" id="pkg-desc" class="form-input" placeholder="Ex: Manutenção corporal e redução de retenção">
           </div>
 
-          <button type="submit" class="form-btn-submit" style="background: #925D11;">Salvar Plano no Catálogo</button>
+          <button type="submit" id="pkg-submit-btn" class="form-btn-submit" style="background: #925D11;">Salvar Plano no Catálogo</button>
         </form>
       </div>
     </div>
@@ -3733,9 +3751,9 @@ body {
 
   <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-client.js?v=32"></script>
-  <script src="js/db.js?v=32"></script>
-  <script src="js/app.js?v=32"></script>
+  <script src="js/supabase-client.js?v=33"></script>
+  <script src="js/db.js?v=33"></script>
+  <script src="js/app.js?v=33"></script>
   <script>
     // Registro do Service Worker para suporte Offline
     if ('serviceWorker' in navigator) {

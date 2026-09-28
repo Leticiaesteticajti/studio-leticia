@@ -1126,6 +1126,7 @@ class StudioApp {
           ${(client.pacotes && client.pacotes.length > 0) ? client.pacotes.map(p => `
             <div style="background: #FDF9F5; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px; margin-bottom: 6px;">
               <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">${p.servicoNome}</div>
+              ${Array.isArray(p.servicosNomes) && p.servicosNomes.length > 1 ? `<div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">💆‍♀️ Inclui: ${p.servicosNomes.join(', ')}</div>` : ''}
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 0.8rem;">
                 <span style="color: #925D11; font-weight: 700;">Realizadas: ${p.sessoesFeitas} de ${p.totalSessoes}</span>
                 <span class="app-status-badge ${p.sessoesFeitas >= p.totalSessoes ? 'status-concluido' : 'status-agendado'}">
@@ -1218,8 +1219,16 @@ class StudioApp {
     let totalSessoes = 5;
     let valorTotal = 580.00;
 
+    let servicosNomes = [];
+
     if (catalogo.length > 0) {
-      const opcoes = catalogo.map((p, idx) => `${idx + 1}: ${p.nome} (${p.qtdSessoes}x - ${this.formatCurrency(p.preco)})`).join('\n');
+      const opcoes = catalogo.map((p, idx) => {
+        const procs = Array.isArray(p.servicosNomes) && p.servicosNomes.length > 0
+          ? p.servicosNomes.join(' + ')
+          : (p.servicoNome || '');
+        return `${idx + 1}: ${p.nome} (${p.qtdSessoes}x • ${procs} - ${this.formatCurrency(p.preco)})`;
+      }).join('\n');
+
       const escolha = prompt(`Escolha um plano do catálogo pelo número ou digite 0 para criar avulso:\n\n${opcoes}\n0: Criar plano avulso`);
       
       const idxEscolhido = parseInt(escolha, 10) - 1;
@@ -1228,10 +1237,14 @@ class StudioApp {
         nomePacote = pSel.nome;
         totalSessoes = pSel.qtdSessoes;
         valorTotal = pSel.preco;
+        servicosNomes = Array.isArray(pSel.servicosNomes) && pSel.servicosNomes.length > 0
+          ? pSel.servicosNomes
+          : (pSel.servicoNome ? [pSel.servicoNome] : [pSel.nome]);
       } else if (escolha === '0') {
         nomePacote = prompt('Nome do Pacote:', 'Pacote Drenagem 5 Sessões') || nomePacote;
         totalSessoes = parseInt(prompt('Quantidade total de sessões:', '5'), 10) || 5;
         valorTotal = parseFloat(prompt('Valor total do pacote (R$):', '580.00')) || 0;
+        servicosNomes = [nomePacote];
       } else {
         return;
       }
@@ -1240,11 +1253,13 @@ class StudioApp {
       if (!nomePacote) return;
       totalSessoes = parseInt(prompt('Quantidade total de sessões:', '5'), 10) || 5;
       valorTotal = parseFloat(prompt('Valor total do pacote (R$):', '580.00')) || 0;
+      servicosNomes = [nomePacote];
     }
 
     const novoPacote = {
       id: 'pct_' + Date.now(),
       servicoNome: nomePacote,
+      servicosNomes: servicosNomes,
       totalSessoes: totalSessoes,
       sessoesFeitas: 0,
       valorTotal: valorTotal,
@@ -2000,24 +2015,42 @@ class StudioApp {
       if (catalogo.length === 0) {
         container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum plano cadastrado no momento.</div>`;
       } else {
-        container.innerHTML = catalogo.map(p => `
-          <div style="background: var(--bg-card-tint); border: 1px solid var(--border-color); border-left: 4px solid var(--primary); border-radius: var(--radius-md); padding: 14px; position: relative;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">${p.nome}</div>
-                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600; margin-top: 2px;">
-                  ✨ ${p.qtdSessoes} Sessões • ${p.servicoNome || 'Procedimento'}
+        container.innerHTML = catalogo.map(p => {
+          const procs = Array.isArray(p.servicosNomes) && p.servicosNomes.length > 0 
+            ? p.servicosNomes 
+            : (p.servicoNome ? p.servicoNome.split(' + ') : ['Procedimento']);
+
+          return `
+            <div style="background: var(--bg-card-tint); border: 1px solid var(--border-color); border-left: 4px solid var(--primary); border-radius: var(--radius-md); padding: 14px; position: relative;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">${p.nome}</div>
+                  
+                  <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px;">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                      ✨ ${p.qtdSessoes} Sessões
+                    </span>
+                    ${procs.map(procName => `
+                      <span style="font-size: 0.74rem; color: var(--text-main); background: #FAF7F2; border: 1px solid var(--border-color); padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                        💆‍♀️ ${procName.trim()}
+                      </span>
+                    `).join('')}
+                  </div>
+
+                  ${p.frequenciaTexto ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">📅 ${p.frequenciaTexto}</div>` : ''}
+                  ${p.descricao ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;"><em>${p.descricao}</em></div>` : ''}
                 </div>
-                ${p.frequenciaTexto ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">📅 ${p.frequenciaTexto}</div>` : ''}
-                ${p.descricao ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;"><em>${p.descricao}</em></div>` : ''}
-              </div>
-              <div style="text-align: right;">
-                <div style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">${this.formatCurrency(p.preco)}</div>
-                <button class="icon-btn" style="width: 28px; height: 28px; font-size: 0.75rem; margin-top: 6px; margin-left: auto;" onclick="app.deletePackageCatalog('${p.id}')" title="Excluir Plano">🗑️</button>
+                <div style="text-align: right; flex-shrink: 0;">
+                  <div style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">${this.formatCurrency(p.preco)}</div>
+                  <div style="display: flex; gap: 4px; justify-content: flex-end; margin-top: 6px;">
+                    <button class="icon-btn" style="width: 28px; height: 28px; font-size: 0.8rem;" onclick="app.openEditPackageModal('${p.id}')" title="Editar Plano">✏️</button>
+                    <button class="icon-btn" style="width: 28px; height: 28px; font-size: 0.8rem;" onclick="app.deletePackageCatalog('${p.id}')" title="Excluir Plano">🗑️</button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
     }
 
@@ -2026,22 +2059,125 @@ class StudioApp {
 
   async openNewPackageModal() {
     this.allServices = await db.getAll('servicos');
-    const select = document.getElementById('pkg-service-select');
-    if (select) {
-      select.innerHTML = '<option value="">Selecione o procedimento...</option>' + 
-        this.allServices.map(s => `<option value="${s.nome}">${s.nome}</option>`).join('');
-    }
+    const services = (this.allServices || []).filter(s => !s.isPacote);
+    const container = document.getElementById('pkg-services-checkboxes');
+    const title = document.getElementById('modal-new-package-title');
+    const submitBtn = document.getElementById('pkg-submit-btn');
+    const editIdInput = document.getElementById('pkg-edit-id');
+
+    if (title) title.textContent = 'Cadastrar Plano / Pacote';
+    if (submitBtn) submitBtn.textContent = 'Salvar Plano no Catálogo';
+    if (editIdInput) editIdInput.value = '';
 
     document.getElementById('form-new-package').reset();
     document.getElementById('pkg-sessions').value = '3';
+
+    if (container) {
+      if (services.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 14px; font-size: 0.84rem;">Nenhum procedimento cadastrado. Adicione procedimentos primeiro na Tabela de Preços.</div>`;
+      } else {
+        container.innerHTML = services.map(s => `
+          <label class="pkg-service-label" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; background: var(--bg-card); border: 1.5px solid var(--border-color); cursor: pointer; transition: all 0.15s ease; user-select: none;">
+            <input type="checkbox" name="pkg-service-item" value="${s.nome}" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;" onchange="app.onPkgServiceChange()">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.3;">${s.nome}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${s.categoria || 'Geral'} • ${this.formatCurrency(s.preco)}</div>
+            </div>
+          </label>
+        `).join('');
+      }
+    }
+
+    this.onPkgServiceChange();
     this.openModal('modal-new-package');
+  }
+
+  async openEditPackageModal(id) {
+    const pkg = await db.get('catalogo_pacotes', id);
+    if (!pkg) return;
+
+    this.allServices = await db.getAll('servicos');
+    const services = (this.allServices || []).filter(s => !s.isPacote);
+    const container = document.getElementById('pkg-services-checkboxes');
+    const title = document.getElementById('modal-new-package-title');
+    const submitBtn = document.getElementById('pkg-submit-btn');
+    const editIdInput = document.getElementById('pkg-edit-id');
+
+    if (title) title.textContent = 'Editar Plano / Pacote';
+    if (submitBtn) submitBtn.textContent = 'Salvar Alterações';
+    if (editIdInput) editIdInput.value = pkg.id;
+
+    document.getElementById('pkg-name').value = pkg.nome || '';
+    document.getElementById('pkg-sessions').value = pkg.qtdSessoes || 3;
+    document.getElementById('pkg-price').value = pkg.preco !== undefined ? pkg.preco : '';
+    document.getElementById('pkg-validity').value = pkg.frequenciaTexto || '';
+    document.getElementById('pkg-desc').value = pkg.descricao || '';
+
+    // Procedimentos selecionados
+    const selectedProcs = Array.isArray(pkg.servicosNomes) && pkg.servicosNomes.length > 0
+      ? pkg.servicosNomes
+      : (pkg.servicoNome ? pkg.servicoNome.split(' + ').map(s => s.trim()) : []);
+
+    if (container) {
+      if (services.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 14px; font-size: 0.84rem;">Nenhum procedimento cadastrado.</div>`;
+      } else {
+        container.innerHTML = services.map(s => {
+          const isChecked = selectedProcs.includes(s.nome);
+          return `
+            <label class="pkg-service-label" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; background: ${isChecked ? '#F8F1E9' : 'var(--bg-card)'}; border: 1.5px solid ${isChecked ? 'var(--primary)' : 'var(--border-color)'}; cursor: pointer; transition: all 0.15s ease; user-select: none;">
+              <input type="checkbox" name="pkg-service-item" value="${s.nome}" ${isChecked ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;" onchange="app.onPkgServiceChange()">
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.3;">${s.nome}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${s.categoria || 'Geral'} • ${this.formatCurrency(s.preco)}</div>
+              </div>
+            </label>
+          `;
+        }).join('');
+      }
+    }
+
+    this.onPkgServiceChange();
+    this.openModal('modal-new-package');
+  }
+
+  onPkgServiceChange() {
+    const checked = document.querySelectorAll('input[name="pkg-service-item"]:checked');
+    const countBadge = document.getElementById('pkg-services-count');
+    if (countBadge) {
+      countBadge.textContent = `${checked.length} selecionado(s)`;
+      countBadge.style.background = checked.length > 0 ? 'rgba(190, 122, 71, 0.22)' : 'rgba(77, 38, 18, 0.08)';
+      countBadge.style.color = checked.length > 0 ? '#381A0B' : 'var(--primary)';
+    }
+
+    document.querySelectorAll('input[name="pkg-service-item"]').forEach(cb => {
+      const parentLabel = cb.closest('label');
+      if (parentLabel) {
+        if (cb.checked) {
+          parentLabel.style.borderColor = 'var(--primary)';
+          parentLabel.style.background = '#F8F1E9';
+        } else {
+          parentLabel.style.borderColor = 'var(--border-color)';
+          parentLabel.style.background = 'var(--bg-card)';
+        }
+      }
+    });
+  }
+
+  toggleAllPkgServices(checkAll = true) {
+    document.querySelectorAll('input[name="pkg-service-item"]').forEach(cb => {
+      cb.checked = checkAll;
+    });
+    this.onPkgServiceChange();
   }
 
   async savePackageCatalog(e) {
     if (e) e.preventDefault();
     try {
+      const editId = (document.getElementById('pkg-edit-id')?.value || '').trim();
       const nome = (document.getElementById('pkg-name').value || '').trim();
-      const servicoNome = document.getElementById('pkg-service-select').value;
+      const checkboxes = document.querySelectorAll('input[name="pkg-service-item"]:checked');
+      const servicosNomes = Array.from(checkboxes).map(cb => cb.value.trim()).filter(Boolean);
       const qtdSessoes = parseInt(document.getElementById('pkg-sessions').value, 10) || 3;
       const preco = parseFloat(document.getElementById('pkg-price').value) || 0;
       const validade = document.getElementById('pkg-validity').value || '';
@@ -2052,19 +2188,44 @@ class StudioApp {
         return;
       }
 
-      await db.put('catalogo_pacotes', {
-        id: 'pct_cat_' + Date.now(),
-        nome,
-        servicoNome,
-        qtdSessoes,
-        frequenciaTexto: validade,
-        preco,
-        descricao: desc,
-        criadoEm: new Date().toISOString()
-      });
+      if (servicosNomes.length === 0) {
+        alert('Por favor, selecione pelo menos um procedimento incluído no plano.');
+        return;
+      }
+
+      const servicoNome = servicosNomes.join(' + ');
+
+      if (editId) {
+        const existing = await db.get('catalogo_pacotes', editId) || {};
+        await db.put('catalogo_pacotes', {
+          ...existing,
+          id: editId,
+          nome,
+          servicoNome,
+          servicosNomes,
+          qtdSessoes,
+          frequenciaTexto: validade,
+          preco,
+          descricao: desc,
+          atualizadoEm: new Date().toISOString()
+        });
+        this.showToast('Plano atualizado com sucesso! ✨');
+      } else {
+        await db.put('catalogo_pacotes', {
+          id: 'pct_cat_' + Date.now(),
+          nome,
+          servicoNome,
+          servicosNomes,
+          qtdSessoes,
+          frequenciaTexto: validade,
+          preco,
+          descricao: desc,
+          criadoEm: new Date().toISOString()
+        });
+        this.showToast('Plano cadastrado com sucesso no Catálogo! 📦✨');
+      }
 
       this.closeModal('modal-new-package');
-      this.showToast('Plano cadastrado com sucesso no Catálogo! 📦✨');
       await this.openPackagesCatalogModal();
     } catch (err) {
       console.error('Erro ao salvar plano:', err);
