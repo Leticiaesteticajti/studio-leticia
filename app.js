@@ -1126,7 +1126,9 @@ class StudioApp {
           ${(client.pacotes && client.pacotes.length > 0) ? client.pacotes.map(p => `
             <div style="background: #FDF9F5; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px; margin-bottom: 6px;">
               <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">${p.servicoNome}</div>
-              ${Array.isArray(p.servicosNomes) && p.servicosNomes.length > 1 ? `<div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">💆‍♀️ Inclui: ${p.servicosNomes.join(', ')}</div>` : ''}
+              ${Array.isArray(p.itens) && p.itens.length > 0 
+                ? `<div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">💆‍♀️ Composição: ${p.itens.map(i => `${i.sessoes}x ${i.nome}`).join(' + ')}</div>` 
+                : (Array.isArray(p.servicosNomes) && p.servicosNomes.length > 1 ? `<div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">💆‍♀️ Inclui: ${p.servicosNomes.join(', ')}</div>` : '')}
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 0.8rem;">
                 <span style="color: #925D11; font-weight: 700;">Realizadas: ${p.sessoesFeitas} de ${p.totalSessoes}</span>
                 <span class="app-status-badge ${p.sessoesFeitas >= p.totalSessoes ? 'status-concluido' : 'status-agendado'}">
@@ -1220,13 +1222,19 @@ class StudioApp {
     let valorTotal = 580.00;
 
     let servicosNomes = [];
+    let itens = [];
 
     if (catalogo.length > 0) {
       const opcoes = catalogo.map((p, idx) => {
-        const procs = Array.isArray(p.servicosNomes) && p.servicosNomes.length > 0
-          ? p.servicosNomes.join(' + ')
-          : (p.servicoNome || '');
-        return `${idx + 1}: ${p.nome} (${p.qtdSessoes}x • ${procs} - ${this.formatCurrency(p.preco)})`;
+        let procs = '';
+        if (Array.isArray(p.itens) && p.itens.length > 0) {
+          procs = p.itens.map(i => `${i.sessoes}x ${i.nome}`).join(' + ');
+        } else if (Array.isArray(p.servicosNomes) && p.servicosNomes.length > 0) {
+          procs = p.servicosNomes.join(' + ');
+        } else {
+          procs = p.servicoNome || '';
+        }
+        return `${idx + 1}: ${p.nome} (${p.qtdSessoes} sessões: ${procs} - ${this.formatCurrency(p.preco)})`;
       }).join('\n');
 
       const escolha = prompt(`Escolha um plano do catálogo pelo número ou digite 0 para criar avulso:\n\n${opcoes}\n0: Criar plano avulso`);
@@ -1240,6 +1248,7 @@ class StudioApp {
         servicosNomes = Array.isArray(pSel.servicosNomes) && pSel.servicosNomes.length > 0
           ? pSel.servicosNomes
           : (pSel.servicoNome ? [pSel.servicoNome] : [pSel.nome]);
+        itens = Array.isArray(pSel.itens) ? pSel.itens : [];
       } else if (escolha === '0') {
         nomePacote = prompt('Nome do Pacote:', 'Pacote Drenagem 5 Sessões') || nomePacote;
         totalSessoes = parseInt(prompt('Quantidade total de sessões:', '5'), 10) || 5;
@@ -1260,6 +1269,7 @@ class StudioApp {
       id: 'pct_' + Date.now(),
       servicoNome: nomePacote,
       servicosNomes: servicosNomes,
+      itens: itens,
       totalSessoes: totalSessoes,
       sessoesFeitas: 0,
       valorTotal: valorTotal,
@@ -2081,29 +2091,47 @@ class StudioApp {
         container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum plano cadastrado no momento.</div>`;
       } else {
         container.innerHTML = catalogo.map(p => {
-          const procs = Array.isArray(p.servicosNomes) && p.servicosNomes.length > 0 
-            ? p.servicosNomes 
-            : (p.servicoNome ? p.servicoNome.split(' + ') : ['Procedimento']);
+          // Detalhamento de sessões por procedimento
+          let detalheItensHtml = '';
+          if (Array.isArray(p.itens) && p.itens.length > 0) {
+            detalheItensHtml = p.itens.map(i => `
+              <span style="font-size: 0.76rem; color: var(--text-main); background: #FAF7F2; border: 1.5px solid var(--border-color); padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+                💆‍♀️ <strong>${i.sessoes}x</strong> ${this.escapeHtml(i.nome)}
+              </span>
+            `).join('');
+          } else {
+            // Retrocompatibilidade inteligente para planos legados (ex: Plano Despertar)
+            const procs = Array.isArray(p.servicosNomes) && p.servicosNomes.length > 0 
+              ? p.servicosNomes 
+              : (p.servicoNome ? p.servicoNome.split(' + ') : ['Procedimento']);
+            
+            const sessoesPorProc = procs.length > 1 ? Math.max(1, Math.round((p.qtdSessoes || procs.length) / procs.length)) : (p.qtdSessoes || 1);
+            detalheItensHtml = procs.map(procName => `
+              <span style="font-size: 0.76rem; color: var(--text-main); background: #FAF7F2; border: 1.5px solid var(--border-color); padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+                💆‍♀️ <strong>${sessoesPorProc}x</strong> ${this.escapeHtml(procName.trim())}
+              </span>
+            `).join('');
+          }
 
           return `
             <div style="background: var(--bg-card-tint); border: 1px solid var(--border-color); border-left: 4px solid var(--primary); border-radius: var(--radius-md); padding: 14px; position: relative;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
                 <div style="flex: 1; min-width: 0;">
-                  <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">${p.nome}</div>
+                  <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">${this.escapeHtml(p.nome)}</div>
                   
-                  <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px;">
-                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                      ✨ ${p.qtdSessoes} Sessões
-                    </span>
-                    ${procs.map(procName => `
-                      <span style="font-size: 0.74rem; color: var(--text-main); background: #FAF7F2; border: 1px solid var(--border-color); padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                        💆‍♀️ ${procName.trim()}
+                  <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-size: 0.76rem; font-weight: 800; color: var(--primary); background: var(--primary-light); padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                        ✨ Total: ${p.qtdSessoes} Sessões
                       </span>
-                    `).join('')}
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                      ${detalheItensHtml}
+                    </div>
                   </div>
 
-                  ${p.frequenciaTexto ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">📅 ${p.frequenciaTexto}</div>` : ''}
-                  ${p.descricao ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;"><em>${p.descricao}</em></div>` : ''}
+                  ${p.frequenciaTexto ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">📅 ${this.escapeHtml(p.frequenciaTexto)}</div>` : ''}
+                  ${p.descricao ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;"><em>${this.escapeHtml(p.descricao)}</em></div>` : ''}
                 </div>
                 <div style="text-align: right; flex-shrink: 0;">
                   <div style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">${this.formatCurrency(p.preco)}</div>
@@ -2135,25 +2163,40 @@ class StudioApp {
     if (editIdInput) editIdInput.value = '';
 
     document.getElementById('form-new-package').reset();
-    document.getElementById('pkg-sessions').value = '3';
+    document.getElementById('pkg-sessions').value = '1';
 
     if (container) {
       if (services.length === 0) {
         container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 14px; font-size: 0.84rem;">Nenhum procedimento cadastrado. Adicione procedimentos primeiro na Tabela de Preços.</div>`;
       } else {
-        container.innerHTML = services.map(s => `
-          <label class="pkg-service-label" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; background: var(--bg-card); border: 1.5px solid var(--border-color); cursor: pointer; transition: all 0.15s ease; user-select: none;">
-            <input type="checkbox" name="pkg-service-item" value="${s.nome}" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;" onchange="app.onPkgServiceChange()">
-            <div style="flex: 1; min-width: 0;">
-              <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.3;">${s.nome}</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${s.categoria || 'Geral'} • ${this.formatCurrency(s.preco)}</div>
+        container.innerHTML = services.map((s, idx) => {
+          const safeId = 'pkg_proc_' + idx;
+          return `
+            <div class="pkg-proc-item-card" id="card-${safeId}" style="border: 1.5px solid var(--border-color); background: var(--bg-card); border-radius: 8px; padding: 10px; transition: all 0.2s ease;">
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; margin: 0;">
+                <input type="checkbox" name="pkg-service-item" id="cb-${safeId}" value="${this.escapeHtml(s.nome)}" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;" onchange="app.onPkgServiceToggle('${safeId}')">
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.3;">${this.escapeHtml(s.nome)}</div>
+                  <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 1px;">${s.categoria || 'Geral'} • ${this.formatCurrency(s.preco)} (avulso)</div>
+                </div>
+              </label>
+
+              <div id="qty-box-${safeId}" style="display: none; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(77,38,18,0.2);">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--primary);">Sessões deste procedimento:</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <button type="button" onclick="app.stepPkgServiceQty('${safeId}', -1)" style="width: 28px; height: 28px; border-radius: 6px; border: 1.5px solid var(--border-color); background: var(--bg-card); font-weight: bold; font-size: 1rem; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">−</button>
+                  <input type="number" id="qty-${safeId}" data-proc-name="${this.escapeHtml(s.nome)}" value="1" min="1" max="99" style="width: 48px; height: 28px; text-align: center; font-weight: 800; font-size: 0.95rem; border: 1.5px solid var(--primary); border-radius: 6px; padding: 2px; color: var(--primary); background: #FFF;" oninput="app.recalculatePkgTotalSessions()">
+                  <span style="font-size: 0.76rem; color: var(--text-muted);">sessão(ões)</span>
+                  <button type="button" onclick="app.stepPkgServiceQty('${safeId}', 1)" style="width: 28px; height: 28px; border-radius: 6px; border: 1.5px solid var(--border-color); background: var(--bg-card); font-weight: bold; font-size: 1rem; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
+                </div>
+              </div>
             </div>
-          </label>
-        `).join('');
+          `;
+        }).join('');
       }
     }
 
-    this.onPkgServiceChange();
+    this.recalculatePkgTotalSessions();
     this.openModal('modal-new-package');
   }
 
@@ -2173,67 +2216,163 @@ class StudioApp {
     if (editIdInput) editIdInput.value = pkg.id;
 
     document.getElementById('pkg-name').value = pkg.nome || '';
-    document.getElementById('pkg-sessions').value = pkg.qtdSessoes || 3;
     document.getElementById('pkg-price').value = pkg.preco !== undefined ? pkg.preco : '';
     document.getElementById('pkg-validity').value = pkg.frequenciaTexto || '';
     document.getElementById('pkg-desc').value = pkg.descricao || '';
 
-    // Procedimentos selecionados
-    const selectedProcs = Array.isArray(pkg.servicosNomes) && pkg.servicosNomes.length > 0
-      ? pkg.servicosNomes
-      : (pkg.servicoNome ? pkg.servicoNome.split(' + ').map(s => s.trim()) : []);
+    // Mapeamento de procedimentos e respectivas sessões
+    const sessionMap = {};
+    if (Array.isArray(pkg.itens) && pkg.itens.length > 0) {
+      pkg.itens.forEach(i => {
+        if (i && i.nome) sessionMap[i.nome.trim()] = i.sessoes || 1;
+      });
+    } else {
+      const procs = Array.isArray(pkg.servicosNomes) && pkg.servicosNomes.length > 0
+        ? pkg.servicosNomes
+        : (pkg.servicoNome ? pkg.servicoNome.split(' + ').map(s => s.trim()) : []);
+      
+      const sessoesPorProc = procs.length > 1 ? Math.max(1, Math.round((pkg.qtdSessoes || procs.length) / procs.length)) : (pkg.qtdSessoes || 1);
+      procs.forEach(pName => {
+        sessionMap[pName.trim()] = sessoesPorProc;
+      });
+    }
 
     if (container) {
       if (services.length === 0) {
         container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 14px; font-size: 0.84rem;">Nenhum procedimento cadastrado.</div>`;
       } else {
-        container.innerHTML = services.map(s => {
-          const isChecked = selectedProcs.includes(s.nome);
+        container.innerHTML = services.map((s, idx) => {
+          const safeId = 'pkg_proc_' + idx;
+          const sName = (s.nome || '').trim();
+          const isChecked = sName in sessionMap;
+          const qty = sessionMap[sName] || 1;
+
           return `
-            <label class="pkg-service-label" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; background: ${isChecked ? '#F8F1E9' : 'var(--bg-card)'}; border: 1.5px solid ${isChecked ? 'var(--primary)' : 'var(--border-color)'}; cursor: pointer; transition: all 0.15s ease; user-select: none;">
-              <input type="checkbox" name="pkg-service-item" value="${s.nome}" ${isChecked ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;" onchange="app.onPkgServiceChange()">
-              <div style="flex: 1; min-width: 0;">
-                <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.3;">${s.nome}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${s.categoria || 'Geral'} • ${this.formatCurrency(s.preco)}</div>
+            <div class="pkg-proc-item-card" id="card-${safeId}" style="border: 1.5px solid ${isChecked ? 'var(--primary)' : 'var(--border-color)'}; background: ${isChecked ? '#FAF4EE' : 'var(--bg-card)'}; border-radius: 8px; padding: 10px; transition: all 0.2s ease;">
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; margin: 0;">
+                <input type="checkbox" name="pkg-service-item" id="cb-${safeId}" value="${this.escapeHtml(s.nome)}" ${isChecked ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;" onchange="app.onPkgServiceToggle('${safeId}')">
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.3;">${this.escapeHtml(s.nome)}</div>
+                  <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 1px;">${s.categoria || 'Geral'} • ${this.formatCurrency(s.preco)} (avulso)</div>
+                </div>
+              </label>
+
+              <div id="qty-box-${safeId}" style="display: ${isChecked ? 'flex' : 'none'}; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(77,38,18,0.2);">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--primary);">Sessões deste procedimento:</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <button type="button" onclick="app.stepPkgServiceQty('${safeId}', -1)" style="width: 28px; height: 28px; border-radius: 6px; border: 1.5px solid var(--border-color); background: var(--bg-card); font-weight: bold; font-size: 1rem; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">−</button>
+                  <input type="number" id="qty-${safeId}" data-proc-name="${this.escapeHtml(s.nome)}" value="${qty}" min="1" max="99" style="width: 48px; height: 28px; text-align: center; font-weight: 800; font-size: 0.95rem; border: 1.5px solid var(--primary); border-radius: 6px; padding: 2px; color: var(--primary); background: #FFF;" oninput="app.recalculatePkgTotalSessions()">
+                  <span style="font-size: 0.76rem; color: var(--text-muted);">sessão(ões)</span>
+                  <button type="button" onclick="app.stepPkgServiceQty('${safeId}', 1)" style="width: 28px; height: 28px; border-radius: 6px; border: 1.5px solid var(--border-color); background: var(--bg-card); font-weight: bold; font-size: 1rem; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
+                </div>
               </div>
-            </label>
+            </div>
           `;
         }).join('');
       }
     }
 
-    this.onPkgServiceChange();
+    this.recalculatePkgTotalSessions();
     this.openModal('modal-new-package');
   }
 
-  onPkgServiceChange() {
-    const checked = document.querySelectorAll('input[name="pkg-service-item"]:checked');
-    const countBadge = document.getElementById('pkg-services-count');
-    if (countBadge) {
-      countBadge.textContent = `${checked.length} selecionado(s)`;
-      countBadge.style.background = checked.length > 0 ? 'rgba(190, 122, 71, 0.22)' : 'rgba(77, 38, 18, 0.08)';
-      countBadge.style.color = checked.length > 0 ? '#381A0B' : 'var(--primary)';
+  onPkgServiceToggle(safeId) {
+    const cb = document.getElementById(`cb-${safeId}`);
+    const card = document.getElementById(`card-${safeId}`);
+    const qtyBox = document.getElementById(`qty-box-${safeId}`);
+    const qtyInput = document.getElementById(`qty-${safeId}`);
+
+    if (cb && card && qtyBox) {
+      if (cb.checked) {
+        card.style.borderColor = 'var(--primary)';
+        card.style.background = '#FAF4EE';
+        qtyBox.style.display = 'flex';
+        if (qtyInput && (!qtyInput.value || parseInt(qtyInput.value, 10) < 1)) {
+          qtyInput.value = '1';
+        }
+      } else {
+        card.style.borderColor = 'var(--border-color)';
+        card.style.background = 'var(--bg-card)';
+        qtyBox.style.display = 'none';
+      }
     }
 
-    document.querySelectorAll('input[name="pkg-service-item"]').forEach(cb => {
-      const parentLabel = cb.closest('label');
-      if (parentLabel) {
-        if (cb.checked) {
-          parentLabel.style.borderColor = 'var(--primary)';
-          parentLabel.style.background = '#F8F1E9';
-        } else {
-          parentLabel.style.borderColor = 'var(--border-color)';
-          parentLabel.style.background = 'var(--bg-card)';
-        }
+    this.recalculatePkgTotalSessions();
+  }
+
+  stepPkgServiceQty(safeId, delta) {
+    const qtyInput = document.getElementById(`qty-${safeId}`);
+    const cb = document.getElementById(`cb-${safeId}`);
+    if (qtyInput) {
+      let current = parseInt(qtyInput.value, 10) || 1;
+      current = Math.max(1, Math.min(99, current + delta));
+      qtyInput.value = current;
+
+      if (cb && !cb.checked) {
+        cb.checked = true;
+        this.onPkgServiceToggle(safeId);
+        return;
       }
+
+      this.recalculatePkgTotalSessions();
+    }
+  }
+
+  recalculatePkgTotalSessions() {
+    const checked = document.querySelectorAll('input[name="pkg-service-item"]:checked');
+    let total = 0;
+
+    checked.forEach(cb => {
+      const safeId = cb.id.replace('cb-', '');
+      const qtyInput = document.getElementById(`qty-${safeId}`);
+      const qty = parseInt(qtyInput ? qtyInput.value : '1', 10) || 1;
+      total += qty;
     });
+
+    const totalInput = document.getElementById('pkg-sessions');
+    if (totalInput) {
+      totalInput.value = total > 0 ? total : 1;
+    }
+
+    const countBadge = document.getElementById('pkg-services-count');
+    if (countBadge) {
+      if (checked.length === 0) {
+        countBadge.textContent = '0 selecionado(s)';
+        countBadge.style.background = 'rgba(77, 38, 18, 0.08)';
+        countBadge.style.color = 'var(--primary)';
+      } else {
+        countBadge.textContent = `${checked.length} proc. (${total} sessões no total)`;
+        countBadge.style.background = 'rgba(190, 122, 71, 0.22)';
+        countBadge.style.color = '#381A0B';
+      }
+    }
   }
 
   toggleAllPkgServices(checkAll = true) {
-    document.querySelectorAll('input[name="pkg-service-item"]').forEach(cb => {
+    const checkboxes = document.querySelectorAll('input[name="pkg-service-item"]');
+    checkboxes.forEach(cb => {
       cb.checked = checkAll;
+      const safeId = cb.id.replace('cb-', '');
+      const card = document.getElementById(`card-${safeId}`);
+      const qtyBox = document.getElementById(`qty-box-${safeId}`);
+      const qtyInput = document.getElementById(`qty-${safeId}`);
+      if (card && qtyBox) {
+        if (checkAll) {
+          card.style.borderColor = 'var(--primary)';
+          card.style.background = '#FAF4EE';
+          qtyBox.style.display = 'flex';
+          if (qtyInput && (!qtyInput.value || parseInt(qtyInput.value, 10) < 1)) {
+            qtyInput.value = '1';
+          }
+        } else {
+          card.style.borderColor = 'var(--border-color)';
+          card.style.background = 'var(--bg-card)';
+          qtyBox.style.display = 'none';
+        }
+      }
     });
-    this.onPkgServiceChange();
+
+    this.recalculatePkgTotalSessions();
   }
 
   async savePackageCatalog(e) {
@@ -2242,23 +2381,34 @@ class StudioApp {
       const editId = (document.getElementById('pkg-edit-id')?.value || '').trim();
       const nome = (document.getElementById('pkg-name').value || '').trim();
       const checkboxes = document.querySelectorAll('input[name="pkg-service-item"]:checked');
-      const servicosNomes = Array.from(checkboxes).map(cb => cb.value.trim()).filter(Boolean);
-      const qtdSessoes = parseInt(document.getElementById('pkg-sessions').value, 10) || 3;
-      const preco = parseFloat(document.getElementById('pkg-price').value) || 0;
-      const validade = document.getElementById('pkg-validity').value || '';
-      const desc = document.getElementById('pkg-desc').value || '';
 
       if (!nome) {
         alert('Por favor, informe o nome do plano/pacote.');
         return;
       }
 
-      if (servicosNomes.length === 0) {
+      if (checkboxes.length === 0) {
         alert('Por favor, selecione pelo menos um procedimento incluído no plano.');
         return;
       }
 
-      const servicoNome = servicosNomes.join(' + ');
+      const itens = [];
+      checkboxes.forEach(cb => {
+        const safeId = cb.id.replace('cb-', '');
+        const qtyInput = document.getElementById(`qty-${safeId}`);
+        const sessoes = parseInt(qtyInput ? qtyInput.value : '1', 10) || 1;
+        itens.push({
+          nome: cb.value.trim(),
+          sessoes: sessoes
+        });
+      });
+
+      const qtdSessoes = itens.reduce((sum, item) => sum + item.sessoes, 0);
+      const servicosNomes = itens.map(i => i.nome);
+      const servicoNome = itens.map(i => `${i.sessoes}x ${i.nome}`).join(' + ');
+      const preco = parseFloat(document.getElementById('pkg-price').value) || 0;
+      const validade = document.getElementById('pkg-validity').value || '';
+      const desc = document.getElementById('pkg-desc').value || '';
 
       if (editId) {
         const existing = await db.get('catalogo_pacotes', editId) || {};
@@ -2268,6 +2418,7 @@ class StudioApp {
           nome,
           servicoNome,
           servicosNomes,
+          itens,
           qtdSessoes,
           frequenciaTexto: validade,
           preco,
@@ -2281,6 +2432,7 @@ class StudioApp {
           nome,
           servicoNome,
           servicosNomes,
+          itens,
           qtdSessoes,
           frequenciaTexto: validade,
           preco,
