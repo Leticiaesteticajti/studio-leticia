@@ -101,54 +101,170 @@
       margin: 0;
     }
 
-    /* Lista de Serviços */
-    .services-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .service-option {
-      border: 1.5px solid var(--border-light, #F2EAE1);
-      border-radius: 12px;
-      padding: 14px;
+    /* SELETOR EM CASCATA & LISTA DE PROCEDIMENTOS */
+    .service-select-trigger {
+      background: var(--bg-card, #FFFFFF);
+      border: 1.5px solid var(--border-color, #E8DFD5);
+      border-radius: var(--radius-md, 12px);
+      padding: 14px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
+      box-shadow: 0 2px 8px rgba(77, 38, 18, 0.05);
+      transition: all 0.25s ease;
+      user-select: none;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .service-select-trigger:hover {
+      border-color: var(--accent-gold, #BE7A47);
+      background: var(--bg-card-tint, #FDFBF9);
+    }
+    .service-select-trigger.open {
+      border-color: var(--accent-gold, #BE7A47);
+      box-shadow: 0 0 0 3px rgba(190, 122, 71, 0.16);
+      background: #FFFFFF;
+    }
+
+    .services-grid,
+    .services-dropdown-list {
+      display: flex !important;
+      flex-direction: column !important; /* FORÇA EXIBIÇÃO EM LINHAS EMPILHADAS (CASCATA) */
+      gap: 10px;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      background: #FFFFFF;
+      border: 1.5px solid var(--border-color, #E8DFD5);
+      border-radius: var(--radius-md, 14px);
+      padding: 10px;
+      box-shadow: 0 8px 24px rgba(77, 38, 18, 0.08);
+      max-height: 480px;
+      overflow-y: auto;
+      animation: cascadeSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes cascadeSlideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .service-option {
+      width: 100% !important;
+      box-sizing: border-box !important;
+      border: 1.5px solid var(--border-light, #F2EAE1);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
       transition: all 0.2s ease;
       background: var(--bg-card-tint, #FDFBF9);
+      user-select: none;
     }
 
     .service-option:hover {
       border-color: var(--accent-gold, #BE7A47);
       background: #FFFFFF;
+      transform: translateX(2px);
+      box-shadow: 0 3px 10px rgba(190, 122, 71, 0.12);
     }
 
     .service-option.selected {
-      border-color: var(--primary, #4D2612);
-      background: var(--accent-gold-light, #FAF2EA);
-      box-shadow: 0 2px 8px rgba(190, 122, 71, 0.2);
+      border-color: var(--accent-gold, #BE7A47);
+      background: linear-gradient(135deg, #FFF9F4 0%, #F7EFE8 100%);
+      box-shadow: 0 3px 12px rgba(190, 122, 71, 0.18);
+    }
+
+    .service-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .service-radio {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #D8C8BA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+      background: #FFFFFF;
+    }
+
+    .service-option:hover .service-radio {
+      border-color: var(--accent-gold, #BE7A47);
+    }
+
+    .service-radio.active,
+    .service-option.selected .service-radio {
+      border-color: var(--accent-gold, #BE7A47);
+      background: var(--accent-gold, #BE7A47);
+    }
+    .service-radio.active::after,
+    .service-option.selected .service-radio::after {
+      content: '✓';
+      color: #FFFFFF;
+      font-size: 0.72rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .service-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .service-name-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
     .service-name {
-      font-weight: 600;
+      font-weight: 700;
       font-size: 0.95rem;
       color: var(--text-main, #26160D);
-      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .service-badge {
+      background: rgba(190, 122, 71, 0.12);
+      color: var(--accent-gold, #BE7A47);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      white-space: nowrap;
     }
 
     .service-desc {
       font-size: 0.78rem;
       color: var(--text-muted, #6B5244);
+      margin-top: 3px;
+      line-height: 1.35;
+    }
+
+    .service-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
     }
 
     .service-price {
-      font-size: 1.05rem;
-      font-weight: 700;
+      font-size: 1.1rem;
+      font-weight: 800;
       color: var(--primary, #4D2612);
       white-space: nowrap;
-      margin-left: 10px;
     }
 
     /* Horários */
@@ -343,7 +459,14 @@
           <div class="step-number">1</div>
           <h2 class="step-title">Escolha o Procedimento</h2>
         </div>
-        <div id="services-list-container" class="services-grid">
+        <div id="service-select-trigger" class="service-select-trigger" onclick="clientBooking.toggleServicesList()">
+          <div id="service-selected-display" style="flex: 1;">
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary);">💆‍♀️ Toque para escolher o procedimento...</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Veja os procedimentos e valores cadastrados</div>
+          </div>
+          <div id="service-chevron" style="font-size: 1.1rem; color: var(--accent-gold); transition: transform 0.25s ease; margin-left: 10px;">▼</div>
+        </div>
+        <div id="services-list-container" class="services-dropdown-list" style="display: none; margin-top: 12px;">
           <!-- Injetado dinamicamente -->
           <div style="text-align: center; color: var(--text-muted); padding: 15px;">Carregando procedimentos...</div>
         </div>
@@ -507,29 +630,97 @@
         // Busca serviços configurados via Supabase ou serviços padrão
         const services = await StudioCloud.getPublicServices();
 
-        container.innerHTML = services.map(s => `
-          <div class="service-option" onclick="clientBooking.selectService('${s.id}', '${s.nome}', ${s.preco}, ${s.duracaoMin || 60}, this)">
-            <div>
-              <div class="service-name">${s.nome}</div>
-              <div class="service-desc">⏱️ ${s.duracaoMin || 60} min • ${s.descricao || 'Atendimento personalizado'}</div>
+        container.innerHTML = services.map(s => {
+          const isSelected = this.selectedService && this.selectedService.id === s.id;
+          return `
+            <div class="service-option ${isSelected ? 'selected' : ''}" onclick="clientBooking.selectService('${s.id}', '${s.nome}', ${s.preco}, ${s.duracaoMin || 60}, this)" data-service-id="${s.id}">
+              <div class="service-left">
+                <span class="service-radio ${isSelected ? 'active' : ''}"></span>
+                <div class="service-info">
+                  <div class="service-name-row">
+                    <span class="service-name">${s.nome}</span>
+                    <span class="service-badge">⏱️ ${s.duracaoMin || 60} min</span>
+                  </div>
+                  <div class="service-desc">${s.descricao || 'Atendimento personalizado Letícia Gomes'}</div>
+                </div>
+              </div>
+              <div class="service-right">
+                <div class="service-price">R$ ${Number(s.preco).toFixed(2).replace('.', ',')}</div>
+              </div>
             </div>
-            <div class="service-price">R$ ${Number(s.preco).toFixed(2).replace('.', ',')}</div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
 
         // Pré-seleciona o primeiro
         if (services.length > 0) {
           const first = container.querySelector('.service-option');
-          if (first) first.click();
+          if (first) {
+            const s = services[0];
+            this.selectService(s.id, s.nome, s.preco, s.duracaoMin || 60, first, false);
+          }
         }
 
         this.renderTimeSlots();
       }
 
-      selectService(id, nome, preco, duracaoMin, el) {
+      toggleServicesList() {
+        const list = document.getElementById('services-list-container');
+        const chevron = document.getElementById('service-chevron');
+        const trigger = document.getElementById('service-select-trigger');
+        if (!list) return;
+        const isHidden = list.style.display === 'none' || !list.style.display;
+        list.style.display = isHidden ? 'flex' : 'none';
+        if (chevron) {
+          chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+        if (trigger) {
+          if (isHidden) trigger.classList.add('open');
+          else trigger.classList.remove('open');
+        }
+      }
+
+      selectService(id, nome, preco, duracaoMin, el, autoClose = true) {
         this.selectedService = { id, nome, preco, duracaoMin };
-        document.querySelectorAll('.service-option').forEach(opt => opt.classList.remove('selected'));
-        if (el) el.classList.add('selected');
+        document.querySelectorAll('.service-option').forEach(opt => {
+          opt.classList.remove('selected');
+          const radio = opt.querySelector('.service-radio');
+          if (radio) radio.classList.remove('active');
+        });
+        if (el) {
+          el.classList.add('selected');
+          const radio = el.querySelector('.service-radio');
+          if (radio) radio.classList.add('active');
+        }
+
+        // Atualiza trigger display
+        const display = document.getElementById('service-selected-display');
+        if (display) {
+          display.innerHTML = `
+            <div style="display: flex; flex-direction: column;">
+              <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">
+                ✨ ${nome}
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="background: rgba(190, 122, 71, 0.12); color: var(--accent-gold); padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">⏱️ ${duracaoMin || 60} min</span>
+                <span style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">R$ ${Number(preco).toFixed(2).replace('.', ',')}</span>
+                <span style="color: var(--text-muted); font-size: 0.76rem;">• Toque para alterar</span>
+              </div>
+            </div>
+          `;
+        }
+
+        if (autoClose) {
+          setTimeout(() => {
+            const list = document.getElementById('services-list-container');
+            const chevron = document.getElementById('service-chevron');
+            const trigger = document.getElementById('service-select-trigger');
+            if (list) list.style.display = 'none';
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
+            if (trigger) trigger.classList.remove('open');
+          }, 160);
+        }
+
+        this.renderTimeSlots();
       }
 
       async renderTimeSlots() {

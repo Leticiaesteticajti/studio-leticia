@@ -2731,15 +2731,38 @@ class StudioApp {
     if (!container) return;
 
     let services = [];
+
+    // 1. Tenta carregar procedimentos cadastrados pela Letícia no banco local (IndexedDB)
     try {
-      const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
-      if (cloud && cloud.getPublicServices) {
-        services = await cloud.getPublicServices();
+      if (typeof db !== 'undefined' && db.getAll) {
+        const local = await db.getAll('servicos');
+        if (local && local.length > 0) {
+          services = local.filter(s => !s.isPacote).map(s => ({
+            id: s.id,
+            nome: s.nome,
+            duracaoMin: s.duracaoMin || 60,
+            preco: s.preco || 0,
+            descricao: s.descricao || s.categoria || 'Procedimento realizado por Letícia Gomes'
+          }));
+        }
       }
     } catch (e) {
-      console.warn('Erro ao obter serviços:', e);
+      console.warn('Erro ao carregar serviços locais:', e);
     }
 
+    // 2. Se não houver serviços locais, busca da Nuvem (Supabase)
+    if (!services || services.length === 0) {
+      try {
+        const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
+        if (cloud && cloud.getPublicServices) {
+          services = await cloud.getPublicServices();
+        }
+      } catch (e) {
+        console.warn('Erro ao obter serviços da nuvem:', e);
+      }
+    }
+
+    // 3. Fallback de segurança com os serviços oficiais
     if (!services || services.length === 0) {
       services = [
         {
@@ -2754,40 +2777,68 @@ class StudioApp {
           nome: 'Drenagem Linfática Facial',
           duracaoMin: 40,
           preco: 90.00,
-          descricao: 'Diminuição de bolsas nos olhos, linhas de expressão e efeito lifting.'
+          descricao: 'Revitalização facial, redução de olheiras e bolsas, efeito lifting.'
         },
         {
           id: 'srv_3',
           nome: 'Drenagem Linfática Pós-Operatório',
           duracaoMin: 60,
           preco: 160.00,
-          descricao: 'Recuperação cirúrgica com toques suaves para alívio de dor e fibroses.'
+          descricao: 'Atendimento especializado para pós-cirúrgico com toque suave e prevenção de fibroses.'
         },
         {
           id: 'srv_4',
-          nome: 'Massagem Relaxante com Óleos',
+          nome: 'Massagem Modeladora Redutora',
           duracaoMin: 60,
+          preco: 140.00,
+          descricao: 'Manobras vigorosas focadas em contorno corporal e celulite.'
+        },
+        {
+          id: 'srv_5',
+          nome: 'Massagem Relaxante com Aromaterapia',
+          duracaoMin: 50,
           preco: 120.00,
-          descricao: 'Alívio profundo de tensões musculares, estresse e renovação de energias.'
+          descricao: 'Alívio de tensões musculares, estresse e relaxamento profundo.'
+        },
+        {
+          id: 'srv_6',
+          nome: 'Limpeza de Pele Profunda',
+          duracaoMin: 75,
+          preco: 150.00,
+          descricao: 'Extração de cravos, esfoliação e hidratação com máscara calmante.'
         }
       ];
     }
 
     this.clientPublicServices = services;
 
-    container.innerHTML = services.map(s => `
-      <div class="service-option" onclick="app.selectClientBookingService('${s.id}', this)">
-        <div>
-          <div class="service-name">${this.escapeHtml(s.nome)}</div>
-          <div class="service-desc">⏱️ ${s.duracaoMin || 60} min • ${this.escapeHtml(s.descricao || 'Atendimento personalizado')}</div>
+    // Renderiza em linhas verticais (layout em cascata)
+    container.innerHTML = services.map(s => {
+      const isSelected = this.selectedBookingService && this.selectedBookingService.id === s.id;
+      return `
+        <div class="service-option ${isSelected ? 'selected' : ''}" onclick="app.selectClientBookingService('${s.id}', this)" data-service-id="${s.id}">
+          <div class="service-left">
+            <span class="service-radio ${isSelected ? 'active' : ''}"></span>
+            <div class="service-info">
+              <div class="service-name-row">
+                <span class="service-name">${this.escapeHtml(s.nome)}</span>
+                <span class="service-badge">⏱️ ${s.duracaoMin || 60} min</span>
+              </div>
+              <div class="service-desc">${this.escapeHtml(s.descricao || 'Atendimento personalizado Letícia Gomes')}</div>
+            </div>
+          </div>
+          <div class="service-right">
+            <div class="service-price">${this.formatCurrency(s.preco)}</div>
+          </div>
         </div>
-        <div class="service-price">R$ ${Number(s.preco).toFixed(2).replace('.', ',')}</div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
+    // Pré-seleciona o primeiro se nenhum selecionado
     if (services.length > 0) {
-      const first = container.querySelector('.service-option');
-      if (first) first.click();
+      const targetId = this.selectedBookingService ? this.selectedBookingService.id : services[0].id;
+      const targetEl = container.querySelector(`[data-service-id="${targetId}"]`) || container.querySelector('.service-option');
+      this.selectClientBookingService(targetId, targetEl, false);
     }
 
     this.renderClientBookingSlots();
@@ -2796,41 +2847,66 @@ class StudioApp {
   toggleClientServicesList() {
     const list = document.getElementById('services-list-container');
     const chevron = document.getElementById('service-chevron');
+    const trigger = document.getElementById('service-select-trigger');
     if (!list) return;
     const isHidden = list.style.display === 'none' || !list.style.display;
     list.style.display = isHidden ? 'flex' : 'none';
     if (chevron) {
       chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
     }
+    if (trigger) {
+      if (isHidden) trigger.classList.add('open');
+      else trigger.classList.remove('open');
+    }
   }
 
-  selectClientBookingService(id, el) {
+  selectClientBookingService(id, el, autoClose = true) {
     const service = (this.clientPublicServices || []).find(s => s.id === id);
     if (!service) return;
     this.selectedBookingService = service;
-    document.querySelectorAll('.service-option').forEach(opt => opt.classList.remove('selected'));
-    if (el) el.classList.add('selected');
 
-    // Atualiza o display do botão seletor
+    // Atualiza classes selected nos itens
+    document.querySelectorAll('.service-option').forEach(opt => {
+      opt.classList.remove('selected');
+      const radio = opt.querySelector('.service-radio');
+      if (radio) radio.classList.remove('active');
+    });
+    if (el) {
+      el.classList.add('selected');
+      const radio = el.querySelector('.service-radio');
+      if (radio) radio.classList.add('active');
+    }
+
+    // Atualiza o display do botão seletor (topo da cascata)
     const display = document.getElementById('service-selected-display');
     if (display) {
       display.innerHTML = `
         <div style="display: flex; flex-direction: column;">
-          <div style="font-size: 1rem; font-weight: 800; color: var(--primary);">
+          <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">
             ✨ ${this.escapeHtml(service.nome)}
           </div>
-          <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
-            ⏱️ ${service.duracaoMin || 60} min • ${this.formatCurrency(service.preco)}
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="background: rgba(190, 122, 71, 0.12); color: var(--accent-gold); padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">⏱️ ${service.duracaoMin || 60} min</span>
+            <span style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">${this.formatCurrency(service.preco)}</span>
+            <span style="color: var(--text-muted); font-size: 0.76rem;">• Toque para alterar</span>
           </div>
         </div>
       `;
     }
 
-    // Fecha a lista suspensa
-    const list = document.getElementById('services-list-container');
-    const chevron = document.getElementById('service-chevron');
-    if (list) list.style.display = 'none';
-    if (chevron) chevron.style.transform = 'rotate(0deg)';
+    if (autoClose) {
+      setTimeout(() => {
+        const list = document.getElementById('services-list-container');
+        const chevron = document.getElementById('service-chevron');
+        const trigger = document.getElementById('service-select-trigger');
+        if (list) list.style.display = 'none';
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+        if (trigger) trigger.classList.remove('open');
+      }, 160);
+    }
+
+    // Recalcula horários com base no serviço selecionado
+    this.renderClientBookingSlots();
   }
 
   async syncServicesToCloud() {
