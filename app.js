@@ -2823,10 +2823,8 @@ class StudioApp {
 
     this.clientPublicServices = services;
 
-    // Inicializa seleção padrão com o primeiro procedimento se vazio
-    if ((!this.selectedBookingServices || this.selectedBookingServices.length === 0) && services.length > 0) {
-      this.selectedBookingServices = [services[0]];
-      this.selectedBookingService = services[0];
+    if (!Array.isArray(this.selectedBookingServices)) {
+      this.selectedBookingServices = [];
     }
 
     // Renderiza o cabeçalho informativo + lista vertical com checkboxes + rodapé de conclusão

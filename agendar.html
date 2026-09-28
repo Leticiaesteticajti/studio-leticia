@@ -699,10 +699,8 @@
         const services = (rawServices || []).filter(s => !s.isPacote);
         this.publicServices = services;
 
-        // Inicializa com o primeiro serviço selecionado se nenhum escolhido
-        if ((!this.selectedServices || this.selectedServices.length === 0) && services.length > 0) {
-          this.selectedServices = [services[0]];
-          this.selectedService = services[0];
+        if (!Array.isArray(this.selectedServices)) {
+          this.selectedServices = [];
         }
 
         container.innerHTML = `
