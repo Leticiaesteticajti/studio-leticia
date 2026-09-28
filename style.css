@@ -1753,10 +1753,17 @@ body {
   background: #FFFFFF;
 }
 
-.services-grid,
-.services-dropdown-list {
+.services-grid {
   display: flex !important;
-  flex-direction: column !important; /* FORÇA EXIBIÇÃO EM LINHAS EMPILHADAS (CASCATA) */
+  flex-direction: column !important;
+  gap: 10px;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.services-dropdown-list {
+  display: none;
+  flex-direction: column;
   gap: 10px;
   width: 100% !important;
   box-sizing: border-box !important;
@@ -1768,6 +1775,10 @@ body {
   max-height: 480px;
   overflow-y: auto;
   animation: cascadeSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.services-dropdown-list.open {
+  display: flex !important;
 }
 
 @keyframes cascadeSlideDown {

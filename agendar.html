@@ -127,10 +127,17 @@
       background: #FFFFFF;
     }
 
-    .services-grid,
-    .services-dropdown-list {
+    .services-grid {
       display: flex !important;
-      flex-direction: column !important; /* FORÇA EXIBIÇÃO EM LINHAS EMPILHADAS (CASCATA) */
+      flex-direction: column !important;
+      gap: 10px;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    .services-dropdown-list {
+      display: none;
+      flex-direction: column;
       gap: 10px;
       width: 100% !important;
       box-sizing: border-box !important;
@@ -142,6 +149,10 @@
       max-height: 480px;
       overflow-y: auto;
       animation: cascadeSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .services-dropdown-list.open {
+      display: flex !important;
     }
 
     @keyframes cascadeSlideDown {
@@ -835,6 +846,8 @@
           if (isHidden) trigger.classList.add('open');
           else trigger.classList.remove('open');
         }
+        if (isHidden) list.classList.add('open');
+        else list.classList.remove('open');
       }
 
       openServicesList() {
@@ -843,6 +856,7 @@
         const trigger = document.getElementById('service-select-trigger');
         if (!list) return;
         list.style.display = 'flex';
+        list.classList.add('open');
         if (chevron) chevron.style.transform = 'rotate(180deg)';
         if (trigger) trigger.classList.add('open');
       }
@@ -852,7 +866,10 @@
         const list = document.getElementById('services-list-container');
         const chevron = document.getElementById('service-chevron');
         const trigger = document.getElementById('service-select-trigger');
-        if (list) list.style.display = 'none';
+        if (list) {
+          list.style.display = 'none';
+          list.classList.remove('open');
+        }
         if (chevron) chevron.style.transform = 'rotate(0deg)';
         if (trigger) trigger.classList.remove('open');
       }

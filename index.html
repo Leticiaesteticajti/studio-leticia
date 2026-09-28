@@ -15,8 +15,8 @@
   <title>Studio Letícia - Gestão & Estética</title>
   
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=29">
-  <link rel="stylesheet" href="style.css?v=29">
+  <link rel="stylesheet" href="css/style.css?v=30">
+  <link rel="stylesheet" href="style.css?v=30">
   <style id="studio-core-styles">
 /* ==========================================================================
    STUDIO LETÍCIA - ESTILO VISUAL REFINADO & PREMIUM (iOS / Mobile First)
@@ -1879,10 +1879,17 @@ body {
     }
 
     /* SELETOR EM CASCATA & LISTA DE PROCEDIMENTOS */
-    .services-grid,
-    .services-dropdown-list {
+    .services-grid {
       display: flex !important;
-      flex-direction: column !important; /* FORÇA EXIBIÇÃO EM LINHAS EMPILHADAS (CASCATA) */
+      flex-direction: column !important;
+      gap: 10px;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    .services-dropdown-list {
+      display: none;
+      flex-direction: column;
       gap: 10px;
       width: 100% !important;
       box-sizing: border-box !important;
@@ -1894,6 +1901,10 @@ body {
       max-height: 480px;
       overflow-y: auto;
       animation: cascadeSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .services-dropdown-list.open {
+      display: flex !important;
     }
 
     @keyframes cascadeSlideDown {
@@ -3715,7 +3726,7 @@ body {
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/app.js?v=29"></script>
+  <script src="js/app.js?v=30"></script>
   <script>
     // Registro do Service Worker para suporte Offline
     if ('serviceWorker' in navigator) {

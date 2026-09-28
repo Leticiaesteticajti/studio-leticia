@@ -2960,6 +2960,8 @@ class StudioApp {
       if (isHidden) trigger.classList.add('open');
       else trigger.classList.remove('open');
     }
+    if (isHidden) list.classList.add('open');
+    else list.classList.remove('open');
   }
 
   openClientServicesList() {
@@ -2968,6 +2970,7 @@ class StudioApp {
     const trigger = document.getElementById('service-select-trigger');
     if (!list) return;
     list.style.display = 'flex';
+    list.classList.add('open');
     if (chevron) chevron.style.transform = 'rotate(180deg)';
     if (trigger) trigger.classList.add('open');
   }
@@ -2977,7 +2980,10 @@ class StudioApp {
     const list = document.getElementById('services-list-container');
     const chevron = document.getElementById('service-chevron');
     const trigger = document.getElementById('service-select-trigger');
-    if (list) list.style.display = 'none';
+    if (list) {
+      list.style.display = 'none';
+      list.classList.remove('open');
+    }
     if (chevron) chevron.style.transform = 'rotate(0deg)';
     if (trigger) trigger.classList.remove('open');
   }
