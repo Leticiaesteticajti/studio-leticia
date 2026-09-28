@@ -318,6 +318,22 @@
       <p class="booking-subtitle">ESTÉTICA &amp; BEM-ESTAR • AGENDE SEU HORÁRIO</p>
     </header>
 
+    <!-- CARD DE ENDEREÇO & LOCALIZAÇÃO GOOGLE MAPS -->
+    <div class="booking-address-card" style="background: var(--bg-card); border: 1.5px solid var(--accent-gold); border-radius: 14px; padding: 12px 14px; margin-bottom: 18px; box-shadow: 0 4px 14px rgba(190, 122, 71, 0.1); display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+        <span style="font-size: 1.6rem; line-height: 1; flex-shrink: 0; color: #BE7A47;">📍</span>
+        <div style="min-width: 0;">
+          <div style="font-weight: 800; font-size: 0.88rem; color: var(--primary);">Studio Letícia • Endereço</div>
+          <div style="font-size: 0.8rem; color: var(--text-main); margin-top: 2px;">
+            Rua 26, nº 135 • Colmeia Park
+          </div>
+        </div>
+      </div>
+      <a href="https://maps.google.com/?q=-17.858556,-51.716417" target="_blank" rel="noopener noreferrer" class="btn-complete" style="padding: 8px 14px; font-size: 0.78rem; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; background: linear-gradient(135deg, #BE7A47, #9E5D2F); color: #fff; border-radius: 20px; font-weight: 700; box-shadow: 0 2px 8px rgba(158, 93, 47, 0.25);">
+        <span>🗺️</span> Ver no Maps
+      </a>
+    </div>
+
     <!-- TELA 1: FORMULÁRIO DE AGENDAMENTO (Exibido por padrão se não houver ?id=) -->
     <div id="section-booking-form">
       
@@ -664,6 +680,17 @@
           <div class="details-row">
             <span class="details-label">Valor:</span>
             <span class="details-value">R$ ${Number(data.servico_preco || 0).toFixed(2).replace('.', ',')}</span>
+          </div>
+          <div class="details-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--primary); font-size: 0.86rem;">
+              <span>📍</span> Endereço do Studio:
+            </div>
+            <div style="font-size: 0.82rem; color: var(--text-main);">
+              Rua 26, número 135 • Colmeia Park
+            </div>
+            <a href="https://maps.google.com/?q=-17.858556,-51.716417" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(190, 122, 71, 0.12); color: var(--primary); border: 1px solid var(--accent-gold); padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; text-decoration: none; margin-top: 4px;">
+              <span>🗺️</span> Abrir no Google Maps
+            </a>
           </div>
         `;
 

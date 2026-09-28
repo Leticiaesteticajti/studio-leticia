@@ -1598,7 +1598,7 @@ class StudioApp {
       const pastCount = matchedClient ? allAgendamentos.filter(a => a.clienteId === matchedClient.id && a.status === 'concluido').length : 0;
 
       // Mensagem direta de WhatsApp
-      const msgWpp = encodeURIComponent(`Olá, ${req.cliente_nome}! Aqui é a Letícia do Studio Letícia sobre sua solicitação de agendamento para ${dataFormatada} às ${req.horario} (${req.servico_nome}).`);
+      const msgWpp = encodeURIComponent(`Olá, ${req.cliente_nome}! Aqui é a Letícia do Studio Letícia sobre sua solicitação de agendamento para ${dataFormatada} às ${req.horario} (${req.servico_nome}).\n\n📍 Nosso Endereço: Rua 26, nº 135 - Colmeia Park\n🗺️ Localização no Google Maps: https://maps.google.com/?q=-17.858556,-51.716417`);
       const linkWpp = `https://wa.me/55${cleanWpp}?text=${msgWpp}`;
 
       // Observação limpa (sem tag [CPF:...])
@@ -3183,6 +3183,17 @@ class StudioApp {
           <span class="details-label">Valor:</span>
           <span class="details-value">R$ ${Number(data.servico_preco || 0).toFixed(2).replace('.', ',')}</span>
         </div>
+        <div class="details-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--primary); font-size: 0.86rem;">
+            <span>📍</span> Endereço do Studio:
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-main);">
+            Rua 26, número 135 • Colmeia Park
+          </div>
+          <a href="https://maps.google.com/?q=-17.858556,-51.716417" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(190, 122, 71, 0.12); color: var(--primary); border: 1px solid var(--accent-gold); padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; text-decoration: none; margin-top: 4px;">
+            <span>🗺️</span> Abrir no Google Maps
+          </a>
+        </div>
       `;
     }
 
@@ -3199,7 +3210,7 @@ class StudioApp {
       if (icon) icon.textContent = '🎉';
       if (badge) badge.textContent = 'CONFIRMADO COM SUCESSO';
       if (headline) headline.textContent = 'Seu Horário está Garantido! ✨';
-      if (desc) desc.textContent = 'A Letícia confirmou seu agendamento no Studio. Estamos te esperando com muito carinho!';
+      if (desc) desc.textContent = 'A Letícia confirmou seu agendamento no Studio. Estamos te esperando com muito carinho na Rua 26, nº 135 - Colmeia Park!';
     } else if (data.status === 'recusado') {
       if (icon) icon.textContent = '❌';
       if (badge) badge.textContent = 'HORÁRIO INDISPONÍVEL';
