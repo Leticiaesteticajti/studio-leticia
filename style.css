@@ -215,9 +215,10 @@ body {
    ========================================================================== */
 .main-content {
   flex: 1;
-  padding: 16px 18px calc(var(--safe-bottom) + 80px) 18px;
+  padding: 14px 16px calc(var(--safe-bottom) + 120px) 16px;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tab-panel {
@@ -299,12 +300,12 @@ body {
 }
 
 .home-hero-badge-img {
-  width: 195px;
-  max-width: 80%;
+  width: clamp(120px, 30vw, 155px);
+  max-width: 65%;
   height: auto;
-  border-radius: 20px;
-  border: 2px solid rgba(242, 206, 159, 0.55);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+  border-radius: 18px;
+  border: 1.5px solid rgba(242, 206, 159, 0.55);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
   transition: transform 0.3s ease;
   display: block;
 }
@@ -314,11 +315,11 @@ body {
 }
 
 .home-hero-greeting-box {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .home-greeting {
-  font-size: 1.25rem;
+  font-size: clamp(1.1rem, 3.8vw, 1.25rem);
   font-weight: 800;
   color: #FFFFFF;
   letter-spacing: 0.3px;
@@ -326,10 +327,10 @@ body {
 }
 
 .home-date {
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   color: #E2CEC0;
   font-weight: 500;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .home-stats-strip {
@@ -340,7 +341,7 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(242, 206, 159, 0.30);
   border-radius: var(--radius-md);
-  padding: 10px 16px;
+  padding: 8px 14px;
 }
 
 .home-stat-pill {
@@ -348,10 +349,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 0;
 }
 
 .home-stat-num {
-  font-size: 1.3rem;
+  font-size: clamp(1.15rem, 4vw, 1.3rem);
   font-weight: 800;
   color: #FFFFFF;
   line-height: 1.1;
@@ -362,55 +364,78 @@ body {
 }
 
 .home-stat-desc {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   font-weight: 700;
   color: #D6C2B4;
-  margin-top: 3px;
+  margin-top: 2px;
+  white-space: nowrap;
 }
 
 .home-stat-divider {
   width: 1px;
-  height: 28px;
+  height: 24px;
   background: rgba(242, 206, 159, 0.25);
+  flex-shrink: 0;
 }
 
 /* Título de Seção da Home */
 .home-section-title {
   font-size: 0.82rem;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
   color: var(--text-muted);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
-/* Grade de Blocos de Opções */
+.home-section-title > span:first-child {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.home-section-title > span:last-child {
+  font-size: 0.72rem;
+  font-weight: normal;
+  color: var(--text-light);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Grade de Blocos de Opções - AJUSTE INTELIGENTE RESPONSIVO */
 .home-blocks-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 11px;
+  grid-template-columns: 1fr;
+  gap: 10px;
   margin-bottom: 24px;
+}
+
+@media (min-width: 540px) {
+  .home-blocks-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
 }
 
 .home-block-item {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 18px;
-  padding: 14px 13px;
+  border-radius: 16px;
+  padding: 13px 14px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   position: relative;
   user-select: none;
   -webkit-user-select: none;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .home-block-item:hover {
@@ -420,12 +445,12 @@ body {
 }
 
 .home-block-item:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
   background: var(--bg-card-soft);
 }
 
 .home-block-item.full-width {
-  grid-column: span 2;
+  grid-column: 1 / -1;
 }
 
 .home-block-item.highlight {
@@ -434,13 +459,13 @@ body {
 }
 
 .home-block-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 13px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   flex-shrink: 0;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
@@ -459,26 +484,29 @@ body {
 }
 
 .home-block-title {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: var(--text-main);
-  line-height: 1.2;
+  line-height: 1.25;
+  overflow-wrap: break-word;
 }
 
 .home-block-subtitle {
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-top: 3px;
+  line-height: 1.35;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .home-block-arrow {
   color: var(--accent-gold);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   margin-left: 2px;
+  flex-shrink: 0;
 }
 
 /* Resumo do Dia / Banner */
@@ -1641,9 +1669,9 @@ body {
 }
 
 /* ==========================================================================
-   RESPONSIVIDADE E PROTEÇÃO CONTRA CORTES (Mobile Safe)
+   RESPONSIVIDADE E PROTEÇÃO CONTRA CORTES (Mobile Safe & Smart Scaling)
    ========================================================================== */
-@media (max-width: 380px) {
+@media (max-width: 520px) {
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
@@ -1651,18 +1679,47 @@ body {
   
   .home-blocks-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .home-block-item.full-width {
-    grid-column: span 1;
+    grid-column: 1 / -1;
   }
 
   .finance-overview {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .finance-box {
+    padding: 13px 12px;
+  }
+  
+  .finance-val {
+    font-size: 1.15rem;
   }
 
   .hero-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .finance-overview {
     grid-template-columns: 1fr;
+  }
+  .home-hero-card {
+    padding: 14px 10px;
+  }
+  .home-block-title {
+    font-size: 0.9rem;
+  }
+  .home-block-subtitle {
+    font-size: 0.72rem;
+  }
+  .main-content {
+    padding: 12px 12px calc(var(--safe-bottom) + 120px) 12px;
   }
 }
 
