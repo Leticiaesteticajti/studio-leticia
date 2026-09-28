@@ -367,7 +367,7 @@ class StudioCloudService {
     this.ensureClient();
     if (!this.isConfigured()) {
       const localList = JSON.parse(localStorage.getItem('studio_demo_requests') || '[]');
-      return localList.slice(0, limit);
+      return localList.filter(item => !item.observacoes || !item.observacoes.includes('[APP_ID:')).slice(0, limit);
     }
 
     try {
@@ -383,7 +383,7 @@ class StudioCloudService {
         console.warn('Erro getAllRequests:', error);
         return [];
       }
-      return data || [];
+      return (data || []).filter(item => !item.observacoes || !item.observacoes.includes('[APP_ID:'));
     } catch (e) {
       console.warn('Falha getAllRequests:', e);
       return [];
@@ -515,7 +515,7 @@ class StudioCloudService {
     this.ensureClient();
     if (!this.isConfigured()) {
       const localList = JSON.parse(localStorage.getItem('studio_demo_requests') || '[]');
-      return localList.filter(item => item.status === 'pendente');
+      return localList.filter(item => item.status === 'pendente' && (!item.observacoes || !item.observacoes.includes('[APP_ID:')));
     }
 
     try {
@@ -531,7 +531,7 @@ class StudioCloudService {
         console.warn('Erro getPendingRequests:', error);
         return [];
       }
-      return data || [];
+      return (data || []).filter(item => !item.observacoes || !item.observacoes.includes('[APP_ID:'));
     } catch (e) {
       console.warn('Falha getPendingRequests:', e);
       return [];
@@ -554,13 +554,76 @@ class StudioCloudService {
         .from('solicitacoes_agendamento')
         .update({ status: 'confirmado', updated_at: new Date().toISOString() })
         .eq('id', requestId)
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
-      return data;
+      const resItem = (data && data.length > 0) ? data[0] : { id: requestId, status: 'confirmado' };
+      try {
+        localStorage.setItem('studio_booking_' + requestId, JSON.stringify(resItem));
+      } catch (_) {}
+      return resItem;
     } catch (e) {
       console.error('Erro confirmBooking:', e);
+      throw e;
+    }
+  }
+
+  // Letícia ajusta o horário (encaixe) e confirma a solicitação
+  async rescheduleAndConfirmBooking(requestId, novaData, novoHorario, motivo = '') {
+    this.ensureClient();
+    const cleanMotivo = motivo ? motivo.trim() : '';
+    const encaixeTag = `[ENCAIXE_HORARIO: ${novaData} ${novoHorario}] ${cleanMotivo}`.trim();
+
+    if (!this.isConfigured()) {
+      const localList = JSON.parse(localStorage.getItem('studio_demo_requests') || '[]');
+      const item = localList.find(i => i.id === requestId);
+      if (item) {
+        item.data_original = item.data;
+        item.horario_original = item.horario;
+        item.data = novaData;
+        item.horario = novoHorario;
+        item.status = 'confirmado';
+        item.observacoes = (item.observacoes ? item.observacoes + ' | ' : '') + encaixeTag;
+      }
+      localStorage.setItem('studio_demo_requests', JSON.stringify(localList));
+      return item;
+    }
+
+    try {
+      let currentObs = '';
+      try {
+        const { data: rows } = await this.client
+          .from('solicitacoes_agendamento')
+          .select('observacoes')
+          .eq('id', requestId)
+          .limit(1);
+        if (rows && rows.length > 0 && rows[0].observacoes) {
+          currentObs = rows[0].observacoes;
+        }
+      } catch (_) {}
+
+      const updatedObs = currentObs ? `${currentObs} | ${encaixeTag}` : encaixeTag;
+
+      const { data, error } = await this.client
+        .from('solicitacoes_agendamento')
+        .update({ 
+          data: novaData,
+          horario: novoHorario,
+          status: 'confirmado',
+          observacoes: updatedObs,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', requestId)
+        .select();
+
+      if (error) throw error;
+      const resItem = (data && data.length > 0) ? data[0] : { id: requestId, data: novaData, horario: novoHorario, status: 'confirmado', observacoes: updatedObs };
+      try {
+        localStorage.setItem('studio_booking_' + requestId, JSON.stringify(resItem));
+      } catch (_) {}
+      return resItem;
+    } catch (e) {
+      console.error('Erro rescheduleAndConfirmBooking:', e);
       throw e;
     }
   }
@@ -588,11 +651,14 @@ class StudioCloudService {
           updated_at: new Date().toISOString() 
         })
         .eq('id', requestId)
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
-      return data;
+      const resItem = (data && data.length > 0) ? data[0] : { id: requestId, status: 'recusado', motivo_recusa: motivo };
+      try {
+        localStorage.setItem('studio_booking_' + requestId, JSON.stringify(resItem));
+      } catch (_) {}
+      return resItem;
     } catch (e) {
       console.error('Erro rejectBooking:', e);
       throw e;

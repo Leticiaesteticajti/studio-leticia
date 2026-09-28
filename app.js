@@ -1487,7 +1487,10 @@ class StudioApp {
   }
 
   async handleIncomingOnlineBooking(newReq) {
-    if (!newReq || newReq.cliente_nome === '__STUDIO_CONFIG_SERVICOS__' || newReq.cliente_nome === '__STUDIO_CONFIG_HORARIOS__') return;
+    if (!newReq) return;
+    if (newReq.cliente_nome === '__STUDIO_CONFIG_SERVICOS__' || newReq.cliente_nome === '__STUDIO_CONFIG_HORARIOS__') return;
+    if (newReq.status !== 'pendente') return;
+    if (newReq.observacoes && newReq.observacoes.includes('[APP_ID:')) return;
 
     this.playNotificationChime();
     this.flashTabTitle('🔔 Novo Agendamento Recebido!');
@@ -1527,6 +1530,7 @@ class StudioApp {
     if (!cloud) return;
     try {
       const pending = await cloud.getPendingRequests();
+      this._currentPendingRequests = pending || [];
       const count = pending.length;
 
       // Alerta sonoro e visual caso o número de pedidos pendentes tenha aumentado ou na inicialização
@@ -1567,7 +1571,7 @@ class StudioApp {
         }
       }
 
-      // 2. Badge na aba do Modal
+      // 2. Badge na aba do Modal (Pendentes)
       const modalBadge = document.getElementById('alerts-badge-tab');
       if (modalBadge) {
         if (count > 0) {
@@ -1578,7 +1582,21 @@ class StudioApp {
         }
       }
 
-      // 3. Banner da Home
+      // 3. Badge na aba do Modal (Histórico)
+      const histBadge = document.getElementById('alerts-history-badge-tab');
+      if (histBadge) {
+        try {
+          const allReqs = await cloud.getAllRequests(50);
+          if (allReqs && allReqs.length > 0) {
+            histBadge.textContent = allReqs.length;
+            histBadge.style.display = 'inline-block';
+          } else {
+            histBadge.style.display = 'none';
+          }
+        } catch (_) {}
+      }
+
+      // 4. Banner da Home
       const banner = document.getElementById('online-requests-banner');
       const countEl = document.getElementById('online-requests-count');
       if (banner && countEl) {
@@ -1590,7 +1608,7 @@ class StudioApp {
         }
       }
 
-      // 4. Bloco de Acesso Rápido da Home
+      // 5. Bloco de Acesso Rápido da Home
       const homePill = document.getElementById('home-alert-pill');
       const dotBadge = document.getElementById('home-block-badge');
       if (homePill) {
@@ -1690,16 +1708,54 @@ class StudioApp {
       }
 
       const pending = await cloud.getPendingRequests();
+      this._currentPendingRequests = pending || [];
 
       if (!pending || pending.length === 0) {
+        let recentHtml = '';
+        try {
+          const recentReqs = await cloud.getAllRequests(3);
+          if (recentReqs && recentReqs.length > 0) {
+            recentHtml = `
+              <div style="margin-top: 16px; text-align: left; border-top: 1px solid var(--border-light); padding-top: 14px;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">
+                  🕒 ÚLTIMOS PEDIDOS PROCESSADOS:
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  ${recentReqs.map(r => {
+                    const [ano, mes, dia] = (r.data || '').split('-');
+                    const dataFmt = dia && mes ? `${dia}/${mes}/${ano}` : r.data;
+                    const isEncaixe = r.observacoes && r.observacoes.includes('[ENCAIXE_HORARIO:');
+                    let badge = '<span style="background: #EBF8EE; color: #1E7E34; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Confirmado</span>';
+                    if (isEncaixe) {
+                      badge = '<span style="background: #E8F4FD; color: #1971C2; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Encaixe</span>';
+                    } else if (r.status === 'recusado') {
+                      badge = '<span style="background: #FBEBEB; color: #C53030; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Recusado</span>';
+                    }
+                    return `
+                      <div style="background: #FAF7F2; border: 1px solid var(--border-light); border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                          <span style="font-weight: 700; color: var(--primary);">${this.escapeHtml(r.cliente_nome || 'Cliente')}</span>
+                          <span style="color: var(--text-muted);"> • ${this.escapeHtml(r.servico_nome || 'Procedimento')} (${dataFmt} às ${r.horario})</span>
+                        </div>
+                        <div>${badge}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          }
+        } catch (_) {}
+
         container.innerHTML = `
-          <div class="card" style="text-align: center; color: var(--text-muted); padding: 30px 20px;">
-            <div style="font-size: 2.2rem; margin-bottom: 8px;">✨</div>
+          <div class="card" style="text-align: center; color: var(--text-muted); padding: 26px 16px;">
+            <div style="font-size: 2.2rem; margin-bottom: 6px;">✨</div>
             <div style="font-weight: 700; color: var(--text-main); font-size: 1rem;">Nenhum pedido pendente</div>
-            <div style="font-size: 0.82rem; margin-top: 6px; line-height: 1.4;">Quando uma cliente solicitar horário pelo seu link, ele aparecerá aqui com alerta sonoro e visual para você confirmar!</div>
-            <button type="button" class="quick-btn" style="margin: 16px auto 0 auto; display: inline-flex; justify-content: center; font-size: 0.82rem; padding: 8px 14px; color: var(--primary); font-weight: 600;" onclick="app.switchAlertsTab('historico')">
-              📜 Ver Histórico de Solicitações
+            <div style="font-size: 0.82rem; margin-top: 4px; line-height: 1.4; color: var(--text-muted);">Todas as solicitações de clientes recebidas estão processadas.</div>
+            <button type="button" class="quick-btn" style="margin: 14px auto 0 auto; display: inline-flex; justify-content: center; font-size: 0.82rem; padding: 8px 14px; color: var(--primary); font-weight: 600;" onclick="app.switchAlertsTab('historico')">
+              📜 Ver Histórico Completo de Pedidos
             </button>
+            ${recentHtml}
           </div>
         `;
         this.checkOnlineRequests();
@@ -1725,7 +1781,7 @@ class StudioApp {
         const cleanCpf = rawCpf.replace(/\D/g, '');
         const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
 
-        // Identificação Inteligente da Cliente no Banco (segura contra campos nulos)
+        // Identificação Inteligente da Cliente no Banco
         let matchedClient = null;
         if (Array.isArray(this.allClients)) {
           if (cleanCpf && cleanCpf.length === 11) {
@@ -1747,10 +1803,13 @@ class StudioApp {
         const linkWpp = `https://wa.me/55${cleanWpp}?text=${msgWpp}`;
 
         // Observação limpa (sem tag [CPF:...])
-        const obsLimpa = (req.observacoes || '').replace(/\[CPF:\s*[0-9.\-]+\]/i, '').trim();
+        const obsLimpa = (req.observacoes || '')
+          .replace(/\[CPF:\s*[0-9.\-]+\]/i, '')
+          .replace(/\[Procedimentos:[^\]]*\]/i, '')
+          .trim();
 
         htmls.push(`
-          <div style="background: var(--bg-card-tint); border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; position: relative;">
+          <div id="req-card-${req.id}" style="background: var(--bg-card-tint); border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; position: relative;">
             
             <!-- Identificação de Perfil: Recorrente vs Nova -->
             ${matchedClient ? `
@@ -1808,14 +1867,17 @@ class StudioApp {
             `}
 
             <!-- Ações em 1 Toque -->
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button type="button" class="btn-complete" style="flex: 2; min-width: 140px; padding: 10px; font-size: 0.85rem;" onclick="app.confirmOnlineRequest('${req.id}')">
-                ✅ Confirmar Horário
+            <div id="req-actions-${req.id}" style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn-complete" style="flex: 1.5; min-width: 130px; padding: 10px 8px; font-size: 0.85rem;" onclick="app.confirmOnlineRequest('${req.id}')">
+                ✅ Confirmar
               </button>
-              <a href="${linkWpp}" target="_blank" class="quick-btn" style="flex: 1.2; min-width: 110px; text-decoration: none; justify-content: center; font-size: 0.82rem; color: var(--green-wpp-dark); border-color: rgba(37,211,102,0.4); padding: 10px;">
+              <button type="button" class="quick-btn" style="flex: 1.5; min-width: 140px; justify-content: center; font-size: 0.82rem; color: var(--primary); border-color: var(--primary); padding: 10px 8px; font-weight: 700; background: rgba(190, 122, 71, 0.08);" onclick="app.openRescheduleModal('${req.id}')">
+                🕒 Encaixar / Mudar
+              </button>
+              <a href="${linkWpp}" target="_blank" class="quick-btn" style="flex: 1; min-width: 95px; text-decoration: none; justify-content: center; font-size: 0.82rem; color: var(--green-wpp-dark); border-color: rgba(37,211,102,0.4); padding: 10px 6px;">
                 💬 WhatsApp
               </a>
-              <button type="button" class="quick-btn" style="flex: 1; min-width: 80px; justify-content: center; color: var(--danger); border-color: rgba(185,55,40,0.3); padding: 10px; font-size: 0.85rem;" onclick="app.rejectOnlineRequest('${req.id}')">
+              <button type="button" class="quick-btn" style="flex: 1; min-width: 80px; justify-content: center; color: var(--danger); border-color: rgba(185,55,40,0.3); padding: 10px 6px; font-size: 0.85rem;" onclick="app.openRejectModal('${req.id}')">
                 ❌ Recusar
               </button>
             </div>
@@ -1840,7 +1902,7 @@ class StudioApp {
     const container = document.getElementById('online-history-list');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando histórico...</div>';
+    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando histórico de pedidos...</div>';
 
     try {
       const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
@@ -1854,7 +1916,7 @@ class StudioApp {
         return;
       }
 
-      const allRequests = await cloud.getAllRequests(40);
+      const allRequests = await cloud.getAllRequests(50);
 
       if (!allRequests || allRequests.length === 0) {
         container.innerHTML = `
@@ -1872,12 +1934,26 @@ class StudioApp {
         const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
         const rawCpf = req.cliente_cpf || (req.observacoes && req.observacoes.match(/\[CPF:\s*([0-9.\-]+)\]/i)?.[1]) || '';
 
+        const obs = req.observacoes || '';
+        const isEncaixe = obs.includes('[ENCAIXE_HORARIO:');
+
         let statusBadge = '<span style="background: #EBF8EE; color: #1E7E34; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">Confirmado</span>';
-        if (req.status === 'recusado') {
+        if (isEncaixe) {
+          statusBadge = '<span style="background: #E8F4FD; color: #1971C2; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">🕒 Confirmado (Encaixe)</span>';
+        } else if (req.status === 'recusado') {
           statusBadge = '<span style="background: #FBEBEB; color: #C53030; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">Recusado</span>';
         } else if (req.status === 'pendente') {
           statusBadge = '<span style="background: #FFF4E5; color: #925D11; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">Pendente</span>';
         }
+
+        const msgWpp = encodeURIComponent(`Olá, ${req.cliente_nome}! Aqui é a Letícia do Studio Letícia.`);
+        const linkWpp = cleanWpp ? `https://wa.me/55${cleanWpp}?text=${msgWpp}` : '#';
+
+        const obsLimpa = obs
+          .replace(/\[CPF:\s*[0-9.\-]+\]/i, '')
+          .replace(/\[Procedimentos:[^\]]*\]/i, '')
+          .replace(/\[ENCAIXE_HORARIO:[^\]]*\]/i, '')
+          .trim();
 
         return `
           <div style="background: #FFFFFF; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; box-shadow: var(--shadow-sm);">
@@ -1888,12 +1964,26 @@ class StudioApp {
                   📱 ${this.formatPhone(req.cliente_whatsapp)} ${rawCpf ? `• 🪪 ${this.formatCPF(rawCpf)}` : ''}
                 </div>
               </div>
-              ${statusBadge}
+              <div style="display: flex; gap: 6px; align-items: center;">
+                ${statusBadge}
+                ${cleanWpp ? `
+                  <a href="${linkWpp}" target="_blank" class="icon-btn" style="width: 28px; height: 28px; font-size: 0.8rem; text-decoration: none;" title="Conversar no WhatsApp">💬</a>
+                ` : ''}
+              </div>
             </div>
+
             <div style="font-size: 0.82rem; color: var(--text-main);">
-              <strong>${this.escapeHtml(req.servico_nome || 'Procedimento')}</strong> • 🗓️ ${dataFormatada} às ${req.horario} • ${this.formatCurrency(req.servico_preco || 0)}
+              <strong>${this.escapeHtml(req.servico_nome || 'Procedimento')}</strong> • 🗓️ <strong>${dataFormatada}</strong> às <strong>${req.horario}</strong> • ${this.formatCurrency(req.servico_preco || 0)}
             </div>
-            ${req.motivo_recusa ? `<div style="font-size: 0.74rem; color: var(--danger); margin-top: 4px;">Motivo: "${this.escapeHtml(req.motivo_recusa)}"</div>` : ''}
+
+            ${isEncaixe ? `
+              <div style="font-size: 0.76rem; color: #1971C2; background: #E8F4FD; padding: 4px 8px; border-radius: 5px; margin-top: 4px; display: inline-block;">
+                🕒 <strong>Horário Ajustado / Encaixe</strong> confirmado pela Letícia no app
+              </div>
+            ` : ''}
+
+            ${obsLimpa ? `<div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;">📝 <em>${this.escapeHtml(obsLimpa)}</em></div>` : ''}
+            ${req.motivo_recusa ? `<div style="font-size: 0.76rem; color: var(--danger); margin-top: 4px;">❌ <strong>Motivo da recusa:</strong> "${this.escapeHtml(req.motivo_recusa)}"</div>` : ''}
           </div>
         `;
       });
@@ -1911,10 +2001,26 @@ class StudioApp {
   }
 
   async confirmOnlineRequest(requestId) {
+    const cardEl = document.getElementById(`req-card-${requestId}`);
+    const actionButtonsEl = document.getElementById(`req-actions-${requestId}`);
+    if (actionButtonsEl) {
+      actionButtonsEl.innerHTML = `
+        <div style="color: var(--primary); font-weight: 700; text-align: center; padding: 10px; width: 100%;">
+          ⏳ Confirmando horário na agenda...
+        </div>
+      `;
+    }
+
     try {
-      const pending = await StudioCloud.getPendingRequests();
-      const req = pending.find(r => r.id === requestId);
-      if (!req) return;
+      let req = (this._currentPendingRequests || []).find(r => r.id === requestId);
+      if (!req) {
+        req = await StudioCloud.getBookingRequestById(requestId);
+      }
+      if (!req) {
+        this.showToast('Solicitação não encontrada.');
+        await this.renderOnlineRequests();
+        return;
+      }
 
       const rawCpf = req.cliente_cpf || (req.observacoes && req.observacoes.match(/\[CPF:\s*([0-9.\-]+)\]/i)?.[1]) || '';
       const cleanCpf = rawCpf.replace(/\D/g, '');
@@ -1924,6 +2030,10 @@ class StudioApp {
       await StudioCloud.confirmBooking(requestId);
 
       // 2. Busca ou cria o cadastro da cliente
+      if (!this.allClients || this.allClients.length === 0) {
+        this.allClients = await db.getAll('clientes');
+      }
+
       let cliente = null;
       if (cleanCpf && cleanCpf.length === 11 && Array.isArray(this.allClients)) {
         cliente = this.allClients.find(c => c && c.cpf && c.cpf.replace(/\D/g, '') === cleanCpf);
@@ -1936,7 +2046,6 @@ class StudioApp {
       }
 
       if (cliente) {
-        // Atualiza CPF se ela ainda não tinha no cadastro
         if (!cliente.cpf && cleanCpf) {
           cliente.cpf = cleanCpf;
           await db.put('clientes', cliente);
@@ -1952,7 +2061,7 @@ class StudioApp {
           preferenciaSessao: 'Com música relaxante',
           notas: 'Cadastrada automaticamente via Agendamento Online',
           anamnese: {
-            queixaPrincipal: (req.observacoes || '').replace(/\[CPF:\s*[0-9.\-]+\]/i, '').trim() || 'Agendamento pelo site',
+            queixaPrincipal: (req.observacoes || '').replace(/\[CPF:\s*[0-9.\-]+\]/i, '').replace(/\[Procedimentos:[^\]]*\]/i, '').trim() || 'Agendamento pelo site',
             cirurgiaRecente: '',
             alergias: '',
             restricoes: '',
@@ -1967,6 +2076,11 @@ class StudioApp {
       }
 
       // 3. Insere o agendamento na grade local da Letícia
+      const obsLimpa = (req.observacoes || '')
+        .replace(/\[CPF:\s*[0-9.\-]+\]/i, '')
+        .replace(/\[Procedimentos:[^\]]*\]/i, '')
+        .trim();
+
       const novoAgendamento = {
         id: 'agd_' + Date.now(),
         clienteId: cliente.id,
@@ -1981,7 +2095,7 @@ class StudioApp {
         status: 'agendado',
         pago: false,
         formaPagamento: '',
-        notas: (req.observacoes || '').replace(/\[CPF:\s*[0-9.\-]+\]/i, '').trim(),
+        notas: obsLimpa,
         criadoEm: new Date().toISOString()
       };
 
@@ -1990,48 +2104,314 @@ class StudioApp {
       // Bloqueia o slot na nuvem
       await StudioCloud.blockSlotOnCloud(novoAgendamento);
 
+      // 4. Remove card da tela e atualiza listas e contadores imediatamente
+      if (cardEl) cardEl.remove();
+      this._currentPendingRequests = (this._currentPendingRequests || []).filter(r => r.id !== requestId);
       this.showToast(`Agendamento de ${cliente.nome} CONFIRMADO com sucesso! 🎉`);
 
-      // 4. Oferece envio da confirmação no WhatsApp
-      const [ano, mes, dia] = (req.data || '').split('-');
-      const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
-      const msg = encodeURIComponent(`Olá, ${cliente.nome}! ✨ Passando para confirmar que seu horário no Studio Letícia foi CONFIRMADO com sucesso para ${dataFormatada} às ${req.horario} (${req.servico_nome}). Te espero com carinho! 💆‍♀️🌸`);
-      
-      if (confirm('Agendamento confirmado na agenda! Deseja enviar a mensagem de confirmação para o WhatsApp da cliente agora?')) {
-        window.open(`https://wa.me/55${cleanWpp}?text=${msg}`, '_blank');
-      }
-
+      await this.renderOnlineRequests();
+      this.checkOnlineRequests(false);
       await this.loadTodayTab();
       if (this.currentTab === 'agenda') await this.loadAgendaTab();
-      await this.renderOnlineRequests();
+
+      // 5. Abre modal de feedback com atalho seguro para WhatsApp
+      const [ano, mes, dia] = (req.data || '').split('-');
+      const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
+      const msg = encodeURIComponent(`Olá, ${cliente.nome}! ✨ Passando para confirmar que seu horário no Studio Letícia foi CONFIRMADO com sucesso para ${dataFormatada} às ${req.horario} (${req.servico_nome}). Te espero com carinho! 💆‍♀️🌸\n\n📍 Endereço: Rua 26, nº 135 - Colmeia Park\n🗺️ Google Maps: https://maps.google.com/?q=-17.858556,-51.716417`);
+      const linkWpp = `https://wa.me/55${cleanWpp}?text=${msg}`;
+
+      this.showBookingActionFeedback({
+        icon: '🎉',
+        title: 'Agendamento Confirmado!',
+        message: `O agendamento de <strong>${this.escapeHtml(cliente.nome)}</strong> para <strong>${dataFormatada} às ${req.horario}</strong> (${this.escapeHtml(req.servico_nome)}) foi registrado com sucesso na sua agenda e atualizado em tempo real na tela da cliente!`,
+        wppLink: linkWpp,
+        wppLabel: 'Enviar Confirmação no WhatsApp'
+      });
     } catch (err) {
-      console.error(err);
-      alert('Erro ao confirmar agendamento: ' + err.message);
+      console.error('Erro confirmOnlineRequest:', err);
+      this.showToast('Erro ao confirmar: ' + (err.message || 'Erro de conexão'));
+      await this.renderOnlineRequests();
     }
   }
 
-  async rejectOnlineRequest(requestId) {
-    const motivo = prompt('Motivo da recusa (será exibido na tela da cliente):', 'Horário indisponível no momento.');
-    if (motivo === null) return;
+  openRescheduleModal(requestId) {
+    let req = (this._currentPendingRequests || []).find(r => r.id === requestId);
+    if (!req) return;
+
+    const [ano, mes, dia] = (req.data || '').split('-');
+    const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
+
+    document.getElementById('reschedule-request-id').value = req.id;
+    document.getElementById('reschedule-client-name').textContent = req.cliente_nome || 'Cliente';
+    document.getElementById('reschedule-client-phone').textContent = '📱 ' + this.formatPhone(req.cliente_whatsapp);
+    document.getElementById('reschedule-service-name').textContent = `${req.servico_nome || 'Procedimento'} (${this.formatCurrency(req.servico_preco || 0)})`;
+    document.getElementById('reschedule-orig-slot').textContent = `${dataFormatada} às ${req.horario}`;
+    
+    const dateInput = document.getElementById('reschedule-new-date');
+    dateInput.value = req.data || new Date().toISOString().split('T')[0];
+    dateInput.min = new Date().toISOString().split('T')[0];
+
+    document.getElementById('reschedule-new-time').value = req.horario || '14:00';
+    document.getElementById('reschedule-note').value = 'Ajustado com a cliente via WhatsApp';
+
+    this.openModal('modal-reschedule-request');
+  }
+
+  async confirmRescheduleBooking(e) {
+    if (e) e.preventDefault();
+    const requestId = document.getElementById('reschedule-request-id').value;
+    const novaData = document.getElementById('reschedule-new-date').value;
+    const novoHorario = document.getElementById('reschedule-new-time').value;
+    const motivo = document.getElementById('reschedule-note').value.trim();
+
+    if (!requestId || !novaData || !novoHorario) {
+      this.showToast('Por favor, selecione a nova data e o novo horário.');
+      return;
+    }
+
+    const btnSubmit = document.getElementById('btn-submit-reschedule');
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = 'Salvando Encaixe... ⏳';
+    }
 
     try {
-      const pending = await StudioCloud.getPendingRequests();
-      const req = pending.find(r => r.id === requestId);
-
-      await StudioCloud.rejectBooking(requestId, motivo);
-      this.showToast('Solicitação recusada.');
-
-      if (req && confirm('Deseja abrir o WhatsApp da cliente para sugerir outro horário?')) {
-        const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
-        const msg = encodeURIComponent(`Olá, ${req.cliente_nome}! Aqui é a Letícia do Studio Letícia. Infelizmente o horário das ${req.horario} do dia ${this.formatDate(req.data)} já estava reservado. Podemos verificar outro dia ou horário para você?`);
-        window.open(`https://wa.me/55${cleanWpp}?text=${msg}`, '_blank');
+      let req = (this._currentPendingRequests || []).find(r => r.id === requestId);
+      if (!req) {
+        req = await StudioCloud.getBookingRequestById(requestId);
+      }
+      if (!req) {
+        this.showToast('Solicitação não encontrada.');
+        this.closeModal('modal-reschedule-request');
+        await this.renderOnlineRequests();
+        return;
       }
 
+      const [anoOrig, mesOrig, diaOrig] = (req.data || '').split('-');
+      const dataOrigFmt = diaOrig && mesOrig ? `${diaOrig}/${mesOrig}/${anoOrig}` : req.data;
+      const horaOrig = req.horario;
+
+      // 1. Atualiza na nuvem com status confirmado e nova data/horário
+      await StudioCloud.rescheduleAndConfirmBooking(requestId, novaData, novoHorario, motivo);
+
+      // 2. Busca ou cria o cadastro da cliente
+      const rawCpf = req.cliente_cpf || (req.observacoes && req.observacoes.match(/\[CPF:\s*([0-9.\-]+)\]/i)?.[1]) || '';
+      const cleanCpf = rawCpf.replace(/\D/g, '');
+      const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
+
+      if (!this.allClients || this.allClients.length === 0) {
+        this.allClients = await db.getAll('clientes');
+      }
+
+      let cliente = null;
+      if (cleanCpf && cleanCpf.length === 11 && Array.isArray(this.allClients)) {
+        cliente = this.allClients.find(c => c && c.cpf && c.cpf.replace(/\D/g, '') === cleanCpf);
+      }
+      if (!cliente && cleanWpp && Array.isArray(this.allClients)) {
+        cliente = this.allClients.find(c => c && c.whatsapp && c.whatsapp.replace(/\D/g, '') === cleanWpp);
+      }
+      if (!cliente && req.cliente_nome && Array.isArray(this.allClients)) {
+        cliente = this.allClients.find(c => c && c.nome && typeof c.nome === 'string' && c.nome.trim().toLowerCase() === req.cliente_nome.trim().toLowerCase());
+      }
+
+      if (cliente) {
+        if (!cliente.cpf && cleanCpf) {
+          cliente.cpf = cleanCpf;
+          await db.put('clientes', cliente);
+        }
+      } else {
+        cliente = {
+          id: 'cli_' + Date.now(),
+          nome: req.cliente_nome,
+          cpf: cleanCpf,
+          whatsapp: cleanWpp,
+          nascimento: '',
+          peso: '',
+          preferenciaSessao: 'Com música relaxante',
+          notas: 'Cadastrada automaticamente via Agendamento Online (Encaixe)',
+          anamnese: {
+            queixaPrincipal: (req.observacoes || '').replace(/\[CPF:\s*[0-9.\-]+\]/i, '').replace(/\[Procedimentos:[^\]]*\]/i, '').trim() || 'Agendamento pelo site',
+            cirurgiaRecente: '',
+            alergias: '',
+            restricoes: '',
+            peso: ''
+          },
+          pacotes: [],
+          criadoEm: new Date().toISOString()
+        };
+        await db.put('clientes', cliente);
+        this.allClients.push(cliente);
+        this.populateClientSelects();
+      }
+
+      // 3. Insere o agendamento com a NOVA data e NOVO horário na agenda da Letícia
+      const obsLimpa = (req.observacoes || '')
+        .replace(/\[CPF:\s*[0-9.\-]+\]/i, '')
+        .replace(/\[Procedimentos:[^\]]*\]/i, '')
+        .trim();
+      const notaEncaixe = `[Encaixe/Horário Ajustado] Solicitado originalmente para ${dataOrigFmt} às ${horaOrig}.${motivo ? ` Motivo: ${motivo}.` : ''} ${obsLimpa}`.trim();
+
+      const novoAgendamento = {
+        id: 'agd_' + Date.now(),
+        clienteId: cliente.id,
+        clienteNome: cliente.nome,
+        whatsapp: cliente.whatsapp,
+        servicoId: req.servico_id || 'srv_1',
+        servicoNome: req.servico_nome,
+        valor: parseFloat(req.servico_preco) || 0,
+        data: novaData,
+        horario: novoHorario,
+        duracaoMin: req.duracao_min || 60,
+        status: 'agendado',
+        pago: false,
+        formaPagamento: '',
+        notas: notaEncaixe,
+        criadoEm: new Date().toISOString()
+      };
+
+      await db.put('agendamentos', novoAgendamento);
+
+      // Bloqueia o novo slot na nuvem
+      await StudioCloud.blockSlotOnCloud(novoAgendamento);
+
+      // 4. Fecha modal de reagendamento
+      this.closeModal('modal-reschedule-request');
+
+      // 5. Remove da lista de pendentes e atualiza UI
+      const cardEl = document.getElementById(`req-card-${requestId}`);
+      if (cardEl) cardEl.remove();
+      this._currentPendingRequests = (this._currentPendingRequests || []).filter(r => r.id !== requestId);
+
+      const [anoNova, mesNova, diaNova] = novaData.split('-');
+      const novaDataFmt = `${diaNova}/${mesNova}/${anoNova}`;
+      this.showToast(`Encaixe de ${cliente.nome} confirmado para ${novaDataFmt} às ${novoHorario}! ✨`);
+
       await this.renderOnlineRequests();
-      this.checkOnlineRequests();
+      this.checkOnlineRequests(false);
+      await this.loadTodayTab();
+      if (this.currentTab === 'agenda') await this.loadAgendaTab();
+
+      // 6. Modal de ação WhatsApp com horário ajustado
+      const msg = encodeURIComponent(`Olá, ${cliente.nome}! ✨ Passando para confirmar que seu horário no Studio Letícia foi AJUSTADO E CONFIRMADO para ${novaDataFmt} às ${novoHorario} (${req.servico_nome}). Te espero com carinho! 💆‍♀️🌸\n\n📍 Endereço: Rua 26, nº 135 - Colmeia Park\n🗺️ Google Maps: https://maps.google.com/?q=-17.858556,-51.716417`);
+      const linkWpp = `https://wa.me/55${cleanWpp}?text=${msg}`;
+
+      this.showBookingActionFeedback({
+        icon: '🕒',
+        title: 'Encaixe Confirmado!',
+        message: `O agendamento de <strong>${this.escapeHtml(cliente.nome)}</strong> foi ajustado para <strong>${novaDataFmt} às ${novoHorario}</strong> e registrado na sua agenda! A tela da cliente também foi atualizada em tempo real.`,
+        wppLink: linkWpp,
+        wppLabel: 'Avisar Cliente no WhatsApp (Horário Ajustado)'
+      });
     } catch (err) {
-      alert('Erro ao recusar: ' + err.message);
+      console.error('Erro confirmRescheduleBooking:', err);
+      this.showToast('Erro ao confirmar encaixe: ' + (err.message || 'Erro de conexão'));
+      await this.renderOnlineRequests();
+    } finally {
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = '✨ Confirmar Encaixe & Salvar';
+      }
     }
+  }
+
+  openRejectModal(requestId) {
+    let req = (this._currentPendingRequests || []).find(r => r.id === requestId);
+    if (!req) return;
+
+    const [ano, mes, dia] = (req.data || '').split('-');
+    const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
+
+    document.getElementById('reject-request-id').value = req.id;
+    document.getElementById('reject-summary-client').textContent = req.cliente_nome || 'Cliente';
+    document.getElementById('reject-summary-details').textContent = `${req.servico_nome || 'Procedimento'} • ${dataFormatada} às ${req.horario}`;
+    document.getElementById('reject-reason').value = 'Horário indisponível no momento.';
+
+    this.openModal('modal-reject-request');
+  }
+
+  async confirmRejectBooking(e) {
+    if (e) e.preventDefault();
+    const requestId = document.getElementById('reject-request-id').value;
+    const motivo = document.getElementById('reject-reason').value.trim() || 'Horário indisponível no momento.';
+
+    if (!requestId) return;
+
+    const btnSubmit = document.getElementById('btn-submit-reject');
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = 'Recusando... ⏳';
+    }
+
+    try {
+      let req = (this._currentPendingRequests || []).find(r => r.id === requestId);
+      if (!req) {
+        req = await StudioCloud.getBookingRequestById(requestId);
+      }
+
+      // 1. Atualiza na nuvem
+      await StudioCloud.rejectBooking(requestId, motivo);
+
+      // 2. Fecha modal de recusa
+      this.closeModal('modal-reject-request');
+
+      // 3. Remove da lista de pendentes e atualiza UI
+      const cardEl = document.getElementById(`req-card-${requestId}`);
+      if (cardEl) cardEl.remove();
+      this._currentPendingRequests = (this._currentPendingRequests || []).filter(r => r.id !== requestId);
+
+      this.showToast('Solicitação recusada.');
+
+      await this.renderOnlineRequests();
+      this.checkOnlineRequests(false);
+
+      // 4. Modal de feedback para sugerir outro horário no WhatsApp
+      if (req) {
+        const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
+        const [ano, mes, dia] = (req.data || '').split('-');
+        const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
+        const msg = encodeURIComponent(`Olá, ${req.cliente_nome}! Aqui é a Letícia do Studio Letícia. Infelizmente o horário das ${req.horario} do dia ${dataFormatada} já estava reservado (${motivo}). Podemos verificar outro dia ou horário para você?`);
+        const linkWpp = `https://wa.me/55${cleanWpp}?text=${msg}`;
+
+        this.showBookingActionFeedback({
+          icon: '❌',
+          title: 'Solicitação Recusada',
+          message: `A solicitação de <strong>${this.escapeHtml(req.cliente_nome)}</strong> para <strong>${dataFormatada} às ${req.horario}</strong> foi recusada. O motivo "<em>${this.escapeHtml(motivo)}</em>" já está visível na tela dela.`,
+          wppLink: linkWpp,
+          wppLabel: 'Sugerir Outro Horário no WhatsApp'
+        });
+      }
+    } catch (err) {
+      console.error('Erro confirmRejectBooking:', err);
+      this.showToast('Erro ao recusar: ' + (err.message || 'Erro de conexão'));
+      await this.renderOnlineRequests();
+    } finally {
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = '❌ Confirmar Recusa';
+      }
+    }
+  }
+
+  showBookingActionFeedback({ icon, title, message, wppLink, wppLabel }) {
+    const iconEl = document.getElementById('feedback-action-icon');
+    const titleEl = document.getElementById('feedback-action-title');
+    const msgEl = document.getElementById('feedback-action-message');
+    const wppBtn = document.getElementById('feedback-action-wpp-btn');
+    const wppLbl = document.getElementById('feedback-action-wpp-label');
+
+    if (iconEl) iconEl.textContent = icon || '✨';
+    if (titleEl) titleEl.textContent = title || 'Ação Concluída';
+    if (msgEl) msgEl.innerHTML = message || '';
+
+    if (wppBtn && wppLink) {
+      wppBtn.href = wppLink;
+      wppBtn.style.display = 'flex';
+      if (wppLbl) wppLbl.textContent = wppLabel || 'Enviar no WhatsApp';
+    } else if (wppBtn) {
+      wppBtn.style.display = 'none';
+    }
+
+    this.openModal('modal-booking-feedback-action');
   }
 
   // Janela: Tabela de Preços
