@@ -15,8 +15,8 @@
   <title>Studio Letícia - Gestão & Estética</title>
   
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=30">
-  <link rel="stylesheet" href="style.css?v=30">
+  <link rel="stylesheet" href="css/style.css?v=32">
+  <link rel="stylesheet" href="style.css?v=32">
   <style id="studio-core-styles">
 /* ==========================================================================
    STUDIO LETÍCIA - ESTILO VISUAL REFINADO & PREMIUM (iOS / Mobile First)
@@ -3674,59 +3674,68 @@ body {
       </div>
     </div>
 
-    <!-- =================================================================
-         MODAL GUIA DE INSTALAÇÃO DO APLICATIVO (PWA)
-         ================================================================= -->
-    <div id="modal-pwa-install-guide" class="modal-overlay">
-      <div class="modal-card" style="max-width: 420px; text-align: center; border-radius: var(--radius-lg); position: relative; padding: 26px 20px;">
-        <button type="button" class="password-toggle-btn" style="position: absolute; top: 12px; right: 12px; font-size: 1.1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; z-index: 10;" onclick="app.closePWAInstallGuide()" title="Fechar">✕</button>
-        
-        <div style="width: 64px; height: 64px; background: rgba(190, 122, 71, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 14px auto; box-shadow: 0 4px 14px rgba(190, 122, 71, 0.15);">📲</div>
-        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 0 0 6px 0;">Instalar o Studio Letícia</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 18px 0; line-height: 1.4;">
-          Tenha o aplicativo na tela inicial do seu celular, abrindo em tela cheia com acesso rápido e prático!
-        </p>
-
-        <!-- GUIA ESPECÍFICO PARA IPHONE / SAFARI -->
-        <div id="pwa-guide-ios" style="display: none; text-align: left; background: var(--bg-card-tint); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 18px;">
-          <div style="font-weight: 700; font-size: 0.88rem; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-            <span>🍎</span> No iPhone (Safari):
-          </div>
-          <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 0.84rem; color: var(--text-main); line-height: 1.4;">
-            <span style="background: var(--accent-gold); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">1</span>
-            <span>Toque no botão <strong>Compartilhar</strong> <span style="font-size: 1.15rem; vertical-align: middle;">📤</span> (ícone quadrado com a seta para cima na barra inferior do Safari).</span>
-          </div>
-          <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 0.84rem; color: var(--text-main); line-height: 1.4;">
-            <span style="background: var(--accent-gold); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">2</span>
-            <span>Role a listinha para cima e toque em <strong>"Adicionar à Tela de Início"</strong> <span style="font-size: 1.15rem; vertical-align: middle;">➕</span>.</span>
-          </div>
-          <div style="display: flex; align-items: flex-start; gap: 10px; font-size: 0.84rem; color: var(--text-main); line-height: 1.4;">
-            <span style="background: var(--accent-gold); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">3</span>
-            <span>No canto superior direito, toque em <strong>"Adicionar"</strong>. Pronto! O app aparecerá com o ícone oficial na sua tela! ✨</span>
-          </div>
-        </div>
-
-        <!-- GUIA PARA ANDROID OU OUTROS NAVEGADORES -->
-        <div id="pwa-guide-other" style="display: none; text-align: left; background: var(--bg-card-tint); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 18px;">
-          <div style="font-weight: 700; font-size: 0.88rem; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-            <span>🤖</span> No seu navegador:
-          </div>
-          <p style="font-size: 0.84rem; color: var(--text-main); line-height: 1.5; margin: 0;">
-            Toque no menu de opções <strong>(três pontinhos ⋮)</strong> e clique em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
-          </p>
-        </div>
-
-        <button type="button" class="btn-complete" style="width: 100%; padding: 12px; font-size: 0.95rem; font-weight: 700;" onclick="app.closePWAInstallGuide()">Entendido! 👍</button>
-      </div>
     </div>
 
   </div>
 
+  <!-- =================================================================
+       MODAL GUIA DE INSTALAÇÃO DO APLICATIVO (PWA) - DISPONÍVEL GLOBALMENTE
+       ================================================================= -->
+  <div id="modal-pwa-install-guide" class="modal-overlay" onclick="if(event.target === this) app.closePWAInstallGuide()" style="display: none; z-index: 100000; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-card" style="max-width: 440px; width: 100%; text-align: center; border-radius: var(--radius-lg); position: relative; padding: 24px 20px; background: var(--bg-card); box-shadow: 0 16px 40px rgba(0,0,0,0.45); border: 1.5px solid var(--border-color); max-height: 90vh; overflow-y: auto;">
+      <button type="button" class="password-toggle-btn" style="position: absolute; top: 12px; right: 12px; font-size: 1.1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; z-index: 10; cursor: pointer; border-radius: 50%;" onclick="app.closePWAInstallGuide()" title="Fechar">✕</button>
+      
+      <div style="width: 64px; height: 64px; background: rgba(190, 122, 71, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 12px auto; box-shadow: 0 4px 14px rgba(190, 122, 71, 0.15);">📲</div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 0 0 6px 0;">Instalar o Studio Letícia</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 16px 0; line-height: 1.4;">
+        Tenha o aplicativo na tela inicial do seu celular, abrindo em tela cheia com acesso rápido e prático!
+      </p>
+
+      <!-- GUIA ESPECÍFICO PARA IPHONE / SAFARI -->
+      <div id="pwa-guide-ios" style="display: none; text-align: left; background: var(--bg-card-tint); border: 1.5px solid var(--accent-gold); border-radius: 12px; padding: 16px; margin-bottom: 18px;">
+        <div style="font-weight: 800; font-size: 0.92rem; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <span>🍎</span> No iPhone (Safari):
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 0.86rem; color: var(--text-main); line-height: 1.4;">
+          <span style="background: var(--accent-gold); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">1</span>
+          <span>Toque no botão <strong>Compartilhar</strong> <span style="font-size: 1.25rem; vertical-align: middle;">📤</span> (ícone de quadrado com a seta para cima na barra inferior do Safari).</span>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 0.86rem; color: var(--text-main); line-height: 1.4;">
+          <span style="background: var(--accent-gold); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">2</span>
+          <span>Role a listinha para cima e toque em <strong>"Adicionar à Tela de Início"</strong> <span style="font-size: 1.25rem; vertical-align: middle;">➕</span>.</span>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; font-size: 0.86rem; color: var(--text-main); line-height: 1.4;">
+          <span style="background: var(--accent-gold); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">3</span>
+          <span>No topo à direita, toque em <strong>"Adicionar"</strong>. Pronto! O app aparecerá com o ícone oficial na sua tela inicial! ✨</span>
+        </div>
+
+        <div style="background: #FFF8F0; border: 1px dashed var(--accent-gold); border-radius: 8px; padding: 12px; font-size: 0.82rem; color: var(--primary); line-height: 1.45;">
+          <strong>💡 Dica Importante:</strong> No iPhone, a instalação só funciona pelo navegador <strong>Safari</strong> da Apple. Se você abriu o site dentro do WhatsApp ou Chrome, toque no botão abaixo para copiar o link e abra no Safari!
+          <button type="button" class="btn-primary" style="margin-top: 10px; width: 100%; padding: 10px; font-size: 0.84rem; font-weight: 700; background: var(--primary); color: #fff; border: none; border-radius: 8px; cursor: pointer;" onclick="app.copyAppUrlForSafari()">
+            📋 Copiar Link do Site para Abrir no Safari
+          </button>
+        </div>
+      </div>
+
+      <!-- GUIA PARA ANDROID OU OUTROS NAVEGADORES -->
+      <div id="pwa-guide-other" style="display: none; text-align: left; background: var(--bg-card-tint); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 18px;">
+        <div style="font-weight: 700; font-size: 0.88rem; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>🤖</span> No seu navegador:
+        </div>
+        <p style="font-size: 0.84rem; color: var(--text-main); line-height: 1.5; margin: 0;">
+          Toque no menu de opções <strong>(três pontinhos ⋮)</strong> e clique em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
+        </p>
+      </div>
+
+      <button type="button" class="btn-complete" style="width: 100%; padding: 12px; font-size: 0.95rem; font-weight: 700;" onclick="app.closePWAInstallGuide()">Entendido! 👍</button>
+    </div>
+  </div>
+
   <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-client.js?v=31"></script>
-  <script src="js/db.js?v=31"></script>
-  <script src="js/app.js?v=31"></script>
+  <script src="js/supabase-client.js?v=32"></script>
+  <script src="js/db.js?v=32"></script>
+  <script src="js/app.js?v=32"></script>
   <script>
     // Registro do Service Worker para suporte Offline
     if ('serviceWorker' in navigator) {

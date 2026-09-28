@@ -3789,7 +3789,7 @@ class StudioApp {
     }
 
     // Caso seja iOS Safari ou navegador que não dispare beforeinstallprompt
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
     this.openPWAInstallGuide(isIOS ? 'ios' : 'other');
   }
 
@@ -3801,12 +3801,31 @@ class StudioApp {
     if (guideIos) guideIos.style.display = type === 'ios' ? 'block' : 'none';
     if (guideOther) guideOther.style.display = type === 'other' ? 'block' : 'none';
 
-    if (modal) modal.classList.add('active');
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    }
   }
 
   closePWAInstallGuide() {
     const modal = document.getElementById('modal-pwa-install-guide');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
+  }
+
+  copyAppUrlForSafari() {
+    const url = window.location.origin + window.location.pathname;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link copiado com sucesso! Abra o Safari no seu iPhone e cole o link na barra de endereços.');
+      }).catch(() => {
+        prompt('Copie o link abaixo para abrir no Safari:', url);
+      });
+    } else {
+      prompt('Copie o link abaixo para abrir no Safari:', url);
+    }
   }
 
   dismissInstallBanner() {
