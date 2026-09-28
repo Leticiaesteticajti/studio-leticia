@@ -26,6 +26,7 @@ class StudioApp {
   async init() {
     await db.ready();
     this.setupAuthMasks();
+    this.initPWAInstall();
     this.isAuthenticated = this.checkAuth();
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -55,6 +56,7 @@ class StudioApp {
     if (bookingView) bookingView.style.display = 'none';
     if (loginScreen) loginScreen.classList.add('hidden');
     if (appContainer) appContainer.style.display = 'block';
+    this.updatePWAUI(this.isStandaloneApp);
   }
 
   showClientBookingView() {
@@ -68,6 +70,7 @@ class StudioApp {
       bookingView.style.display = 'block';
       this.initClientBooking();
     }
+    this.updatePWAUI(this.isStandaloneApp);
   }
 
   showLoginModal() {
@@ -3219,6 +3222,127 @@ class StudioApp {
     if (formSection) formSection.style.display = 'block';
     this.selectedBookingTime = null;
     this.renderClientBookingSlots();
+  }
+
+  // ==========================================================================
+  // INSTALAÇÃO DO APLICATIVO (PWA - PROGRESSIVE WEB APP)
+  // ==========================================================================
+  initPWAInstall() {
+    this.deferredInstallPrompt = null;
+    this.isStandaloneApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+    // Detecta se já está instalado
+    if (this.isStandaloneApp) {
+      this.updatePWAUI(true);
+      return;
+    }
+
+    // Captura o evento nativo de instalação no Chrome / Edge / Android
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredInstallPrompt = e;
+      this.updatePWAUI(false, true);
+    });
+
+    // Detecta quando a instalação foi concluída
+    window.addEventListener('appinstalled', () => {
+      this.deferredInstallPrompt = null;
+      this.isStandaloneApp = true;
+      this.updatePWAUI(true);
+      this.showToast('Studio Letícia instalado com sucesso! 🎉');
+    });
+
+    // Atualização inicial da interface
+    this.updatePWAUI(false, false);
+  }
+
+  updatePWAUI(isStandalone, hasPromptEvent = false) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isDismissed = sessionStorage.getItem('studio_pwa_dismissed') === '1';
+
+    const clientBanner = document.getElementById('pwa-install-banner');
+    const appBanner = document.getElementById('app-pwa-banner');
+    const loginBtn = document.getElementById('btn-login-install');
+    const settingsTitle = document.getElementById('settings-pwa-title');
+    const settingsSub = document.getElementById('settings-pwa-subtitle');
+
+    if (isStandalone) {
+      if (clientBanner) clientBanner.style.display = 'none';
+      if (appBanner) appBanner.style.display = 'none';
+      if (loginBtn) loginBtn.style.display = 'none';
+      if (settingsTitle) settingsTitle.textContent = 'Aplicativo Instalado ✅';
+      if (settingsSub) settingsSub.textContent = 'Você já está usando a versão oficial do aplicativo.';
+      return;
+    }
+
+    // Se não estiver em modo standalone:
+    if (loginBtn) loginBtn.style.display = 'flex';
+
+    if (!isDismissed) {
+      const isBookingView = document.getElementById('client-booking-view')?.style.display !== 'none';
+      const isAppContainer = document.getElementById('app-container')?.style.display !== 'none';
+
+      if (clientBanner && isBookingView) clientBanner.style.display = 'flex';
+      if (appBanner && isAppContainer) appBanner.style.display = 'flex';
+    }
+
+    if (settingsTitle) settingsTitle.textContent = 'Instalar App no Celular';
+    if (settingsSub) settingsSub.textContent = isIOS ? 'Toque para ver o passo a passo no iPhone' : 'Abra em tela cheia direto da tela inicial';
+  }
+
+  async promptInstallPWA() {
+    if (this.isStandaloneApp) {
+      this.showToast('O aplicativo já está instalado no seu aparelho! ✨');
+      return;
+    }
+
+    // Se temos o prompt nativo pronto (Android / Chrome)
+    if (this.deferredInstallPrompt) {
+      try {
+        this.deferredInstallPrompt.prompt();
+        const choice = await this.deferredInstallPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          this.dismissInstallBanner();
+          this.dismissAppInstallBanner();
+        }
+        this.deferredInstallPrompt = null;
+        return;
+      } catch (err) {
+        console.warn('Erro ao abrir prompt nativo de instalação:', err);
+      }
+    }
+
+    // Caso seja iOS Safari ou navegador que não dispare beforeinstallprompt
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    this.openPWAInstallGuide(isIOS ? 'ios' : 'other');
+  }
+
+  openPWAInstallGuide(type = 'ios') {
+    const modal = document.getElementById('modal-pwa-install-guide');
+    const guideIos = document.getElementById('pwa-guide-ios');
+    const guideOther = document.getElementById('pwa-guide-other');
+
+    if (guideIos) guideIos.style.display = type === 'ios' ? 'block' : 'none';
+    if (guideOther) guideOther.style.display = type === 'other' ? 'block' : 'none';
+
+    if (modal) modal.classList.add('active');
+  }
+
+  closePWAInstallGuide() {
+    const modal = document.getElementById('modal-pwa-install-guide');
+    if (modal) modal.classList.remove('active');
+  }
+
+  dismissInstallBanner() {
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'none';
+    sessionStorage.setItem('studio_pwa_dismissed', '1');
+  }
+
+  dismissAppInstallBanner() {
+    const banner = document.getElementById('app-pwa-banner');
+    if (banner) banner.style.display = 'none';
+    sessionStorage.setItem('studio_pwa_dismissed', '1');
   }
 }
 

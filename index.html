@@ -2043,13 +2043,104 @@ body {
       border-color: var(--accent-gold, #BE7A47);
       background: var(--bg-card-tint, #FDFBF9);
     }
-    .services-dropdown-list {
+    /* BANNER & BOTÕES DE INSTALAÇÃO PWA */
+    .pwa-install-banner {
+      background: linear-gradient(135deg, #FFF9F2 0%, #F5ECE1 100%);
+      border: 1.5px solid var(--accent-gold, #BE7A47);
+      border-radius: var(--radius-md, 12px);
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(190, 122, 71, 0.12);
+      animation: slideDown 0.3s ease;
+    }
+    .pwa-banner-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+    .pwa-banner-icon {
+      font-size: 1.6rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .pwa-banner-text {
       display: flex;
       flex-direction: column;
+      min-width: 0;
+    }
+    .pwa-banner-text strong {
+      font-size: 0.88rem;
+      color: var(--primary, #4D2612);
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pwa-banner-text small {
+      font-size: 0.74rem;
+      color: var(--text-muted, #6B5244);
+    }
+    .pwa-banner-actions {
+      display: flex;
+      align-items: center;
       gap: 8px;
-      max-height: 380px;
-      overflow-y: auto;
-      padding-right: 2px;
+      flex-shrink: 0;
+    }
+    .btn-pwa-install {
+      background: linear-gradient(135deg, #BE7A47 0%, #9E5D2F 100%);
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(158, 93, 47, 0.25);
+      transition: transform 0.15s ease;
+    }
+    .btn-pwa-install:active {
+      transform: scale(0.96);
+    }
+    .btn-pwa-dismiss {
+      background: transparent;
+      border: none;
+      color: var(--text-muted, #6B5244);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-install-btn {
+      width: 100%;
+      margin-top: 10px;
+      background: rgba(190, 122, 71, 0.08);
+      border: 1px solid var(--accent-gold, #BE7A47);
+      color: var(--primary, #4D2612);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .login-install-btn:hover {
+      background: rgba(190, 122, 71, 0.16);
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 </style>
 </head>
@@ -2090,6 +2181,11 @@ body {
 
         <button type="submit" class="login-btn-submit">Entrar no Aplicativo ✨</button>
 
+        <!-- BOTÃO INSTALAR PWA NO LOGIN -->
+        <button type="button" id="btn-login-install" class="login-install-btn" style="display: none;" onclick="app.promptInstallPWA()">
+          <span>📲</span> Instalar Aplicativo no Celular
+        </button>
+
         <div id="login-error" class="login-error-msg"></div>
 
         <div class="login-footer-hint" style="text-align: center; color: var(--text-light); font-size: 0.75rem; margin-top: 14px;">
@@ -2106,6 +2202,21 @@ body {
        VISÃO 1: TELA PÚBLICA DE AGENDAMENTO (PADRÃO PARA AS CLIENTES)
        =============================================================== -->
   <div id="client-booking-view" class="booking-wrapper" style="display: none; margin: 0 auto;">
+    
+    <!-- BANNER DE INSTALAÇÃO DO APP (PWA) -->
+    <div id="pwa-install-banner" class="pwa-install-banner" style="display: none;">
+      <div class="pwa-banner-content">
+        <span class="pwa-banner-icon">📲</span>
+        <div class="pwa-banner-text">
+          <strong>Instalar App Studio Letícia</strong>
+          <small>Acesse mais rápido direto da sua tela inicial</small>
+        </div>
+      </div>
+      <div class="pwa-banner-actions">
+        <button type="button" class="btn-pwa-install" onclick="app.promptInstallPWA()">Instalar</button>
+        <button type="button" class="btn-pwa-dismiss" onclick="app.dismissInstallBanner()" title="Fechar">✕</button>
+      </div>
+    </div>
     <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
       <button type="button" class="btn-complete" style="background: rgba(77, 38, 18, 0.08); color: var(--primary); font-size: 0.78rem; padding: 6px 14px; border: 1px solid var(--border-color); cursor: pointer;" onclick="app.showLoginModal()">
         🔐 Acesso da Profissional
@@ -2252,6 +2363,21 @@ body {
         <button class="icon-btn gold-btn" onclick="app.openNewAppointmentModal()" title="Novo Agendamento">➕</button>
       </div>
     </header>
+
+    <!-- BANNER PWA NO APP PRINCIPAL (LETÍCIA) -->
+    <div id="app-pwa-banner" class="pwa-install-banner" style="display: none; margin: 12px 16px 0 16px;">
+      <div class="pwa-banner-content">
+        <span class="pwa-banner-icon">📲</span>
+        <div class="pwa-banner-text">
+          <strong>Instalar App Studio Letícia</strong>
+          <small>Abra em tela cheia direto do seu celular</small>
+        </div>
+      </div>
+      <div class="pwa-banner-actions">
+        <button type="button" class="btn-pwa-install" onclick="app.promptInstallPWA()">Instalar</button>
+        <button type="button" class="btn-pwa-dismiss" onclick="app.dismissAppInstallBanner()" title="Fechar">✕</button>
+      </div>
+    </div>
 
     <!-- CONTEÚDO PRINCIPAL (TABS) -->
     <main class="main-content">
@@ -2561,6 +2687,18 @@ body {
             <div>
               <div class="settings-nav-title">Grade de Horários &amp; Dias</div>
               <div class="settings-nav-subtitle">Escolha quais horários e dias aparecem no site para as clientes</div>
+            </div>
+          </div>
+          <div style="font-size: 1.2rem; color: var(--text-light); font-weight: bold;">›</div>
+        </div>
+
+        <!-- 4. Instalar App no Celular -->
+        <div class="settings-nav-card" id="settings-pwa-card" onclick="app.promptInstallPWA()">
+          <div class="settings-nav-info">
+            <div class="settings-nav-icon" style="background: #ECFDF5; color: #059669;">📲</div>
+            <div>
+              <div class="settings-nav-title" id="settings-pwa-title">Instalar App no Celular</div>
+              <div class="settings-nav-subtitle" id="settings-pwa-subtitle">Abra em tela cheia direto da sua tela inicial</div>
             </div>
           </div>
           <div style="font-size: 1.2rem; color: var(--text-light); font-weight: bold;">›</div>
@@ -3284,6 +3422,52 @@ body {
             💾 Salvar e Atualizar Site das Clientes ✨
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- =================================================================
+         MODAL GUIA DE INSTALAÇÃO DO APLICATIVO (PWA)
+         ================================================================= -->
+    <div id="modal-pwa-install-guide" class="modal-overlay">
+      <div class="modal-card" style="max-width: 420px; text-align: center; border-radius: var(--radius-lg); position: relative; padding: 26px 20px;">
+        <button type="button" class="password-toggle-btn" style="position: absolute; top: 12px; right: 12px; font-size: 1.1rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; z-index: 10;" onclick="app.closePWAInstallGuide()" title="Fechar">✕</button>
+        
+        <div style="width: 64px; height: 64px; background: rgba(190, 122, 71, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 14px auto; box-shadow: 0 4px 14px rgba(190, 122, 71, 0.15);">📲</div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 0 0 6px 0;">Instalar o Studio Letícia</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 18px 0; line-height: 1.4;">
+          Tenha o aplicativo na tela inicial do seu celular, abrindo em tela cheia com acesso rápido e prático!
+        </p>
+
+        <!-- GUIA ESPECÍFICO PARA IPHONE / SAFARI -->
+        <div id="pwa-guide-ios" style="display: none; text-align: left; background: var(--bg-card-tint); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 18px;">
+          <div style="font-weight: 700; font-size: 0.88rem; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+            <span>🍎</span> No iPhone (Safari):
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 0.84rem; color: var(--text-main); line-height: 1.4;">
+            <span style="background: var(--accent-gold); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">1</span>
+            <span>Toque no botão <strong>Compartilhar</strong> <span style="font-size: 1.15rem; vertical-align: middle;">📤</span> (ícone quadrado com a seta para cima na barra inferior do Safari).</span>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 0.84rem; color: var(--text-main); line-height: 1.4;">
+            <span style="background: var(--accent-gold); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">2</span>
+            <span>Role a listinha para cima e toque em <strong>"Adicionar à Tela de Início"</strong> <span style="font-size: 1.15rem; vertical-align: middle;">➕</span>.</span>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 10px; font-size: 0.84rem; color: var(--text-main); line-height: 1.4;">
+            <span style="background: var(--accent-gold); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">3</span>
+            <span>No canto superior direito, toque em <strong>"Adicionar"</strong>. Pronto! O app aparecerá com o ícone oficial na sua tela! ✨</span>
+          </div>
+        </div>
+
+        <!-- GUIA PARA ANDROID OU OUTROS NAVEGADORES -->
+        <div id="pwa-guide-other" style="display: none; text-align: left; background: var(--bg-card-tint); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 18px;">
+          <div style="font-weight: 700; font-size: 0.88rem; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+            <span>🤖</span> No seu navegador:
+          </div>
+          <p style="font-size: 0.84rem; color: var(--text-main); line-height: 1.5; margin: 0;">
+            Toque no menu de opções <strong>(três pontinhos ⋮)</strong> e clique em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
+          </p>
+        </div>
+
+        <button type="button" class="btn-complete" style="width: 100%; padding: 12px; font-size: 0.95rem; font-weight: 700;" onclick="app.closePWAInstallGuide()">Entendido! 👍</button>
       </div>
     </div>
 
