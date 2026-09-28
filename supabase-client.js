@@ -19,50 +19,57 @@ class StudioCloudService {
     const savedUrl = localStorage.getItem('studio_supabase_url') || DEFAULT_SUPABASE_CONFIG.url;
     const savedKey = localStorage.getItem('studio_supabase_key') || DEFAULT_SUPABASE_CONFIG.anonKey;
 
-    if (window.supabase && savedUrl && savedKey) {
+    const sbLib = (typeof window !== 'undefined' && window.supabase) || (typeof supabase !== 'undefined' ? supabase : null);
+
+    if (sbLib && savedUrl && savedKey) {
       try {
-        this.client = window.supabase.createClient(savedUrl, savedKey);
+        this.client = sbLib.createClient(savedUrl, savedKey);
       } catch (e) {
         console.warn('Erro ao inicializar Supabase Client:', e);
       }
     }
   }
 
+  ensureClient() {
+    if (!this.client) {
+      this.init();
+    }
+    return this.client;
+  }
+
   isConfigured() {
+    this.ensureClient();
     const savedKey = localStorage.getItem('studio_supabase_key') || DEFAULT_SUPABASE_CONFIG.anonKey;
     return !!(this.client && savedKey && (savedKey.startsWith('sb_') || savedKey.startsWith('eyJ') || savedKey.length > 20));
   }
 
   // Busca catálogo de serviços disponíveis para a cliente agendar (Nuvem ou Local)
   async getPublicServices() {
+    this.ensureClient();
     const defaultServices = [
       {
         id: 'srv_1',
         nome: 'Drenagem Linfática Corporal',
+        categoria: 'Corporal',
         duracaoMin: 60,
-        preco: 130.00,
+        preco: 100.00,
         descricao: 'Redução de retenção de líquidos, desinchaço e ativação da circulação.'
       },
       {
-        id: 'srv_2',
-        nome: 'Drenagem Linfática Facial',
-        duracaoMin: 40,
-        preco: 90.00,
-        descricao: 'Diminuição de bolsas nos olhos, linhas de expressão e efeito lifting.'
-      },
-      {
-        id: 'srv_3',
-        nome: 'Drenagem Linfática Pós-Operatório',
-        duracaoMin: 60,
-        preco: 160.00,
-        descricao: 'Recuperação cirúrgica com toques suaves para alívio de dor e fibroses.'
-      },
-      {
         id: 'srv_4',
-        nome: 'Massagem Relaxante com Óleos',
+        nome: 'Massagem Modeladora Redutora',
+        categoria: 'Corporal',
         duracaoMin: 60,
-        preco: 120.00,
-        descricao: 'Alívio profundo de tensões musculares, estresse e renovação de energias.'
+        preco: 119.90,
+        descricao: 'Manobras vigorosas focadas em contorno corporal e celulite.'
+      },
+      {
+        id: 'srv_5',
+        nome: 'Massagem Relaxante com Aromaterapia',
+        categoria: 'Corporal',
+        duracaoMin: 50,
+        preco: 100.00,
+        descricao: 'Alívio de tensões musculares, estresse e relaxamento profundo.'
       }
     ];
 
@@ -73,6 +80,7 @@ class StudioCloudService {
           .from('solicitacoes_agendamento')
           .select('observacoes')
           .eq('cliente_nome', '__STUDIO_CONFIG_SERVICOS__')
+          .order('updated_at', { ascending: false })
           .limit(1);
 
         if (!error && data && data.length > 0 && data[0].observacoes) {
@@ -86,31 +94,14 @@ class StudioCloudService {
       }
     }
 
-    // 2. Fallback: Se for a própria Letícia com IndexedDB local ativo
-    try {
-      if (typeof db !== 'undefined' && db && db.getAll) {
-        const localServices = await db.getAll('servicos');
-        if (localServices && localServices.length > 0) {
-          return localServices;
-        }
-      }
-    } catch (e) {
-      // Ignora e usa catálogo padrão
-    }
-
     return defaultServices;
   }
 
   // Sincroniza catálogo de procedimentos da Letícia para a nuvem
   async syncServicesCatalog(services) {
+    this.ensureClient();
     if (!this.isConfigured() || !services || services.length === 0) return;
     try {
-      const { data: existing } = await this.client
-        .from('solicitacoes_agendamento')
-        .select('id')
-        .eq('cliente_nome', '__STUDIO_CONFIG_SERVICOS__')
-        .limit(1);
-
       const payload = {
         cliente_nome: '__STUDIO_CONFIG_SERVICOS__',
         cliente_whatsapp: '00000000000',
@@ -125,12 +116,13 @@ class StudioCloudService {
         updated_at: new Date().toISOString()
       };
 
-      if (existing && existing.length > 0) {
-        await this.client
-          .from('solicitacoes_agendamento')
-          .update(payload)
-          .eq('id', existing[0].id);
-      } else {
+      const { data: updated, error: updateErr } = await this.client
+        .from('solicitacoes_agendamento')
+        .update(payload)
+        .eq('cliente_nome', '__STUDIO_CONFIG_SERVICOS__')
+        .select('id');
+
+      if (!updateErr && (!updated || updated.length === 0)) {
         await this.client
           .from('solicitacoes_agendamento')
           .insert([payload]);
@@ -142,6 +134,7 @@ class StudioCloudService {
 
   // Busca configuração de horários e dias de atendimento disponíveis
   async getPublicScheduleConfig() {
+    this.ensureClient();
     const defaultConfig = {
       slots: ['08:00', '09:00', '10:00', '11:00', '13:30', '14:30', '15:30', '16:30', '17:30'],
       diasSemana: [1, 2, 3, 4, 5, 6] // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
@@ -153,6 +146,7 @@ class StudioCloudService {
           .from('solicitacoes_agendamento')
           .select('observacoes')
           .eq('cliente_nome', '__STUDIO_CONFIG_HORARIOS__')
+          .order('updated_at', { ascending: false })
           .limit(1);
 
         if (!error && data && data.length > 0 && data[0].observacoes) {
@@ -179,6 +173,7 @@ class StudioCloudService {
 
   // Sincroniza a configuração de horários e dias com o Supabase
   async syncScheduleConfig(config) {
+    this.ensureClient();
     if (!config || !config.slots) return;
     try {
       localStorage.setItem('studio_schedule_config', JSON.stringify(config));
@@ -186,12 +181,6 @@ class StudioCloudService {
 
     if (!this.isConfigured()) return;
     try {
-      const { data: existing } = await this.client
-        .from('solicitacoes_agendamento')
-        .select('id')
-        .eq('cliente_nome', '__STUDIO_CONFIG_HORARIOS__')
-        .limit(1);
-
       const payload = {
         cliente_nome: '__STUDIO_CONFIG_HORARIOS__',
         cliente_whatsapp: '00000000000',
@@ -206,12 +195,13 @@ class StudioCloudService {
         updated_at: new Date().toISOString()
       };
 
-      if (existing && existing.length > 0) {
-        await this.client
-          .from('solicitacoes_agendamento')
-          .update(payload)
-          .eq('id', existing[0].id);
-      } else {
+      const { data: updated, error: updateErr } = await this.client
+        .from('solicitacoes_agendamento')
+        .update(payload)
+        .eq('cliente_nome', '__STUDIO_CONFIG_HORARIOS__')
+        .select('id');
+
+      if (!updateErr && (!updated || updated.length === 0)) {
         await this.client
           .from('solicitacoes_agendamento')
           .insert([payload]);
@@ -374,6 +364,7 @@ class StudioCloudService {
 
   // Busca todo o histórico recente de solicitações (Confirmadas, Pendentes, Recusadas)
   async getAllRequests(limit = 40) {
+    this.ensureClient();
     if (!this.isConfigured()) {
       const localList = JSON.parse(localStorage.getItem('studio_demo_requests') || '[]');
       return localList.slice(0, limit);
@@ -384,6 +375,7 @@ class StudioCloudService {
         .from('solicitacoes_agendamento')
         .select('*')
         .neq('cliente_nome', '__STUDIO_CONFIG_SERVICOS__')
+        .neq('cliente_nome', '__STUDIO_CONFIG_HORARIOS__')
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -451,6 +443,7 @@ class StudioCloudService {
 
   // Assinatura Realtime para a Letícia receber novos pedidos instantaneamente
   subscribeToNewBookings(callback) {
+    this.ensureClient();
     if (!this.client || typeof this.client.channel !== 'function') return null;
     try {
       const channel = this.client
@@ -478,6 +471,7 @@ class StudioCloudService {
 
   // Assinatura Realtime para a tela da cliente atualizar no milissegundo em que a Letícia aprova
   subscribeToBookingStatus(requestId, callback) {
+    this.ensureClient();
     if (!this.client || !requestId || typeof this.client.channel !== 'function') return null;
     try {
       const channel = this.client
@@ -518,6 +512,7 @@ class StudioCloudService {
 
   // Busca solicitações pendentes para a Letícia aprovar no app
   async getPendingRequests() {
+    this.ensureClient();
     if (!this.isConfigured()) {
       const localList = JSON.parse(localStorage.getItem('studio_demo_requests') || '[]');
       return localList.filter(item => item.status === 'pendente');
@@ -528,6 +523,8 @@ class StudioCloudService {
         .from('solicitacoes_agendamento')
         .select('*')
         .eq('status', 'pendente')
+        .neq('cliente_nome', '__STUDIO_CONFIG_SERVICOS__')
+        .neq('cliente_nome', '__STUDIO_CONFIG_HORARIOS__')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -543,6 +540,7 @@ class StudioCloudService {
 
   // Letícia confirma a solicitação
   async confirmBooking(requestId) {
+    this.ensureClient();
     if (!this.isConfigured()) {
       const localList = JSON.parse(localStorage.getItem('studio_demo_requests') || '[]');
       const item = localList.find(i => i.id === requestId);
@@ -569,6 +567,7 @@ class StudioCloudService {
 
   // Letícia recusa a solicitação
   async rejectBooking(requestId, motivo = '') {
+    this.ensureClient();
     if (!this.isConfigured()) {
       const localList = JSON.parse(localStorage.getItem('studio_demo_requests') || '[]');
       const item = localList.find(i => i.id === requestId);

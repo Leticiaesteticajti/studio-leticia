@@ -15,8 +15,8 @@
   <title>Studio Letícia - Gestão & Estética</title>
   
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=33">
-  <link rel="stylesheet" href="style.css?v=33">
+  <link rel="stylesheet" href="css/style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=34">
   <style id="studio-core-styles">
 /* ==========================================================================
    STUDIO LETÍCIA - ESTILO VISUAL REFINADO & PREMIUM (iOS / Mobile First)
@@ -3450,9 +3450,12 @@ body {
           <button class="btn-close" onclick="app.closeModal('modal-price-table')">✕</button>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; flex-wrap: wrap;">
           <span style="font-size: 0.82rem; color: var(--text-muted);">Procedimentos e Valores:</span>
-          <button class="btn-complete" style="font-size: 0.78rem; padding: 6px 12px;" onclick="app.openNewServiceModal()">+ Novo Serviço</button>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-complete" style="font-size: 0.78rem; padding: 6px 12px; background: #0284C7;" onclick="app.syncServicesToCloud(true)">🌐 Atualizar no Site</button>
+            <button class="btn-complete" style="font-size: 0.78rem; padding: 6px 12px;" onclick="app.openNewServiceModal()">+ Novo Serviço</button>
+          </div>
         </div>
 
         <div id="price-table-full-list" style="display: flex; flex-direction: column; gap: 10px;">
@@ -3600,7 +3603,10 @@ body {
               <span style="font-size: 0.74rem; color: var(--text-muted);">Solicitações online &amp; notificações em tempo real</span>
             </div>
           </div>
-          <button class="btn-close" onclick="app.closeModal('modal-online-requests')">✕</button>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button class="icon-btn" style="width: 32px; height: 32px; font-size: 0.85rem;" onclick="app.refreshOnlineRequestsModal()" title="Atualizar Notificações">🔄</button>
+            <button class="btn-close" onclick="app.closeModal('modal-online-requests')">✕</button>
+          </div>
         </div>
 
         <!-- Abas do Painel de Alertas: Pendentes / Histórico -->
@@ -3751,9 +3757,9 @@ body {
 
   <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-client.js?v=33"></script>
-  <script src="js/db.js?v=33"></script>
-  <script src="js/app.js?v=33"></script>
+  <script src="js/supabase-client.js?v=34"></script>
+  <script src="js/db.js?v=34"></script>
+  <script src="js/app.js?v=34"></script>
   <script>
     // Registro do Service Worker para suporte Offline
     if ('serviceWorker' in navigator) {
