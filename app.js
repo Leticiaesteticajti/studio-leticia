@@ -2372,11 +2372,19 @@ class StudioApp {
 
   // Clientes
   openNewClientModal() {
-    document.getElementById('form-client').reset();
+    const form = document.getElementById('form-client');
+    if (form) form.reset();
     document.getElementById('client-id').value = '';
     document.getElementById('modal-client-title').textContent = 'Cadastrar Cliente';
     document.getElementById('client-preferencia-sessao').value = 'Com música relaxante';
+    const sheet = document.getElementById('modal-client')?.querySelector('.modal-sheet');
+    if (sheet) sheet.scrollTop = 0;
     this.openModal('modal-client');
+    setTimeout(() => {
+      if (sheet) sheet.scrollTop = 0;
+      const nameInput = document.getElementById('client-name');
+      if (nameInput) nameInput.focus();
+    }, 120);
   }
 
   async editClient(id) {
@@ -2402,36 +2410,57 @@ class StudioApp {
     document.getElementById('anamnese-alergias').value = an.alergias || '';
     document.getElementById('anamnese-restricoes').value = an.restricoes || '';
 
+    const sheet = document.getElementById('modal-client')?.querySelector('.modal-sheet');
+    if (sheet) sheet.scrollTop = 0;
     this.openModal('modal-client');
+    setTimeout(() => {
+      if (sheet) sheet.scrollTop = 0;
+    }, 120);
   }
 
   async saveClient(e) {
     if (e) e.preventDefault();
     try {
       const id = document.getElementById('client-id').value || ('cli_' + Date.now());
-      const nome = (document.getElementById('client-name').value || '').trim();
-      const whatsapp = (document.getElementById('client-phone').value || '').trim();
+      const nomeInput = document.getElementById('client-name');
+      const phoneInput = document.getElementById('client-phone');
+      const nome = (nomeInput?.value || '').trim();
+      const whatsapp = (phoneInput?.value || '').trim();
       const rawCpf = (document.getElementById('client-cpf') ? document.getElementById('client-cpf').value : '').replace(/\D/g, '');
       const nascimento = document.getElementById('client-birthdate').value;
       const peso = document.getElementById('client-peso').value;
       const preferenciaSessao = document.getElementById('client-preferencia-sessao').value;
       const notas = document.getElementById('client-notes').value;
+      const sheet = document.getElementById('modal-client')?.querySelector('.modal-sheet');
+
+      const highlightField = (input, msg) => {
+        if (sheet) {
+          sheet.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        if (input) {
+          input.focus();
+          input.style.border = '2px solid #E53E3E';
+          input.style.backgroundColor = 'rgba(229, 62, 62, 0.08)';
+          setTimeout(() => {
+            input.style.border = '';
+            input.style.backgroundColor = '';
+          }, 3500);
+        }
+        this.showToast(msg);
+      };
 
       if (!nome) {
-        alert('Por favor, preencha o Nome da cliente no topo do formulário.');
-        document.getElementById('client-name').focus();
+        highlightField(nomeInput, '⚠️ Por favor, informe o Nome Completo no início da ficha.');
         return;
       }
 
       if (!whatsapp) {
-        alert('Por favor, preencha o WhatsApp da cliente.');
-        document.getElementById('client-phone').focus();
+        highlightField(phoneInput, '⚠️ Por favor, informe o WhatsApp da cliente.');
         return;
       }
 
       if (rawCpf && rawCpf.length === 11 && !this.isValidCPF(rawCpf)) {
-        alert('O CPF digitado não é válido. Por favor, verifique os números.');
-        document.getElementById('client-cpf').focus();
+        highlightField(document.getElementById('client-cpf'), '⚠️ O CPF digitado não é válido. Verifique os números.');
         return;
       }
 
@@ -2478,7 +2507,16 @@ class StudioApp {
   // Modais genéricos
   openModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) modal.classList.add('active');
+    if (modal) {
+      modal.classList.add('active');
+      const sheet = modal.querySelector('.modal-sheet');
+      if (sheet) {
+        sheet.scrollTop = 0;
+        requestAnimationFrame(() => {
+          sheet.scrollTop = 0;
+        });
+      }
+    }
   }
 
   closeModal(modalId) {

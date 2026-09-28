@@ -1,4 +1,4 @@
-const CACHE_NAME = 'studio-leticia-v25';
+const CACHE_NAME = 'studio-leticia-v26';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
