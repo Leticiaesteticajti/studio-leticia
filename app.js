@@ -1373,7 +1373,10 @@ class StudioApp {
   }
 
   setupBookingSettings() {
-    const bookingUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+    const isCustomDomain = window.location.hostname === 'estudioleticiaestetica.com.br' || window.location.hostname === 'www.estudioleticiaestetica.com.br';
+    const bookingUrl = isCustomDomain 
+      ? 'https://estudioleticiaestetica.com.br'
+      : (window.location.origin.includes('github.io') ? 'https://estudioleticiaestetica.com.br' : (window.location.origin + window.location.pathname.replace('index.html', '')));
     const display = document.getElementById('booking-public-url-display');
     if (display) display.textContent = bookingUrl;
 
@@ -1384,15 +1387,18 @@ class StudioApp {
   }
 
   copyBookingLink() {
-    const bookingUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+    const isCustomDomain = window.location.hostname === 'estudioleticiaestetica.com.br' || window.location.hostname === 'www.estudioleticiaestetica.com.br';
+    const bookingUrl = isCustomDomain 
+      ? 'https://estudioleticiaestetica.com.br'
+      : (window.location.origin.includes('github.io') ? 'https://estudioleticiaestetica.com.br' : (window.location.origin + window.location.pathname.replace('index.html', '')));
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(bookingUrl).then(() => {
-        this.showToast('Link Oficial do Studio copiado para o WhatsApp! 📋✨');
+        this.showToast('Link do Site Oficial copiado (estudioleticiaestetica.com.br)! 📋✨');
       }).catch(() => {
-        prompt('Copie o link abaixo para enviar às clientes:', bookingUrl);
+        prompt('Copie o link do site abaixo para enviar às clientes:', bookingUrl);
       });
     } else {
-      prompt('Copie o link abaixo para enviar às clientes:', bookingUrl);
+      prompt('Copie o link do site abaixo para enviar às clientes:', bookingUrl);
     }
   }
 
@@ -3314,7 +3320,8 @@ class StudioApp {
     if (btnWpp) {
       const msgWpp = encodeURIComponent(`Olá, Letícia! Fiz um agendamento pelo seu site para ${dataFormatada} às ${data.horario} (${data.servico_nome}).`);
       const config = (await db.get('config', 'app_config')) || {};
-      const studioNum = (config.studioPhone || '5564999999999').replace(/\D/g, '');
+      let studioNum = (config.whatsappStudio || config.studioPhone || '6493094775').replace(/\D/g, '');
+      if (!studioNum.startsWith('55')) studioNum = '55' + studioNum;
       btnWpp.href = `https://wa.me/${studioNum}?text=${msgWpp}`;
     }
 
@@ -3324,7 +3331,7 @@ class StudioApp {
       if (icon) icon.textContent = '🎉';
       if (badge) badge.textContent = 'CONFIRMADO COM SUCESSO';
       if (headline) headline.textContent = 'Seu Horário está Garantido! ✨';
-      if (desc) desc.textContent = 'A Letícia confirmou seu agendamento no Studio. Estamos te esperando com muito carinho na Rua 26, nº 135 - Colmeia Park!';
+      if (desc) desc.textContent = 'A Letícia confirmou seu agendamento no Studio. Estamos te esperando com muito carinho na Rua 26, nº 135 • Colmeia Park • Jataí - GO!';
     } else if (data.status === 'recusado') {
       if (icon) icon.textContent = '❌';
       if (badge) badge.textContent = 'HORÁRIO INDISPONÍVEL';

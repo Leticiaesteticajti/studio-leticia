@@ -1,4 +1,4 @@
-const CACHE_NAME = 'studio-leticia-v27';
+const CACHE_NAME = 'studio-leticia-v28';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -17,6 +17,9 @@ const ASSETS_TO_CACHE = [
   './img/logo-oficial.png',
   './img/logo-symbol.png',
   './img/logo-transparent.png',
+  './img/logo-oficial-transparente.png',
+  './img/foto-atendimento-1.jpg',
+  './img/foto-atendimento-2.jpg',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png'

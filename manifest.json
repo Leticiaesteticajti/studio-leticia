@@ -1,7 +1,7 @@
 {
-  "name": "Studio Letícia - Gestão & Estética",
+  "name": "Studio Letícia - Estética & Bem-Estar",
   "short_name": "Studio Letícia",
-  "description": "App de gestão de agenda, clientes e caixa para estética e drenagem",
+  "description": "Studio Letícia - Estética & Bem-Estar em Jataí-GO. Agendamentos e procedimentos com Letícia Gomes",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

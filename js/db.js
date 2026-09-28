@@ -224,7 +224,9 @@ class LocalDatabase {
         id: 'app_config',
         studioNome: 'Studio Letícia',
         profissionalNome: 'Letícia',
-        whatsappStudio: '',
+        whatsappStudio: '6493094775',
+        studioAddress: 'Rua 26, nº 135 • Colmeia Park • Jataí - GO',
+        dominio: 'estudioleticiaestetica.com.br',
         chavePix: '',
         authCpf: '',
         authSenha: 'LETICIA123',
@@ -238,6 +240,18 @@ class LocalDatabase {
       }
       if (config.authCpf === undefined) {
         config.authCpf = '';
+        needsUpdate = true;
+      }
+      if (!config.whatsappStudio || config.whatsappStudio === '') {
+        config.whatsappStudio = '6493094775';
+        needsUpdate = true;
+      }
+      if (!config.studioAddress) {
+        config.studioAddress = 'Rua 26, nº 135 • Colmeia Park • Jataí - GO';
+        needsUpdate = true;
+      }
+      if (!config.dominio) {
+        config.dominio = 'estudioleticiaestetica.com.br';
         needsUpdate = true;
       }
       if (needsUpdate) {

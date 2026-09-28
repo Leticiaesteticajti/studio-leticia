@@ -2386,27 +2386,63 @@ body {
     </div>
     
     
-    <!-- CABEÇALHO -->
-    <header class="booking-header">
-      <img src="img/logo-badge.png" alt="Studio Letícia" class="booking-logo">
-      <h1 class="booking-title">STUDIO LETÍCIA</h1>
-      <p class="booking-subtitle">ESTÉTICA &amp; BEM-ESTAR • AGENDE SEU HORÁRIO</p>
+    <!-- CABEÇALHO COM LOGO OFICIAL TRANSPARENTE -->
+    <header class="booking-header" style="text-align: center; margin-bottom: 18px;">
+      <img src="img/logo-oficial-transparente.png" alt="Studio Letícia - Estética &amp; Bem-Estar" class="booking-logo" style="max-height: 125px; width: auto; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(190, 122, 71, 0.18)); margin-bottom: 8px;">
+      <h1 class="booking-title" style="letter-spacing: 2px;">STUDIO LETÍCIA</h1>
+      <p class="booking-subtitle">ESTÉTICA &amp; BEM-ESTAR • JATAÍ - GO</p>
     </header>
 
-    <!-- CARD DE ENDEREÇO & LOCALIZAÇÃO GOOGLE MAPS -->
-    <div class="booking-address-card" style="background: var(--bg-card); border: 1.5px solid var(--accent-gold); border-radius: 14px; padding: 12px 14px; margin-bottom: 18px; box-shadow: 0 4px 14px rgba(190, 122, 71, 0.1); display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-      <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-        <span style="font-size: 1.6rem; line-height: 1; flex-shrink: 0; color: #BE7A47;">📍</span>
-        <div style="min-width: 0;">
-          <div style="font-weight: 800; font-size: 0.88rem; color: var(--primary);">Studio Letícia • Endereço</div>
-          <div style="font-size: 0.8rem; color: var(--text-main); margin-top: 2px;">
-            Rua 26, nº 135 • Colmeia Park
+    <!-- CARD DE ENDEREÇO & CONTATO DIRETO WHATSAPP -->
+    <div class="booking-address-card" style="background: var(--bg-card); border: 1.5px solid var(--accent-gold); border-radius: 16px; padding: 14px 16px; margin-bottom: 18px; box-shadow: 0 4px 16px rgba(190, 122, 71, 0.12);">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+          <span style="font-size: 1.6rem; line-height: 1; flex-shrink: 0; color: #BE7A47;">📍</span>
+          <div>
+            <div style="font-weight: 800; font-size: 0.92rem; color: var(--primary);">Studio Letícia • Endereço</div>
+            <div style="font-size: 0.82rem; color: var(--text-main); margin-top: 2px;">
+              Rua 26, nº 135 • Colmeia Park • Jataí - GO
+            </div>
+          </div>
+        </div>
+        <a href="https://maps.google.com/?q=-17.858556,-51.716417" target="_blank" rel="noopener noreferrer" class="btn-complete" style="padding: 7px 14px; font-size: 0.78rem; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; background: linear-gradient(135deg, #BE7A47, #9E5D2F); color: #fff; border-radius: 20px; font-weight: 700; box-shadow: 0 2px 8px rgba(158, 93, 47, 0.25);">
+          <span>🗺️</span> Ver no Maps
+        </a>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px dashed rgba(190, 122, 71, 0.25); flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.2rem;">💬</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">WhatsApp: (64) 9309-4775</span>
+        </div>
+        <a href="https://wa.me/556493094775?text=Ol%C3%A1%2C%20Let%C3%ADcia!%20Gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20os%20atendimentos." target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: #25D366; color: #FFFFFF; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-decoration: none; box-shadow: 0 2px 8px rgba(37, 211, 102, 0.25);">
+          <span>📱</span> Falar no WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <!-- BANNER VISUAL: CUIDADOS & MASSOTERAPIA COM FOTOS REAIS -->
+    <div style="margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px;">
+        <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden; border: 1.5px solid var(--border-light, #F2EAE1); box-shadow: 0 4px 14px rgba(77, 38, 18, 0.06);">
+          <img src="img/foto-atendimento-1.jpg" alt="Massoterapia e Drenagem com Letícia Gomes" style="width: 100%; height: 210px; object-fit: cover; object-position: center top; display: block;">
+          <div style="padding: 12px 14px;">
+            <div style="font-weight: 800; font-size: 0.92rem; color: var(--primary);">Massoterapia &amp; Drenagem</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; line-height: 1.35;">
+              Alívio de tensões, redução de inchaço e retenção de líquidos com atendimento humanizado.
+            </div>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden; border: 1.5px solid var(--border-light, #F2EAE1); box-shadow: 0 4px 14px rgba(77, 38, 18, 0.06);">
+          <img src="img/foto-atendimento-2.jpg" alt="Seu momento de cuidado e bem-estar no Studio Letícia" style="width: 100%; height: 210px; object-fit: cover; object-position: center top; display: block;">
+          <div style="padding: 12px 14px;">
+            <div style="font-weight: 800; font-size: 0.92rem; color: var(--primary);">Seu Corpo, Seu Templo</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; line-height: 1.35;">
+              Ambiente relaxante, música suave e protocolos exclusivos pensados para o seu bem-estar.
+            </div>
           </div>
         </div>
       </div>
-      <a href="https://maps.google.com/?q=-17.858556,-51.716417" target="_blank" rel="noopener noreferrer" class="btn-complete" style="padding: 8px 14px; font-size: 0.78rem; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; background: linear-gradient(135deg, #BE7A47, #9E5D2F); color: #fff; border-radius: 20px; font-weight: 700; box-shadow: 0 2px 8px rgba(158, 93, 47, 0.25);">
-        <span>🗺️</span> Ver no Maps
-      </a>
     </div>
 
     <!-- TELA 1: FORMULÁRIO DE AGENDAMENTO (Exibido por padrão se não houver ?id=) -->
@@ -2505,7 +2541,7 @@ body {
 
         <div id="status-actions">
           <!-- Botão WhatsApp para falar direto com a Letícia -->
-          <a id="btn-talk-leticia" href="#" target="_blank" class="quick-btn green-action" style="width: 100%; justify-content: center; box-sizing: border-box; padding: 12px; margin-bottom: 10px; text-decoration: none;">
+          <a id="btn-talk-leticia" href="https://wa.me/556493094775" target="_blank" class="quick-btn green-action" style="width: 100%; justify-content: center; box-sizing: border-box; padding: 12px; margin-bottom: 10px; text-decoration: none;">
             💬 Conversar com a Letícia no WhatsApp
           </a>
 
@@ -2516,6 +2552,16 @@ body {
       </div>
     </div>
 
+    <!-- RODAPÉ OFICIAL STUDIO LETÍCIA -->
+    <footer style="text-align: center; padding: 26px 14px 40px 14px; margin-top: 28px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.82rem; line-height: 1.6;">
+      <img src="img/logo-oficial-transparente.png" alt="Studio Letícia" style="max-height: 60px; width: auto; margin-bottom: 10px; opacity: 0.9; filter: drop-shadow(0 2px 8px rgba(190, 122, 71, 0.15));">
+      <div style="font-weight: 800; color: var(--primary); font-size: 0.92rem; letter-spacing: 1px;">STUDIO LETÍCIA • ESTÉTICA &amp; BEM-ESTAR</div>
+      <div style="margin-top: 2px;">📍 Rua 26, nº 135 • Colmeia Park • Jataí - GO</div>
+      <div>💬 Atendimento com hora marcada • WhatsApp: <strong>(64) 9309-4775</strong></div>
+      <div style="margin-top: 8px;">
+        <a href="https://estudioleticiaestetica.com.br" style="color: var(--accent-gold); font-weight: 700; text-decoration: none;">🌐 estudioleticiaestetica.com.br</a>
+      </div>
+    </footer>
   
   </div>
 
@@ -2527,10 +2573,10 @@ body {
     <!-- CABEÇALHO DO APLICATIVO COM LOGO OFICIAL -->
     <header class="app-header">
       <div class="brand-wrapper">
-        <img src="img/logo-badge.png" alt="Studio Letícia" class="brand-logo-img">
+        <img src="img/logo-oficial-transparente.png" alt="Studio Letícia" class="brand-logo-img" style="object-fit: contain;">
         <div class="brand-info">
           <h1 id="header-title">STUDIO LETÍCIA</h1>
-          <p id="header-subtitle">ESTÉTICA &amp; BEM-ESTAR</p>
+          <p id="header-subtitle">ESTÉTICA &amp; BEM-ESTAR • JATAÍ - GO</p>
         </div>
       </div>
       <div class="header-actions">
