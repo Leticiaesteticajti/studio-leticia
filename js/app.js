@@ -2653,7 +2653,7 @@ class StudioApp {
   }
 
   setupClientPhoneMask() {
-    const input = document.getElementById('client-whatsapp');
+    const input = document.getElementById('booking-client-whatsapp') || document.getElementById('client-phone');
     if (!input || input.dataset.hasMask) return;
     input.dataset.hasMask = 'true';
     input.addEventListener('input', (e) => {

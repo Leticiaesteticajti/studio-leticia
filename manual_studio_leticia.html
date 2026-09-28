@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Manual do Usuário - Studio Letícia</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    @page {
+      size: A4 portrait;
+      margin: 14mm 14mm 14mm 14mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #26160D;
+      background: #FFFFFF;
+      margin: 0;
+      padding: 0;
+      font-size: 9.5pt;
+      line-height: 1.5;
+    }
+
+    /* QUEBRAS DE PÁGINA */
+    .page-break {
+      page-break-after: always;
+      break-after: page;
+    }
+
+    .page {
+      position: relative;
+      min-height: 260mm;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* CABEÇALHO E RODAPÉ DE PÁGINA */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1.5px solid #BE7A47;
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+      font-size: 8pt;
+      color: #6B5244;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .page-header-logo {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: #4D2612;
+    }
+
+    .page-footer {
+      margin-top: auto;
+      border-top: 1px solid #E8DFD5;
+      padding-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 7.5pt;
+      color: #8C7567;
+    }
+
+    /* CAPA */
+    .cover-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 265mm;
+      padding: 30px 20px;
+      background: linear-gradient(165deg, #FAF7F2 0%, #F5ECE1 50%, #FAF7F2 100%);
+      border: 3px solid #BE7A47;
+      border-radius: 20px;
+      position: relative;
+    }
+
+    .cover-badge-img {
+      width: 170px;
+      height: auto;
+      border-radius: 24px;
+      border: 3px solid #BE7A47;
+      box-shadow: 0 12px 36px rgba(77, 38, 18, 0.25);
+      margin-bottom: 24px;
+    }
+
+    .cover-title {
+      font-family: 'Cinzel', serif;
+      font-size: 26pt;
+      font-weight: 800;
+      color: #4D2612;
+      letter-spacing: 2px;
+      margin: 0 0 6px 0;
+    }
+
+    .cover-subtitle {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #BE7A47;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin: 0 0 20px 0;
+    }
+
+    .cover-tagline {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #26160D;
+      margin-bottom: 8px;
+    }
+
+    .cover-desc {
+      font-size: 9.5pt;
+      color: #6B5244;
+      max-width: 440px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .cover-meta {
+      background: #FFFFFF;
+      border: 1px solid #DFD5C8;
+      border-radius: 12px;
+      padding: 12px 24px;
+      display: flex;
+      gap: 30px;
+      font-size: 8.5pt;
+      color: #4D2612;
+      box-shadow: 0 4px 12px rgba(77, 38, 18, 0.06);
+    }
+
+    .cover-meta-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .cover-meta-label {
+      font-size: 7pt;
+      color: #8C7567;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .cover-meta-val {
+      font-weight: 800;
+      color: #4D2612;
+      margin-top: 2px;
+    }
+
+    /* SEÇÕES E CONTEÚDO */
+    h2.section-heading {
+      font-family: 'Cinzel', serif;
+      font-size: 15pt;
+      font-weight: 800;
+      color: #4D2612;
+      border-bottom: 2px solid #BE7A47;
+      padding-bottom: 6px;
+      margin: 0 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h3.subsection-heading {
+      font-size: 11pt;
+      font-weight: 800;
+      color: #85421E;
+      margin: 14px 0 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    p {
+      margin: 0 0 8px 0;
+      color: #382417;
+    }
+
+    /* TABELAS DE BOTÕES & FUNÇÕES */
+    table.btn-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px 0;
+      font-size: 8.5pt;
+    }
+
+    table.btn-table th {
+      background: #4D2612;
+      color: #FFFFFF;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+      letter-spacing: 0.6px;
+      padding: 8px 10px;
+      text-align: left;
+      border: 1px solid #4D2612;
+    }
+
+    table.btn-table td {
+      padding: 8px 10px;
+      border: 1px solid #E8DFD5;
+      vertical-align: middle;
+    }
+
+    table.btn-table tr:nth-child(even) {
+      background: #FDFBF8;
+    }
+
+    .btn-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #FAF2EA;
+      border: 1px solid #BE7A47;
+      color: #4D2612;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 8pt;
+      white-space: nowrap;
+    }
+
+    .btn-pill.primary {
+      background: #4D2612;
+      color: #FFFFFF;
+      border-color: #4D2612;
+    }
+
+    .btn-pill.success {
+      background: #E8F5E9;
+      color: #1B5E20;
+      border-color: #81C784;
+    }
+
+    .btn-pill.danger {
+      background: #FFEBEE;
+      color: #B71C1C;
+      border-color: #E57373;
+    }
+
+    /* CARDS DE DESTAQUE */
+    .highlight-card {
+      background: #FDF9F4;
+      border-left: 4px solid #BE7A47;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 10px 0 14px 0;
+      font-size: 8.8pt;
+    }
+
+    .highlight-card strong {
+      color: #4D2612;
+    }
+
+    .tip-box {
+      background: #F3FAF5;
+      border: 1px dashed #2E7D32;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin: 8px 0;
+      font-size: 8.3pt;
+      color: #1B5E20;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* GRADE DE ATALHOS VISUAIS */
+    .grid-shortcuts {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin: 10px 0 14px 0;
+    }
+
+    .shortcut-card {
+      background: #FFFFFF;
+      border: 1px solid #DFD5C8;
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .shortcut-icon {
+      font-size: 1.4rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #FAF2EA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .shortcut-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .shortcut-title {
+      font-weight: 800;
+      font-size: 8.5pt;
+      color: #4D2612;
+    }
+
+    .shortcut-desc {
+      font-size: 7.2pt;
+      color: #6B5244;
+      line-height: 1.2;
+    }
+
+    /* ETAPAS NUMERADAS */
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 8px 0 12px 0;
+    }
+
+    .step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 8.8pt;
+    }
+
+    .step-badge {
+      background: #BE7A47;
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 7.5pt;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================================================
+       PÁGINA 1: CAPA OFICIAL
+       ========================================================================= -->
+  <div class="page cover-page page-break">
+    <img src="img/logo-badge.png" alt="Studio Letícia" class="cover-badge-img">
+    <h1 class="cover-title">STUDIO LETÍCIA</h1>
+    <div class="cover-subtitle">Estética &amp; Bem-Estar</div>
+
+    <div class="cover-tagline">Manual Oficial do Aplicativo &amp; Guia de Operação</div>
+    <p class="cover-desc">
+      Guia ilustrado, prático e detalhado com a explicação de todos os botões, recursos, grade de horários, fluxo de aprovação de clientes e controle financeiro.
+    </p>
+
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Versão do App</span>
+        <span class="cover-meta-val">2.4 Cloud Sync</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Destinatária</span>
+        <span class="cover-meta-val">Letícia Ferreira</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Acesso Online</span>
+        <span class="cover-meta-val">GitHub Pages PWA</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Data de Emissão</span>
+        <span class="cover-meta-val">Setembro / 2026</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       PÁGINA 2: INSTALAÇÃO NO CELULAR & ACESSO RESTRITO
+       ========================================================================= -->
+  <div class="page page-break">
+    <div class="page-header">
+      <span class="page-header-logo">Studio Letícia • Manual</span>
+      <span>Capítulo 1: Instalação &amp; Acesso</span>
+    </div>
+
+    <h2 class="section-heading">📲 1. Como Instalar o App no Celular (Sem Baixar em Lojas)</h2>
+    <p>
+      O sistema do Studio Letícia utiliza a tecnologia moderna <strong>PWA (Progressive Web App)</strong>. Ele funciona como um aplicativo normal, abre em tela cheia (sem a barra de navegação do navegador) e você pode acessá-lo direto pelo ícone dourado na sua tela inicial!
+    </p>
+
+    <div class="highlight-card">
+      <strong>🔗 Link Oficial do Aplicativo:</strong> <code>https://leticiaesteticajti.github.io/studio-leticia/</code>
+    </div>
+
+    <h3 class="subsection-heading">🍎 No iPhone (Apple Safari):</h3>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-badge">1</div>
+        <div>Abra o link acima no navegador <strong>Safari</strong> do seu iPhone.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-badge">2</div>
+        <div>Toque no botão <strong>Compartilhar 📤</strong> (ícone de quadrado com setinha para cima na barra inferior).</div>
+      </div>
+      <div class="step-row">
+        <div class="step-badge">3</div>
+        <div>Role as opções para cima e toque em <strong>"Adicionar à Tela de Início" ➕</strong>.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-badge">4</div>
+        <div>Toque em <strong>"Adicionar"</strong> no canto superior direito. Pronto! O ícone dourado aparecerá entre seus apps.</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading">🤖 No Android (Google Chrome):</h3>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-badge">1</div>
+        <div>Abra o link no <strong>Chrome</strong>. No topo da tela surgirá o banner: <em>"Instalar App Studio Letícia"</em>.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-badge">2</div>
+        <div>Toque no botão <strong>[ Instalar ]</strong> e confirme na janelinha que abrir.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-badge">3</div>
+        <div>Caso o banner não apareça, toque nos <strong>três pontinhos (⋮)</strong> no topo e escolha <em>"Instalar aplicativo"</em>.</div>
+      </div>
+    </div>
+
+    <h2 class="section-heading" style="margin-top: 18px;">🔐 2. Tela de Login e Acesso Seguro</h2>
+    <p>
+      Quando a Letícia abre o app, a primeira tela pode ser a de agendamento público. No canto superior direito, há o botão:
+      <span class="btn-pill">🔐 Acesso da Profissional</span>.
+    </p>
+
+    <table class="btn-table">
+      <thead>
+        <tr>
+          <th style="width: 25%;">Campo / Botão</th>
+          <th style="width: 35%;">Como Preencher / O que Faz</th>
+          <th style="width: 40%;">Finalidade e Dica</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="btn-pill">👤 CPF de Acesso</span></td>
+          <td>Digite o seu CPF cadastrado. Possui formatação automática (000.000.000-00).</td>
+          <td>Garante que apenas você acesse as informações confidenciais do Studio.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill">🔑 Senha</span></td>
+          <td>Digite a sua senha de segurança. O botão <strong>👁️</strong> permite ver o que digitou.</td>
+          <td>Pode ser alterada a qualquer momento na aba Ajustes.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill">☑ Lembrar meu acesso</span></td>
+          <td>Marque a caixinha antes de entrar.</td>
+          <td>Você não precisará digitar a senha todas as vezes que abrir o app no celular!</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill primary">Entrar no Aplicativo ✨</span></td>
+          <td>Valida os dados e abre o painel interno completo.</td>
+          <td>Acesso instantâneo com sincronização em nuvem.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="tip-box">
+      <span>💡</span> <strong>Dica de Ouro:</strong> Mantenha a opção <em>"Lembrar meu acesso neste aparelho"</em> marcada para que o app abra direto no seu painel em 1 segundo!
+    </div>
+
+    <div class="page-footer">
+      <span>Studio Letícia • Gestão &amp; Estética</span>
+      <span>Página 2</span>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       PÁGINA 3: CENTRAL DE ALERTAS & NOTIFICAÇÕES (O NOVO PAINEL)
+       ========================================================================= -->
+  <div class="page page-break">
+    <div class="page-header">
+      <span class="page-header-logo">Studio Letícia • Manual</span>
+      <span>Capítulo 2: Central de Alertas</span>
+    </div>
+
+    <h2 class="section-heading">🔔 3. Painel de Alertas &amp; Notificações de Agendamento</h2>
+    <p>
+      Esse é o seu <strong>centro de comando em tempo real</strong>! Sempre que uma cliente marcar um horário pelo site, o sistema avisa você imediatamente para você aprovar ou não.
+    </p>
+
+    <div class="grid-shortcuts">
+      <div class="shortcut-card">
+        <div class="shortcut-icon" style="background: #FFF2F2; color: #E53E3E;">🔔</div>
+        <div class="shortcut-info">
+          <div class="shortcut-title">Sininho com Bolinha Vermelha</div>
+          <div class="shortcut-desc">Fica fixo no topo do app. O número vermelho indica quantas solicitações novas você tem para aprovar.</div>
+        </div>
+      </div>
+      <div class="shortcut-card">
+        <div class="shortcut-icon" style="background: #E8F5E9; color: #2E7D32;">🎵</div>
+        <div class="shortcut-info">
+          <div class="shortcut-title">Alerta Sonoro Duplo</div>
+          <div class="shortcut-desc">Toca um som suave no celular ou computador sempre que um agendamento novo chegar na tela.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading">Como Funciona a Janela de Alertas:</h3>
+    <p>
+      Ao tocar no sininho ou no card <strong>"Painel de Alertas"</strong> na tela inicial, abre uma janela com duas abas:
+    </p>
+
+    <table class="btn-table">
+      <thead>
+        <tr>
+          <th style="width: 28%;">Elemento / Botão</th>
+          <th style="width: 32%;">Ação Realizada</th>
+          <th style="width: 40%;">Comportamento Inteligente</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="btn-pill">Aba: Pendentes</span></td>
+          <td>Mostra os agendamentos aguardando sua resposta.</td>
+          <td>Lista organizada do mais recente para o mais antigo.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill">Aba: Histórico</span></td>
+          <td>Mostra pedidos que você já aprovou ou recusou antes.</td>
+          <td>Permite conferir datas, horários e motivos passados.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill" style="background:#EFF6FF; color:#1E40AF; border-color:#93C5FD;">🌟 Identificador CPF</span></td>
+          <td>Cruza o CPF da cliente com seu banco de dados.</td>
+          <td>Exibe <strong>"CLIENTE RECORRENTE (X sessões)"</strong> ou <strong>"NOVA CLIENTE"</strong> automaticamente!</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill success">✅ Confirmar</span></td>
+          <td><strong>Aprova o agendamento</strong> com 1 clique!</td>
+          <td>Coloca o atendimento na sua Agenda oficial e atualiza a tela da cliente para <em>"Confirmado"</em>.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill danger">❌ Recusar</span></td>
+          <td>Rejeita a solicitação com justificativa.</td>
+          <td>Abre uma janelinha para você informar o motivo (ex.: <em>"Horário já preenchido"</em>). A cliente é informada e pode escolher outro horário.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill" style="background:#DCFCE7; color:#166534; border-color:#86EFAC;">💬 WhatsApp</span></td>
+          <td>Abre conversa direta com a cliente no WhatsApp.</td>
+          <td>Já carrega o texto pronto: <em>"Olá [Nome]! Vi seu agendamento para [Serviço] no dia [Data]..."</em>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight-card">
+      <strong>🛡️ Detector Automático de Conflitos:</strong> Se duas clientes tentarem solicitar o mesmo dia e horário, o sistema coloca um aviso vermelho em destaque: <em>"⚠️ ATENÇÃO: Já existe outro atendimento marcado para este mesmo horário!"</em>, evitando agendamentos duplicados.
+    </div>
+
+    <div class="page-footer">
+      <span>Studio Letícia • Gestão &amp; Estética</span>
+      <span>Página 3</span>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       PÁGINA 4: GRADE DE HORÁRIOS & DIAS (AJUSTE DA LETÍCIA)
+       ========================================================================= -->
+  <div class="page page-break">
+    <div class="page-header">
+      <span class="page-header-logo">Studio Letícia • Manual</span>
+      <span>Capítulo 3: Grade de Horários &amp; Dias</span>
+    </div>
+
+    <h2 class="section-heading">🕒 4. Como Configurar os Horários e Dias que Aparecem no Site</h2>
+    <p>
+      A Letícia tem total liberdade para definir <strong>quais dias da semana atende</strong> e <strong>quais horários ficam disponíveis</strong> para as clientes escolherem no site.
+    </p>
+
+    <div class="highlight-card">
+      <strong>Onde Fica Essa Configuração:</strong><br>
+      Toque na aba <strong>Ajustes ⚙️</strong> no rodapé do app ➔ Toque no card <strong>"Grade de Horários &amp; Dias"</strong>.
+    </div>
+
+    <h3 class="subsection-heading">Controles da Grade de Atendimento:</h3>
+
+    <table class="btn-table">
+      <thead>
+        <tr>
+          <th style="width: 25%;">Controle</th>
+          <th style="width: 35%;">Como Usar</th>
+          <th style="width: 40%;">Efeito Imediato no Site</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="btn-pill">Caixas dos Dias da Semana</span></td>
+          <td>Marque ou desmarque: <strong>Segunda, Terça, Quarta, Quinta, Sexta, Sábado ou Domingo</strong>.</td>
+          <td>Se você desmarcar a Segunda-Feira ou o Domingo, as clientes não conseguirão escolher essas datas no calendário do site!</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill" style="border: 1px dashed #BE7A47;">Chips de Horário [ 08:00 ✕ ]</span></td>
+          <td>Cada horário disponível aparece como uma caixinha com um <strong>✕</strong> no canto.</td>
+          <td>Toque no <strong>✕</strong> para excluir qualquer horário que você não queira atender (ex.: horário de almoço ou fim de tarde).</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill">+ Adicionar Horário</span></td>
+          <td>Escolha a hora (ex.: 08:30 ou 14:00) e toque em <strong>+ Adicionar</strong>.</td>
+          <td>Inclui novos horários personalizados na sua grade com total flexibilidade.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill">Restaurar Padrão</span></td>
+          <td>Restaura os horários comerciais convencionais (08:00 às 17:30).</td>
+          <td>Útil caso você queira resetar as configurações e recomeçar.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill primary">💾 Salvar e Atualizar</span></td>
+          <td>Grava a nova grade no servidor Supabase na nuvem.</td>
+          <td>O site das clientes atualiza imediatamente com a nova grade configurada!</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="tip-box">
+      <span>💡</span> <strong>Exemplo Prático:</strong> Se na próxima semana você for viajar na sexta-feira e não puder atender, basta entrar na Grade, desmarcar a "Sexta-feira" e clicar em Salvar. Pronto! Nenhuma cliente conseguirá agendar na sexta!
+    </div>
+
+    <h2 class="section-heading" style="margin-top: 20px;">🏷️ 5. Tabela de Preços e Procedimentos</h2>
+    <p>
+      Também na aba Ajustes, toque em <strong>"Tabela de Preços"</strong> para gerenciar seus serviços:
+    </p>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-badge">•</div>
+        <div><strong>Adicionar Procedimento:</strong> Cadastre novo serviço com Nome, Tempo de Duração (minutos), Preço (R$) e Descrição dos benefícios.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-badge">•</div>
+        <div><strong>Editar / Excluir:</strong> Altere preços e tempos com 1 toque. Tudo o que você alterar aqui atualiza na hora na tela de agendamento das clientes!</div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Studio Letícia • Gestão &amp; Estética</span>
+      <span>Página 4</span>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       PÁGINA 5: GESTÃO DO DIA A DIA (AGENDA, CLIENTES & CAIXA)
+       ========================================================================= -->
+  <div class="page page-break">
+    <div class="page-header">
+      <span class="page-header-logo">Studio Letícia • Manual</span>
+      <span>Capítulo 4: Dia a Dia do Studio</span>
+    </div>
+
+    <h2 class="section-heading">📅 6. Aba Agenda (Seu Calendário Visual)</h2>
+    <p>
+      Na barra inferior do app, o botão <strong>Agenda 🗓️</strong> dá visão completa do mês e dos horários:
+    </p>
+
+    <table class="btn-table">
+      <thead>
+        <tr>
+          <th style="width: 25%;">Botão / Recurso</th>
+          <th style="width: 35%;">Ação</th>
+          <th style="width: 40%;">Dica de Operação</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="btn-pill">◀ e ▶ Mês</span></td>
+          <td>Avança ou volta os meses do ano.</td>
+          <td>Permite agendar sessões com semanas de antecedência.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill">Hoje</span></td>
+          <td>Volta direto para o dia atual com 1 toque.</td>
+          <td>Agilidade para o seu atendimento diário.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill">+ Agendar neste dia</span></td>
+          <td>Abre a janela de novo agendamento com a data já preenchida.</td>
+          <td>Para quando uma cliente liga ou pede horário pessoalmente.</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill success">Concluir Sessão</span></td>
+          <td>Marca o atendimento como realizado.</td>
+          <td>Gera automaticamente o lançamento de entrada de dinheiro no seu Caixa!</td>
+        </tr>
+        <tr>
+          <td><span class="btn-pill danger">Cancelar</span></td>
+          <td>Desmarca o horário liberando para outra pessoa.</td>
+          <td>Registra o cancelamento no histórico sem bagunçar suas finanças.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-heading" style="margin-top: 18px;">👥 7. Aba Clientes (Fichas &amp; Anamnese)</h2>
+    <p>
+      No botão <strong>Clientes 👥</strong>, você tem o prontuário completo de todas as pessoas atendidas:
+    </p>
+
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-badge">🔍</div>
+        <div><strong>Busca Rápida:</strong> Digite o Nome ou os primeiros números do CPF da cliente para encontrá-la instantaneamente.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-badge">➕</div>
+        <div><strong>+ Cadastrar Cliente:</strong> Registre Nome, WhatsApp, CPF, Nascimento, Peso Atual (kg) e Preferência na Sessão (música relaxante ou silêncio).</div>
+      </div>
+      <div class="step-row">
+        <div class="step-badge">📋</div>
+        <div><strong>Ficha de Anamnese:</strong> Campo médico/estético para anotar histórico cirúrgico, gestação, circulação, próteses ou cuidados específicos.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-badge">📦</div>
+        <div><strong>Pacotes Ativos:</strong> Controle quantas sessões de drenagem a cliente já fez e quantas ainda tem direito no pacote.</div>
+      </div>
+    </div>
+
+    <h2 class="section-heading" style="margin-top: 18px;">💰 8. Aba Caixa (Seu Lucro Real no Bolso)</h2>
+    <p>
+      No botão <strong>Caixa 💰</strong>, você tem a saúde financeira do Studio na ponta dos dedos:
+    </p>
+
+    <table class="btn-table">
+      <thead>
+        <tr>
+          <th style="width: 25%;">Indicador</th>
+          <th style="width: 35%;">O Que Representa</th>
+          <th style="width: 40%;">Como Alimentar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color: #2E7D32;">🟢 Entradas</strong></td>
+          <td>Total de dinheiro que entrou no Studio (Pix, Cartão, Dinheiro).</td>
+          <td>Alimentado ao concluir sessões ou clicar em <strong>+ Novo Lançamento</strong>.</td>
+        </tr>
+        <tr>
+          <td><strong style="color: #C62828;">🔴 Saídas / Gastos</strong></td>
+          <td>Despesas com materiais, cremes, toalhas, descartáveis, etc.</td>
+          <td>Clique em <strong>+ Nova Despesa</strong> e anote o valor e a categoria do gasto.</td>
+        </tr>
+        <tr>
+          <td><strong style="color: #85421E;">💎 Lucro Líquido</strong></td>
+          <td>O valor líquido que realmente sobra no bolso da Letícia!</td>
+          <td>Calculado automaticamente: <em>(Entradas - Saídas)</em>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-footer">
+      <span>Studio Letícia • Gestão &amp; Estética</span>
+      <span>Página 5</span>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       PÁGINA 6: RESUMO GERAL DE TODOS OS BOTÕES & SUPORTE
+       ========================================================================= -->
+  <div class="page">
+    <div class="page-header">
+      <span class="page-header-logo">Studio Letícia • Manual</span>
+      <span>Capítulo 5: Guia Rápido dos Botões</span>
+    </div>
+
+    <h2 class="section-heading">⚡ 9. Dicionário Completo de Todos os Botões do App</h2>
+
+    <table class="btn-table">
+      <thead>
+        <tr>
+          <th style="width: 15%;">Ícone</th>
+          <th style="width: 25%;">Nome do Botão</th>
+          <th style="width: 30%;">Onde Encontrar</th>
+          <th style="width: 30%;">Ação ao Clicar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">🔔</td>
+          <td><strong>Sininho de Alertas</strong></td>
+          <td>Topo direito de todas as telas</td>
+          <td>Abre a Central de Alertas para aceitar ou recusar solicitações de clientes.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">➕</td>
+          <td><strong>Novo Agendamento</strong></td>
+          <td>Topo direito do cabeçalho</td>
+          <td>Abre o formulário para agendar uma cliente de forma rápida.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">🏠</td>
+          <td><strong>Início</strong></td>
+          <td>Menu do rodapé</td>
+          <td>Leva para a tela principal com o resumo do dia e menu de atalhos.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">🗓️</td>
+          <td><strong>Agenda</strong></td>
+          <td>Menu do rodapé</td>
+          <td>Abre o calendário mensal com horários e status dos atendimentos.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">👥</td>
+          <td><strong>Clientes</strong></td>
+          <td>Menu do rodapé</td>
+          <td>Lista todas as clientes, ficha de anamnese, peso e histórico.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">💰</td>
+          <td><strong>Caixa</strong></td>
+          <td>Menu do rodapé</td>
+          <td>Exibe entradas, saídas, formas de pagamento e lucro líquido.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">⚙️</td>
+          <td><strong>Ajustes</strong></td>
+          <td>Menu do rodapé</td>
+          <td>Preços, pacotes, grade de horários, senha e backup de dados.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">🕒</td>
+          <td><strong>Grade de Horários</strong></td>
+          <td>Aba Ajustes</td>
+          <td>Escolhe dias da semana de atendimento e horários disponíveis.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">🏷️</td>
+          <td><strong>Tabela de Preços</strong></td>
+          <td>Aba Ajustes ou Atalho na Home</td>
+          <td>Adiciona e altera procedimentos, tempos e valores em R$.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">📦</td>
+          <td><strong>Planos &amp; Pacotes</strong></td>
+          <td>Aba Ajustes ou Atalho na Home</td>
+          <td>Cria pacotes de sessões e planos mensais com desconto.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">📲</td>
+          <td><strong>Instalar App</strong></td>
+          <td>Aba Ajustes e Tela de Login</td>
+          <td>Abre o guia interativo de instalação do aplicativo no celular.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-size: 1.3rem;">💾</td>
+          <td><strong>Backup no WhatsApp</strong></td>
+          <td>Aba Ajustes (Segurança)</td>
+          <td>Envia uma cópia completa de todos os seus dados para o seu WhatsApp!</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight-card" style="margin-top: 16px; text-align: center; background: linear-gradient(135deg, #FAF2EA, #F4E5D4); border: 2px solid #BE7A47;">
+      <h3 style="margin: 0 0 6px 0; font-family: 'Cinzel', serif; font-size: 12pt; color: #4D2612;">✨ Studio Letícia • Gestão &amp; Estética</h3>
+      <p style="margin: 0; font-size: 8.5pt; color: #6B5244;">
+        Desenvolvido com carinho para transformar a gestão da sua clínica com máxima elegância, pontualidade e praticidade!
+      </p>
+    </div>
+
+    <div class="page-footer">
+      <span>Studio Letícia • Gestão &amp; Estética</span>
+      <span>Página 6</span>
+    </div>
+  </div>
+
+</body>
+</html>
