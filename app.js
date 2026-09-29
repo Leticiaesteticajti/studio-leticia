@@ -938,7 +938,7 @@ class StudioApp {
                         app.status === 'cancelado' ? 'Cancelado' : 'Agendado';
 
     const wppLink = this.generateWhatsAppReminderUrl(app);
-    const pacoteTag = app.numSessao ? `<span class="app-package-tag">Sessão ${app.numSessao}</span>` : '';
+    const pacoteTag = app.numSessao ? `<span class="app-package-tag" style="background: #FFF3E0; color: #B26A00; border: 1px solid #FFE0B2; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;">✨ Sessão ${app.numSessao}${app.totalSessoesPacote ? ` de ${app.totalSessoesPacote}` : ''}${app.pacoteNome ? ` (${this.escapeHtml(app.pacoteNome)})` : ''}</span>` : '';
 
     return `
       <div class="appointment-card ${app.status || 'agendado'}">
@@ -956,7 +956,7 @@ class StudioApp {
 
         <div class="app-details-row">
           <span>Valor: <strong class="app-price">${this.formatCurrency(app.valor)}</strong></span>
-          <span>${app.pago ? '✅ Pago (' + (app.formaPagamento || 'PIX').toUpperCase() + ')' : '⏳ Aguardando Pagamento'}</span>
+          <span>${app.pago ? '✅ ' + (app.formaPagamento === 'pacote' ? 'Pago no Plano' : 'Pago (' + (app.formaPagamento || 'PIX').toUpperCase() + ')') : '⏳ Aguardando Pagamento'}</span>
         </div>
 
         <div class="app-actions">
@@ -990,7 +990,8 @@ class StudioApp {
     const [ano, mes, dia] = app.data.split('-');
     const dataFormatada = `${dia}/${mes}`;
 
-    const msg = `Olá, ${app.clienteNome}! ✨\nPassando para confirmar seu horário de *${app.servicoNome}* com a Letícia no dia *${dataFormatada}* às *${app.horario}*.\n\nPodemos confirmar? Te espero com muito carinho! 💆‍♀️🌸`;
+    const sessaoInfo = app.numSessao ? ` (Sessão ${app.numSessao}${app.totalSessoesPacote ? ` de ${app.totalSessoesPacote}` : ''})` : '';
+    const msg = `Olá, ${app.clienteNome}! ✨\nPassando para confirmar seu horário de *${app.servicoNome}*${sessaoInfo} com a Letícia no dia *${dataFormatada}* às *${app.horario}*.\n\nPodemos confirmar? Te espero com muito carinho! 💆‍♀️🌸`;
 
     return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
   }
@@ -1138,19 +1139,66 @@ class StudioApp {
                   </span>
                 </div>
 
-                <!-- Detalhamento por procedimento -->
-                ${Array.isArray(p.itens) && p.itens.length > 0 ? `
-                  <div style="margin: 8px 0; background: rgba(255,255,255,0.7); border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 4px;">
-                    ${p.itens.map(i => `
-                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
-                        <span style="font-weight: 600; color: var(--text-main);">💆‍♀️ ${this.escapeHtml(i.nome)}</span>
-                        <span style="color: var(--primary); font-weight: 700;">${i.feitas || 0} de ${i.sessoes} feitas</span>
-                      </div>
-                    `).join('')}
-                  </div>
-                ` : (Array.isArray(p.servicosNomes) && p.servicosNomes.length > 1 ? `
-                  <div style="font-size: 0.76rem; color: var(--text-muted); margin: 4px 0;">💆‍♀️ Inclui: ${p.servicosNomes.join(', ')}</div>
-                ` : '')}
+                <!-- Detalhamento interativo por procedimento -->
+                ${(() => {
+                  let itemsToRender = [];
+                  if (Array.isArray(p.itens) && p.itens.length > 0) {
+                    itemsToRender = p.itens;
+                  } else if (Array.isArray(p.servicosNomes) && p.servicosNomes.length > 0) {
+                    itemsToRender = p.servicosNomes.map(nome => ({
+                      nome,
+                      sessoes: Math.max(1, Math.floor((p.totalSessoes || 1) / p.servicosNomes.length)),
+                      feitas: 0
+                    }));
+                  } else {
+                    itemsToRender = [{
+                      nome: p.servicoNome,
+                      sessoes: p.totalSessoes || 1,
+                      feitas: p.sessoesFeitas || 0
+                    }];
+                  }
+
+                  return `
+                    <div style="margin: 8px 0; display: flex; flex-direction: column; gap: 6px;">
+                      ${itemsToRender.map(i => {
+                        const disponiveis = Math.max(0, i.sessoes - (i.feitas || 0));
+                        const esgotado = disponiveis <= 0;
+                        return `
+                          <div style="background: #FFFFFF; border: 1.5px solid ${esgotado ? '#E2E8F0' : 'rgba(190, 122, 71, 0.28)'}; border-radius: 8px; padding: 8px 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                              <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-main);">
+                                💆‍♀️ ${this.escapeHtml(i.nome)}
+                              </span>
+                              <span style="font-size: 0.70rem; font-weight: 700; padding: 2px 7px; border-radius: 5px; ${esgotado ? 'background: #EDF2F7; color: #718096;' : 'background: #EBF8EE; color: #1E7E34;'}">
+                                ${esgotado ? '✓ Esgotado' : `${disponiveis} disp.`}
+                              </span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem;">
+                              <span style="color: var(--text-muted);">
+                                Feitas: <strong style="color: var(--primary);">${i.feitas || 0} de ${i.sessoes}</strong>
+                              </span>
+                              <div style="display: flex; gap: 4px;">
+                                ${!esgotado ? `
+                                  <button type="button" class="btn-sm" style="font-size: 0.70rem; padding: 3px 8px; background: var(--primary); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 700;" onclick="app.openNewAppointmentForClientPackage('${client.id}', '${p.id}', '${this.escapeHtml(i.nome)}')">
+                                    🗓️ Agendar
+                                  </button>
+                                  <button type="button" class="btn-sm" style="font-size: 0.70rem; padding: 3px 6px; background: #EBF8EE; color: #1E7E34; border: 1px solid #C6F6D5; border-radius: 4px; cursor: pointer; font-weight: 700;" onclick="app.deductPackageItemSession('${client.id}', '${p.id}', '${this.escapeHtml(i.nome)}')" title="Dar baixa em 1 sessão">
+                                    ✓ Baixar
+                                  </button>
+                                ` : ''}
+                                ${(i.feitas || 0) > 0 ? `
+                                  <button type="button" class="btn-sm" style="font-size: 0.70rem; padding: 3px 6px; background: #EDF2F7; color: #4A5568; border: 1px solid #CBD5E0; border-radius: 4px; cursor: pointer;" onclick="app.revertPackageItemSession('${client.id}', '${p.id}', '${this.escapeHtml(i.nome)}')" title="Estornar 1 sessão realizada">
+                                    ↺ Estornar
+                                  </button>
+                                ` : ''}
+                              </div>
+                            </div>
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                  `;
+                })()}
 
                 <!-- Barra de Progresso Geral -->
                 <div style="margin: 8px 0 6px 0;">
@@ -1738,6 +1786,121 @@ class StudioApp {
       wppLink: linkWpp,
       wppLabel: 'Enviar Carteirinha no WhatsApp'
     });
+  }
+
+  // Atalho inteligente: Abre agendamento já com a cliente, plano e procedimento selecionados
+  openNewAppointmentForClientPackage(clientId, packageId, itemNome) {
+    this.closeModal('modal-client-details');
+    this.openNewAppointmentModal();
+    const clientSelect = document.getElementById('app-client-select');
+    if (clientSelect) {
+      clientSelect.value = clientId;
+      this.onAppointmentClientChange();
+    }
+
+    if (packageId) {
+      const pkgSelect = document.getElementById('app-package-select');
+      if (pkgSelect) {
+        pkgSelect.value = packageId;
+        this.onAppointmentPackageChange();
+      }
+    }
+
+    if (itemNome) {
+      const itemSelect = document.getElementById('app-package-item-select');
+      if (itemSelect) {
+        for (let i = 0; i < itemSelect.options.length; i++) {
+          if (itemSelect.options[i].value === itemNome) {
+            itemSelect.selectedIndex = i;
+            break;
+          }
+        }
+        this.onAppointmentPackageItemChange();
+      }
+    }
+  }
+
+  // Baixa manual de 1 sessão direto na ficha da cliente
+  async deductPackageItemSession(clientId, packageId, itemNome) {
+    const client = await db.get('clientes', clientId);
+    if (!client || !client.pacotes) return;
+    const pacote = client.pacotes.find(p => p.id === packageId);
+    if (!pacote) return;
+
+    let item = (pacote.itens || []).find(i => i.nome === itemNome);
+    const procNome = item ? item.nome : (itemNome || pacote.servicoNome);
+    const disponiveis = item ? (item.sessoes - (item.feitas || 0)) : (pacote.totalSessoes - (pacote.sessoesFeitas || 0));
+
+    if (disponiveis <= 0) {
+      alert(`⚠️ Todas as sessões de "${procNome}" já foram realizadas!`);
+      return;
+    }
+
+    if (!confirm(`Deseja dar baixa em 1 sessão de "${procNome}" para ${client.nome}?`)) {
+      return;
+    }
+
+    pacote.sessoesFeitas = Math.min(pacote.totalSessoes, (pacote.sessoesFeitas || 0) + 1);
+    if (item) {
+      item.feitas = Math.min(item.sessoes, (item.feitas || 0) + 1);
+    }
+
+    const allDone = Array.isArray(pacote.itens) && pacote.itens.length > 0
+      ? pacote.itens.every(i => (i.feitas || 0) >= i.sessoes)
+      : (pacote.sessoesFeitas >= pacote.totalSessoes);
+
+    if (pacote.sessoesFeitas >= pacote.totalSessoes || allDone) {
+      pacote.status = 'concluido';
+      pacote.concluidoEm = new Date().toISOString();
+      this.showToast(`🎉 Parabéns! Pacote "${pacote.servicoNome}" 100% concluído!`);
+    } else {
+      const realizadas = item ? item.feitas : pacote.sessoesFeitas;
+      const total = item ? item.sessoes : pacote.totalSessoes;
+      this.showToast(`✓ Sessão de "${procNome}" baixada! (${realizadas}/${total})`);
+    }
+
+    await db.put('clientes', client);
+    const cIdx = this.allClients.findIndex(c => c.id === client.id);
+    if (cIdx !== -1) this.allClients[cIdx] = client;
+
+    await this.viewClientDetails(clientId);
+    if (this.currentTab === 'clientes') await this.loadClientsTab();
+  }
+
+  // Estorno manual de 1 sessão direto na ficha da cliente
+  async revertPackageItemSession(clientId, packageId, itemNome) {
+    const client = await db.get('clientes', clientId);
+    if (!client || !client.pacotes) return;
+    const pacote = client.pacotes.find(p => p.id === packageId);
+    if (!pacote) return;
+
+    let item = (pacote.itens || []).find(i => i.nome === itemNome);
+    const procNome = item ? item.nome : (itemNome || pacote.servicoNome);
+    const feitas = item ? (item.feitas || 0) : (pacote.sessoesFeitas || 0);
+
+    if (feitas <= 0) {
+      alert(`⚠️ Não há sessões realizadas de "${procNome}" para estornar.`);
+      return;
+    }
+
+    if (!confirm(`Deseja estornar 1 sessão de "${procNome}"? Ela voltará a ficar disponível para a cliente.`)) {
+      return;
+    }
+
+    pacote.sessoesFeitas = Math.max(0, (pacote.sessoesFeitas || 1) - 1);
+    if (item) {
+      item.feitas = Math.max(0, (item.feitas || 1) - 1);
+    }
+    pacote.status = 'ativo';
+    delete pacote.concluidoEm;
+
+    await db.put('clientes', client);
+    const cIdx = this.allClients.findIndex(c => c.id === client.id);
+    if (cIdx !== -1) this.allClients[cIdx] = client;
+
+    this.showToast(`↺ 1 sessão de "${procNome}" estornada com sucesso.`);
+    await this.viewClientDetails(clientId);
+    if (this.currentTab === 'clientes') await this.loadClientsTab();
   }
 
   // =========================================================================
@@ -3546,8 +3709,16 @@ class StudioApp {
   onAppointmentServiceChange() {
     const serviceId = document.getElementById('app-service-select').value;
     const servico = this.allServices.find(s => s.id === serviceId);
+    const pacoteSelect = document.getElementById('app-package-select');
+    const pacoteId = pacoteSelect ? pacoteSelect.value : null;
+
     if (servico) {
-      document.getElementById('app-price').value = servico.preco;
+      if (pacoteId) {
+        // Se um plano está ativo e selecionado, a sessão é coberta pelo plano (R$ 0,00)
+        document.getElementById('app-price').value = '0.00';
+      } else {
+        document.getElementById('app-price').value = servico.preco;
+      }
       document.getElementById('app-duration').value = servico.duracaoMin || 60;
     }
   }
@@ -3556,17 +3727,169 @@ class StudioApp {
     const clientId = document.getElementById('app-client-select').value;
     const client = this.allClients.find(c => c.id === clientId);
     const box = document.getElementById('app-package-option-box');
+    const badge = document.getElementById('app-package-avail-badge');
     const select = document.getElementById('app-package-select');
+    const itemBox = document.getElementById('app-package-item-box');
+    const itemHint = document.getElementById('app-package-item-hint');
 
-    if (client && client.pacotes && client.pacotes.some(p => p.sessoesFeitas < p.totalSessoes)) {
-      box.style.display = 'block';
-      select.innerHTML = '<option value="">Não (Cobrar avulso)</option>' + 
-        client.pacotes
-          .filter(p => p.sessoesFeitas < p.totalSessoes)
-          .map(p => `<option value="${p.id}">${p.servicoNome} (Sessão ${p.sessoesFeitas + 1} de ${p.totalSessoes})</option>`).join('');
+    if (client && client.pacotes && client.pacotes.length > 0) {
+      // Filtra planos ativos que ainda tenham sessões disponíveis
+      const activePackages = client.pacotes.filter(p => 
+        p.status !== 'concluido' && (p.sessoesFeitas || 0) < (p.totalSessoes || 1)
+      );
+
+      if (activePackages.length > 0) {
+        box.style.display = 'block';
+        if (badge) {
+          badge.style.display = 'inline-block';
+          badge.textContent = activePackages.length === 1 ? '1 Plano Ativo' : `${activePackages.length} Planos Ativos`;
+        }
+
+        select.innerHTML = '<option value="">Não usar plano (Cobrar atendimento avulso)</option>' + 
+          activePackages.map(p => {
+            const restantes = (p.totalSessoes || 1) - (p.sessoesFeitas || 0);
+            return `<option value="${p.id}">✨ ${p.servicoNome} (${restantes} de ${p.totalSessoes} restantes)</option>`;
+          }).join('');
+
+        // Se houver apenas 1 plano ativo, pré-seleciona para facilitar
+        if (activePackages.length === 1) {
+          select.value = activePackages[0].id;
+        }
+
+        this.onAppointmentPackageChange();
+        return;
+      }
+    }
+
+    // Cliente sem planos ativos
+    box.style.display = 'none';
+    if (badge) badge.style.display = 'none';
+    if (itemBox) itemBox.style.display = 'none';
+    if (itemHint) itemHint.textContent = '';
+    select.innerHTML = '<option value="">Não usar plano (Cobrar avulso)</option>';
+    select.value = '';
+    this.onAppointmentServiceChange();
+  }
+
+  onAppointmentPackageChange() {
+    const clientId = document.getElementById('app-client-select').value;
+    const client = this.allClients.find(c => c.id === clientId);
+    const pacoteSelect = document.getElementById('app-package-select');
+    const pacoteId = pacoteSelect ? pacoteSelect.value : '';
+    const itemBox = document.getElementById('app-package-item-box');
+    const itemSelect = document.getElementById('app-package-item-select');
+    const itemHint = document.getElementById('app-package-item-hint');
+
+    if (!pacoteId || !client || !client.pacotes) {
+      if (itemBox) itemBox.style.display = 'none';
+      if (itemHint) itemHint.textContent = '';
+      this.onAppointmentServiceChange();
+      return;
+    }
+
+    const pacote = client.pacotes.find(p => p.id === pacoteId);
+    if (!pacote) {
+      if (itemBox) itemBox.style.display = 'none';
+      return;
+    }
+
+    // Normaliza procedimentos do plano
+    let itens = [];
+    if (Array.isArray(pacote.itens) && pacote.itens.length > 0) {
+      itens = pacote.itens;
+    } else if (Array.isArray(pacote.servicosNomes) && pacote.servicosNomes.length > 0) {
+      itens = pacote.servicosNomes.map(nome => ({
+        nome,
+        sessoes: Math.max(1, Math.floor((pacote.totalSessoes || 1) / pacote.servicosNomes.length)),
+        feitas: 0
+      }));
     } else {
-      box.style.display = 'none';
-      select.innerHTML = '<option value="">Não (Cobrar avulso)</option>';
+      itens = [{
+        nome: pacote.servicoNome || 'Procedimento do Plano',
+        sessoes: pacote.totalSessoes || 1,
+        feitas: pacote.sessoesFeitas || 0
+      }];
+    }
+
+    if (itemSelect) {
+      let optionsHtml = '';
+      let firstAvailable = null;
+
+      itens.forEach(item => {
+        const disponiveis = Math.max(0, item.sessoes - (item.feitas || 0));
+        const esgotado = disponiveis <= 0;
+        if (!esgotado && !firstAvailable) {
+          firstAvailable = item;
+        }
+        optionsHtml += `<option value="${this.escapeHtml(item.nome)}" ${esgotado ? 'disabled' : ''}>
+          ${esgotado ? '❌' : '💆‍♀️'} ${item.nome} (${disponiveis} de ${item.sessoes} disponíveis)${esgotado ? ' - ESGOTADO' : ''}
+        </option>`;
+      });
+
+      itemSelect.innerHTML = optionsHtml;
+      if (firstAvailable) {
+        itemSelect.value = firstAvailable.nome;
+      }
+    }
+
+    if (itemBox) itemBox.style.display = 'block';
+    this.onAppointmentPackageItemChange();
+  }
+
+  onAppointmentPackageItemChange() {
+    const clientId = document.getElementById('app-client-select').value;
+    const client = this.allClients.find(c => c.id === clientId);
+    const pacoteId = document.getElementById('app-package-select').value;
+    const itemSelect = document.getElementById('app-package-item-select');
+    const itemHint = document.getElementById('app-package-item-hint');
+    const priceInput = document.getElementById('app-price');
+    const serviceSelect = document.getElementById('app-service-select');
+    const durationInput = document.getElementById('app-duration');
+
+    if (!pacoteId || !client || !client.pacotes || !itemSelect) return;
+
+    const pacote = client.pacotes.find(p => p.id === pacoteId);
+    if (!pacote) return;
+
+    const selectedItemName = itemSelect.value;
+    let item = (pacote.itens || []).find(i => i.nome === selectedItemName);
+    if (!item) {
+      item = { nome: selectedItemName || pacote.servicoNome, sessoes: pacote.totalSessoes, feitas: pacote.sessoesFeitas || 0 };
+    }
+
+    const disponiveis = Math.max(0, item.sessoes - (item.feitas || 0));
+    const proximaSessao = Math.min(item.sessoes, (item.feitas || 0) + 1);
+
+    if (itemHint) {
+      if (disponiveis > 0) {
+        itemHint.innerHTML = `✨ <strong>Sessão ${proximaSessao} de ${item.sessoes}</strong> deste procedimento (${disponiveis} disponível${disponiveis > 1 ? 'is' : ''} no plano).<br>O valor desta sessão será <strong>R$ 0,00</strong> porque já está quitada no plano.`;
+        itemHint.style.color = '#2B6CB0';
+        itemHint.style.background = '#EBF8FF';
+      } else {
+        itemHint.innerHTML = `⚠️ <strong>Atenção:</strong> Todas as ${item.sessoes} sessões deste procedimento já foram realizadas no plano!`;
+        itemHint.style.color = '#C53030';
+        itemHint.style.background = '#FFF5F5';
+      }
+    }
+
+    // Zera o valor a ser cobrado
+    if (priceInput) {
+      priceInput.value = '0.00';
+    }
+
+    // Sincroniza o seletor de serviço do formulário com o item do plano
+    if (serviceSelect && this.allServices) {
+      const match = this.allServices.find(s => 
+        s.nome.trim().toLowerCase() === selectedItemName.trim().toLowerCase() ||
+        s.nome.toLowerCase().includes(selectedItemName.toLowerCase()) ||
+        selectedItemName.toLowerCase().includes(s.nome.toLowerCase())
+      );
+      if (match) {
+        serviceSelect.value = match.id;
+        if (durationInput) {
+          durationInput.value = match.duracaoMin || 60;
+        }
+      }
     }
   }
 
@@ -3577,6 +3900,10 @@ class StudioApp {
     document.getElementById('app-date').value = dataPadrao || this.selectedAgendaDate;
     document.getElementById('app-time').value = '14:00';
     document.getElementById('app-package-option-box').style.display = 'none';
+    const itemBox = document.getElementById('app-package-item-box');
+    if (itemBox) itemBox.style.display = 'none';
+    const itemHint = document.getElementById('app-package-item-hint');
+    if (itemHint) itemHint.textContent = '';
 
     this.populateClientSelects();
     this.populateServiceSelects();
@@ -3634,10 +3961,41 @@ class StudioApp {
       const servico = this.allServices.find(s => s.id === servicoId);
 
       let numSessao = null;
+      let pacoteNome = null;
+      let pacoteItemNome = null;
+      let totalSessoesPacote = null;
+
       if (pacoteId && cliente && cliente.pacotes) {
         const pacote = cliente.pacotes.find(p => p.id === pacoteId);
         if (pacote) {
-          numSessao = pacote.sessoesFeitas + 1;
+          pacoteNome = pacote.servicoNome;
+          const selectedItemName = document.getElementById('app-package-item-select') 
+            ? document.getElementById('app-package-item-select').value 
+            : null;
+
+          let targetItem = null;
+          if (Array.isArray(pacote.itens) && pacote.itens.length > 0) {
+            targetItem = pacote.itens.find(i => i.nome === selectedItemName) || pacote.itens[0];
+          }
+
+          if (targetItem) {
+            const disponiveis = targetItem.sessoes - (targetItem.feitas || 0);
+            if (disponiveis <= 0) {
+              alert(`⚠️ Atenção: Todas as sessões de "${targetItem.nome}" deste plano já foram concluídas!\nPor favor, escolha outro procedimento com saldo disponível.`);
+              return;
+            }
+            pacoteItemNome = targetItem.nome;
+            numSessao = (targetItem.feitas || 0) + 1;
+            totalSessoesPacote = targetItem.sessoes;
+          } else {
+            if ((pacote.sessoesFeitas || 0) >= (pacote.totalSessoes || 1)) {
+              alert(`⚠️ Atenção: Todas as sessões deste plano já foram concluídas!`);
+              return;
+            }
+            pacoteItemNome = pacote.servicoNome;
+            numSessao = (pacote.sessoesFeitas || 0) + 1;
+            totalSessoesPacote = pacote.totalSessoes;
+          }
         }
       }
 
@@ -3647,7 +4005,7 @@ class StudioApp {
         clienteNome: cliente ? cliente.nome : 'Cliente',
         whatsapp: cliente ? cliente.whatsapp : '',
         servicoId,
-        servicoNome: servico ? servico.nome : 'Serviço',
+        servicoNome: pacoteItemNome || (servico ? servico.nome : 'Serviço'),
         data,
         horario,
         duracaoMin,
@@ -3656,7 +4014,10 @@ class StudioApp {
         pago: pacoteId ? true : false,
         formaPagamento: pacoteId ? 'pacote' : null,
         pacoteId,
+        pacoteNome,
+        pacoteItemNome,
         numSessao,
+        totalSessoesPacote,
         notas
       };
 
@@ -3694,8 +4055,13 @@ class StudioApp {
     this.activeAppointmentForCompletion = agendamento;
     document.getElementById('complete-app-id').value = agendamento.id;
     document.getElementById('complete-summary-client').textContent = agendamento.clienteNome;
+
+    const descPacote = agendamento.pacoteItemNome 
+      ? `${agendamento.pacoteItemNome} • Plano: ${agendamento.pacoteNome || 'Pacote'}${agendamento.numSessao ? ` (Sessão ${agendamento.numSessao})` : ''}`
+      : agendamento.servicoNome;
+
     document.getElementById('complete-summary-service').textContent = 
-      `${agendamento.servicoNome} • Agendado para ${agendamento.horario}`;
+      `${descPacote} • Agendado para ${agendamento.horario}`;
     document.getElementById('complete-supplies').value = agendamento.suprimentosGastos || '';
     document.getElementById('complete-evolution').value = agendamento.evolucaoSessao || '';
     document.getElementById('complete-payment-val').value = agendamento.valor || 0;
@@ -3737,18 +4103,84 @@ class StudioApp {
         if (cliente && cliente.pacotes) {
           const pacote = cliente.pacotes.find(p => p.id === app.pacoteId);
           if (pacote) {
+            // Avança contador total de sessões do pacote
             pacote.sessoesFeitas = Math.min(pacote.totalSessoes, (pacote.sessoesFeitas || 0) + 1);
+
+            // Avança contador do procedimento específico do plano
+            let procNome = app.pacoteItemNome || app.servicoNome;
             if (Array.isArray(pacote.itens) && pacote.itens.length > 0) {
-              const matchedItem = pacote.itens.find(i => 
-                i.nome === app.servicoNome || 
-                (i.id && i.id === app.servicoId) ||
-                (app.servicoNome && app.servicoNome.toLowerCase().includes((i.nome || '').toLowerCase()))
-              );
+              let matchedItem = pacote.itens.find(i => i.nome === procNome);
+              if (!matchedItem) {
+                matchedItem = pacote.itens.find(i => 
+                  i.nome.toLowerCase() === (procNome || '').toLowerCase() ||
+                  (i.id && i.id === app.servicoId) ||
+                  (procNome && procNome.toLowerCase().includes((i.nome || '').toLowerCase())) ||
+                  (i.nome && (procNome || '').toLowerCase().includes(i.nome.toLowerCase()))
+                );
+              }
               if (matchedItem) {
                 matchedItem.feitas = Math.min(matchedItem.sessoes, (matchedItem.feitas || 0) + 1);
+                procNome = matchedItem.nome;
               }
             }
+
+            // Verifica se o pacote foi 100% finalizado
+            const allItemsDone = Array.isArray(pacote.itens) && pacote.itens.length > 0
+              ? pacote.itens.every(i => (i.feitas || 0) >= i.sessoes)
+              : false;
+
+            const planoFinalizado = pacote.sessoesFeitas >= pacote.totalSessoes || allItemsDone;
+            if (planoFinalizado) {
+              pacote.status = 'concluido';
+              pacote.concluidoEm = new Date().toISOString();
+            }
+
             await db.put('clientes', cliente);
+            // Sincroniza cache em memória
+            const cIdx = this.allClients.findIndex(c => c.id === cliente.id);
+            if (cIdx !== -1) this.allClients[cIdx] = cliente;
+
+            if (planoFinalizado) {
+              this.showToast(`🎉 Parabéns! Todas as ${pacote.totalSessoes} sessões do plano foram concluídas!`);
+            } else {
+              this.showToast(`✓ Sessão de ${procNome} baixada do plano! (${pacote.sessoesFeitas} de ${pacote.totalSessoes} concluídas)`);
+            }
+          }
+        }
+      } else if (metodo === 'pacote' && app.clienteId) {
+        // Modo inteligente: se marcou como "pacote" na finalização mas não havia vinculado antes
+        const cliente = await db.get('clientes', app.clienteId);
+        if (cliente && cliente.pacotes) {
+          const activePkg = cliente.pacotes.find(p => 
+            p.status !== 'concluido' && (p.sessoesFeitas || 0) < p.totalSessoes
+          );
+          if (activePkg) {
+            app.pacoteId = activePkg.id;
+            app.pacoteNome = activePkg.servicoNome;
+            activePkg.sessoesFeitas = Math.min(activePkg.totalSessoes, (activePkg.sessoesFeitas || 0) + 1);
+            if (Array.isArray(activePkg.itens) && activePkg.itens.length > 0) {
+              const matchedItem = activePkg.itens.find(i => 
+                (i.feitas || 0) < i.sessoes && (
+                  i.nome === app.servicoNome || 
+                  (i.id && i.id === app.servicoId) ||
+                  app.servicoNome.toLowerCase().includes((i.nome || '').toLowerCase()) ||
+                  i.nome.toLowerCase().includes((app.servicoNome || '').toLowerCase())
+                )
+              ) || activePkg.itens.find(i => (i.feitas || 0) < i.sessoes);
+              if (matchedItem) {
+                matchedItem.feitas = Math.min(matchedItem.sessoes, (matchedItem.feitas || 0) + 1);
+                app.pacoteItemNome = matchedItem.nome;
+              }
+            }
+            if (activePkg.sessoesFeitas >= activePkg.totalSessoes) {
+              activePkg.status = 'concluido';
+              activePkg.concluidoEm = new Date().toISOString();
+            }
+            await db.put('clientes', cliente);
+            const cIdx = this.allClients.findIndex(c => c.id === cliente.id);
+            if (cIdx !== -1) this.allClients[cIdx] = cliente;
+            await db.put('agendamentos', app);
+            this.showToast(`✓ Sessão baixada do plano "${activePkg.servicoNome}"! (${activePkg.sessoesFeitas}/${activePkg.totalSessoes})`);
           }
         }
       }
@@ -3784,6 +4216,30 @@ class StudioApp {
     const agendamento = await db.get('agendamentos', appId);
     if (!agendamento) return;
 
+    // Se este agendamento concluído era de um pacote, reverte 1 sessão
+    if (agendamento.status === 'concluido' && agendamento.pacoteId && agendamento.clienteId) {
+      const cliente = await db.get('clientes', agendamento.clienteId);
+      if (cliente && cliente.pacotes) {
+        const pacote = cliente.pacotes.find(p => p.id === agendamento.pacoteId);
+        if (pacote) {
+          pacote.sessoesFeitas = Math.max(0, (pacote.sessoesFeitas || 1) - 1);
+          if (Array.isArray(pacote.itens) && pacote.itens.length > 0) {
+            const targetNome = agendamento.pacoteItemNome || agendamento.servicoNome;
+            let matchedItem = pacote.itens.find(i => i.nome === targetNome) ||
+              pacote.itens.find(i => i.nome.toLowerCase() === (targetNome || '').toLowerCase());
+            if (matchedItem) {
+              matchedItem.feitas = Math.max(0, (matchedItem.feitas || 1) - 1);
+            }
+          }
+          pacote.status = 'ativo';
+          delete pacote.concluidoEm;
+          await db.put('clientes', cliente);
+          const cIdx = this.allClients.findIndex(c => c.id === cliente.id);
+          if (cIdx !== -1) this.allClients[cIdx] = cliente;
+        }
+      }
+    }
+
     agendamento.status = 'agendado';
     await db.put('agendamentos', agendamento);
     this.showToast('Agendamento reaberto.');
@@ -3796,6 +4252,31 @@ class StudioApp {
   async deleteAppointment(id) {
     if (confirm('Deseja excluir este agendamento?')) {
       const agendamento = await db.get('agendamentos', id);
+
+      // Se era agendamento concluído de pacote, reverte a sessão do pacote
+      if (agendamento && agendamento.status === 'concluido' && agendamento.pacoteId && agendamento.clienteId) {
+        const cliente = await db.get('clientes', agendamento.clienteId);
+        if (cliente && cliente.pacotes) {
+          const pacote = cliente.pacotes.find(p => p.id === agendamento.pacoteId);
+          if (pacote) {
+            pacote.sessoesFeitas = Math.max(0, (pacote.sessoesFeitas || 1) - 1);
+            if (Array.isArray(pacote.itens) && pacote.itens.length > 0) {
+              const targetNome = agendamento.pacoteItemNome || agendamento.servicoNome;
+              let matchedItem = pacote.itens.find(i => i.nome === targetNome) ||
+                pacote.itens.find(i => i.nome.toLowerCase() === (targetNome || '').toLowerCase());
+              if (matchedItem) {
+                matchedItem.feitas = Math.max(0, (matchedItem.feitas || 1) - 1);
+              }
+            }
+            pacote.status = 'ativo';
+            delete pacote.concluidoEm;
+            await db.put('clientes', cliente);
+            const cIdx = this.allClients.findIndex(c => c.id === cliente.id);
+            if (cIdx !== -1) this.allClients[cIdx] = cliente;
+          }
+        }
+      }
+
       await db.delete('agendamentos', id);
 
       if (agendamento) {
