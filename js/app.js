@@ -681,12 +681,48 @@ class StudioApp {
 
   async loadInitialData() {
     this.allClients = await db.getAll('clientes');
+    
+    // Sincroniza catálogo de procedimentos da nuvem se disponível (evita sobrescrever com dados locais antigos)
+    await this.syncServicesFromCloudIfAvailable();
+
     this.allServices = await db.getAll('servicos');
     this.populateClientSelects();
     this.populateServiceSelects();
-    this.syncServicesToCloud();
     this.syncAppointmentsToCloud();
     await this.loadPublicScheduleConfig();
+  }
+
+  async syncServicesFromCloudIfAvailable() {
+    const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
+    if (!cloud || !cloud.isConfigured()) return;
+    try {
+      const remoteServices = await cloud.getPublicServices();
+      if (Array.isArray(remoteServices) && remoteServices.length > 0) {
+        const localServices = await db.getAll('servicos');
+        
+        for (const remote of remoteServices) {
+          await db.put('servicos', {
+            id: remote.id,
+            nome: remote.nome,
+            categoria: remote.categoria || 'Corporal',
+            duracaoMin: remote.duracaoMin || 60,
+            preco: Number(remote.preco) || 0,
+            descricao: remote.descricao || '',
+            visivelNoSite: remote.visivelNoSite !== false,
+            isPacote: false
+          });
+        }
+
+        const remoteIds = new Set(remoteServices.map(s => s.id));
+        for (const loc of localServices) {
+          if (!loc.isPacote && !remoteIds.has(loc.id)) {
+            await db.delete('servicos', loc.id);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Não foi possível sincronizar serviços da nuvem no início:', e);
+    }
   }
 
   // =========================================================================
@@ -3178,25 +3214,70 @@ class StudioApp {
       if (this.allServices.length === 0) {
         container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum procedimento cadastrado.</div>`;
       } else {
-        container.innerHTML = this.allServices.map(s => `
-          <div style="background: var(--bg-card-soft); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">${s.nome}</div>
-              <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">
-                ${s.categoria || 'Geral'} • ⏱️ ${s.duracaoMin || 60} minutos
+        container.innerHTML = this.allServices.map(s => {
+          const isVisibleOnSite = s.visivelNoSite !== false && !s.isPacote;
+          const statusBadge = isVisibleOnSite 
+            ? `<span style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">🌐 No Site</span>`
+            : `<span style="background: rgba(107, 114, 128, 0.12); color: #4B5563; font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">🔒 Apenas Interno</span>`;
+
+          return `
+            <div style="background: var(--bg-card-soft); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">${s.nome}</span>
+                  ${statusBadge}
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">
+                  📁 ${s.categoria || 'Geral'} • ⏱️ ${s.duracaoMin || 60} minutos
+                </div>
+                ${s.descricao ? `<div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px; line-height: 1.3; font-style: italic;">${s.descricao}</div>` : ''}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <strong style="font-size: 1.05rem; color: var(--primary); white-space: nowrap;">${this.formatCurrency(s.preco)}</strong>
+                <button class="icon-btn" style="width: 34px; height: 34px; font-size: 0.85rem;" onclick="app.openEditServiceModal('${s.id}')" title="Editar Procedimento Completo">✏️</button>
+                <button class="icon-btn" style="width: 34px; height: 34px; font-size: 0.85rem; color: var(--danger);" onclick="app.deleteService('${s.id}')" title="Excluir Procedimento">🗑️</button>
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <strong style="font-size: 1.05rem; color: var(--primary);">${this.formatCurrency(s.preco)}</strong>
-              <button class="icon-btn" style="width: 32px; height: 32px; font-size: 0.8rem;" onclick="app.editServicePrice('${s.id}')" title="Alterar Preço">✏️</button>
-              <button class="icon-btn" style="width: 32px; height: 32px; font-size: 0.8rem; color: var(--danger);" onclick="app.deleteService('${s.id}')" title="Excluir">🗑️</button>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
     }
 
     this.openModal('modal-price-table');
+  }
+
+  async openEditServiceModal(id) {
+    const servico = await db.get('servicos', id);
+    if (!servico) return;
+
+    const title = document.getElementById('modal-service-title');
+    if (title) title.textContent = 'Editar Procedimento';
+
+    const srvId = document.getElementById('srv-id');
+    if (srvId) srvId.value = servico.id;
+
+    const srvName = document.getElementById('srv-name');
+    if (srvName) srvName.value = servico.nome || '';
+
+    const srvPrice = document.getElementById('srv-price');
+    if (srvPrice) srvPrice.value = servico.preco || 0;
+
+    const srvDuration = document.getElementById('srv-duration');
+    if (srvDuration) srvDuration.value = servico.duracaoMin || 60;
+
+    const srvCat = document.getElementById('srv-cat');
+    if (srvCat) srvCat.value = servico.categoria || 'Corporal';
+
+    const srvDesc = document.getElementById('srv-desc');
+    if (srvDesc) srvDesc.value = servico.descricao || '';
+
+    const srvVisible = document.getElementById('srv-visible-site');
+    if (srvVisible) srvVisible.checked = (servico.visivelNoSite !== false);
+
+    const btnSubmit = document.getElementById('btn-save-service');
+    if (btnSubmit) btnSubmit.textContent = 'Salvar Alterações & Atualizar Site ✨';
+
+    this.openModal('modal-service');
   }
 
   async editServicePrice(id) {
@@ -3209,7 +3290,7 @@ class StudioApp {
     const valorFloat = parseFloat(novoPreco.replace(',', '.')) || 0;
     servico.preco = valorFloat;
     await db.put('servicos', servico);
-    await this.syncServicesToCloud();
+    await this.syncServicesToCloud(true);
     await this.loadInitialData();
     await this.openPriceTableModal();
     this.showToast('Preço atualizado com sucesso! ✨');
@@ -3594,35 +3675,53 @@ class StudioApp {
 
   async saveService(e) {
     e.preventDefault();
-    const nome = document.getElementById('srv-name').value;
-    const preco = parseFloat(document.getElementById('srv-price').value) || 0;
-    const duracaoMin = parseInt(document.getElementById('srv-duration').value, 10) || 60;
-    const categoria = document.getElementById('srv-cat').value;
+    const idField = document.getElementById('srv-id');
+    const existingId = idField ? idField.value.trim() : '';
+
+    const nome = (document.getElementById('srv-name')?.value || '').trim();
+    const preco = parseFloat(document.getElementById('srv-price')?.value) || 0;
+    const duracaoMin = parseInt(document.getElementById('srv-duration')?.value, 10) || 60;
+    const categoria = document.getElementById('srv-cat')?.value || 'Corporal';
+    const descricao = (document.getElementById('srv-desc')?.value || '').trim();
+    const visivelNoSite = document.getElementById('srv-visible-site') ? document.getElementById('srv-visible-site').checked : true;
+
+    if (!nome) {
+      this.showToast('Informe o nome do procedimento.');
+      return;
+    }
+
+    const id = existingId || ('srv_' + Date.now());
+    const isEdit = !!existingId;
 
     await db.put('servicos', {
-      id: 'srv_' + Date.now(),
+      id,
       nome,
       preco,
       duracaoMin,
       categoria,
+      descricao,
+      visivelNoSite,
       isPacote: categoria === 'Pacotes'
     });
 
-    await this.syncServicesToCloud();
+    await this.syncServicesToCloud(true);
     this.closeModal('modal-service');
-    document.getElementById('form-service').reset();
+    const form = document.getElementById('form-service');
+    if (form) form.reset();
     await this.loadInitialData();
     await this.openPriceTableModal();
-    this.showToast('Procedimento cadastrado com sucesso!');
+    this.showToast(isEdit ? 'Procedimento atualizado e site sincronizado! ✨' : 'Procedimento cadastrado e site sincronizado! ✨');
   }
 
   async deleteService(id) {
-    if (confirm('Deseja realmente remover este procedimento da tabela?')) {
+    const servico = await db.get('servicos', id);
+    const nome = servico ? servico.nome : 'este procedimento';
+    if (confirm(`Deseja realmente excluir "${nome}" da tabela e remover do site?`)) {
       await db.delete('servicos', id);
-      await this.syncServicesToCloud();
+      await this.syncServicesToCloud(true);
       await this.loadInitialData();
       await this.openPriceTableModal();
-      this.showToast('Procedimento excluído.');
+      this.showToast('Procedimento excluído e site atualizado.');
     }
   }
 
@@ -4459,7 +4558,27 @@ class StudioApp {
   }
 
   openNewServiceModal() {
-    document.getElementById('form-service').reset();
+    const form = document.getElementById('form-service');
+    if (form) form.reset();
+
+    const title = document.getElementById('modal-service-title');
+    if (title) title.textContent = 'Novo Procedimento';
+
+    const srvId = document.getElementById('srv-id');
+    if (srvId) srvId.value = '';
+
+    const srvDuration = document.getElementById('srv-duration');
+    if (srvDuration) srvDuration.value = '60';
+
+    const srvVisible = document.getElementById('srv-visible-site');
+    if (srvVisible) srvVisible.checked = true;
+
+    const srvDesc = document.getElementById('srv-desc');
+    if (srvDesc) srvDesc.value = '';
+
+    const btnSubmit = document.getElementById('btn-save-service');
+    if (btnSubmit) btnSubmit.textContent = 'Salvar Procedimento & Atualizar Site ✨';
+
     this.openModal('modal-service');
   }
 
@@ -4704,7 +4823,7 @@ class StudioApp {
         if (typeof db !== 'undefined' && db.getAll) {
           const local = await db.getAll('servicos');
           if (local && local.length > 0) {
-            services = local.filter(s => !s.isPacote).map(s => ({
+            services = local.filter(s => !s.isPacote && s.visivelNoSite !== false).map(s => ({
               id: s.id,
               nome: s.nome,
               duracaoMin: s.duracaoMin || 60,
@@ -4726,15 +4845,31 @@ class StudioApp {
           nome: 'Drenagem Linfática Corporal',
           categoria: 'Corporal',
           duracaoMin: 60,
-          preco: 100.00,
+          preco: 130.00,
           descricao: 'Redução de retenção de líquidos, desinchaço e ativação da circulação.'
+        },
+        {
+          id: 'srv_2',
+          nome: 'Drenagem Linfática Facial',
+          categoria: 'Facial',
+          duracaoMin: 40,
+          preco: 90.00,
+          descricao: 'Revitalização facial, redução de olheiras e bolsas, efeito lifting.'
+        },
+        {
+          id: 'srv_3',
+          nome: 'Drenagem Linfática Pós-Operatório',
+          categoria: 'Corporal',
+          duracaoMin: 60,
+          preco: 160.00,
+          descricao: 'Atendimento especializado para pós-cirúrgico com toque suave e prevenção de fibroses.'
         },
         {
           id: 'srv_4',
           nome: 'Massagem Modeladora Redutora',
           categoria: 'Corporal',
           duracaoMin: 60,
-          preco: 119.90,
+          preco: 140.00,
           descricao: 'Manobras vigorosas focadas em contorno corporal e celulite.'
         },
         {
@@ -4742,13 +4877,21 @@ class StudioApp {
           nome: 'Massagem Relaxante com Aromaterapia',
           categoria: 'Corporal',
           duracaoMin: 50,
-          preco: 100.00,
+          preco: 120.00,
           descricao: 'Alívio de tensões musculares, estresse e relaxamento profundo.'
+        },
+        {
+          id: 'srv_6',
+          nome: 'Limpeza de Pele Profunda',
+          categoria: 'Facial',
+          duracaoMin: 75,
+          preco: 150.00,
+          descricao: 'Extração de cravos, esfoliação e hidratação com máscara calmante.'
         }
       ];
     }
 
-    this.clientPublicServices = services;
+    this.clientPublicServices = (services || []).filter(s => !s.isPacote && s.visivelNoSite !== false);
 
     if (!Array.isArray(this.selectedBookingServices)) {
       this.selectedBookingServices = [];
@@ -4964,22 +5107,28 @@ class StudioApp {
   }
 
   async syncServicesToCloud(showToastFeedback = false) {
-    if (!this.isAuthenticated) return;
     const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
     if (!cloud || !cloud.isConfigured()) return;
     try {
       const servicos = await db.getAll('servicos');
-      if (servicos && servicos.length > 0) {
-        const toSync = servicos.filter(s => !s.isPacote);
-        await cloud.syncServicesCatalog(toSync);
-        if (showToastFeedback) {
-          this.showToast('✅ Catálogo atualizado no site das clientes com sucesso!');
-        }
+      const toSync = (servicos || []).filter(s => !s.isPacote).map(s => ({
+        id: s.id,
+        nome: s.nome,
+        categoria: s.categoria || 'Corporal',
+        duracaoMin: s.duracaoMin || 60,
+        preco: Number(s.preco) || 0,
+        descricao: s.descricao || '',
+        visivelNoSite: s.visivelNoSite !== false
+      }));
+
+      await cloud.syncServicesCatalog(toSync);
+      if (showToastFeedback) {
+        this.showToast('✅ Catálogo atualizado no site com sucesso!');
       }
     } catch (e) {
       console.warn('Aviso: falha ao sincronizar catálogo na nuvem:', e);
       if (showToastFeedback) {
-        this.showToast('⚠️ Falha ao sincronizar catálogo na nuvem. Verifique a conexão.');
+        this.showToast('⚠️ Falha ao sincronizar catálogo no site. Verifique a conexão.');
       }
     }
   }

@@ -3601,11 +3601,13 @@ body {
       <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-header">
-          <h2 class="modal-title">Novo Procedimento</h2>
+          <h2 class="modal-title" id="modal-service-title">Novo Procedimento</h2>
           <button class="btn-close" onclick="app.closeModal('modal-service')">✕</button>
         </div>
 
         <form id="form-service" onsubmit="app.saveService(event)">
+          <input type="hidden" id="srv-id" value="">
+
           <div class="form-group">
             <label class="form-label">Nome do Procedimento *</label>
             <input type="text" id="srv-name" class="form-input" placeholder="Ex: Drenagem Linfática Detox" required>
@@ -3627,12 +3629,27 @@ body {
             <select id="srv-cat" class="form-select">
               <option value="Corporal">Corporal</option>
               <option value="Facial">Facial</option>
-              <option value="Pacotes">Pacotes de Sessões</option>
               <option value="Especial">Especial</option>
+              <option value="Pacotes">Pacotes de Sessões</option>
             </select>
           </div>
 
-          <button type="submit" class="form-btn-submit">Salvar Procedimento</button>
+          <div class="form-group">
+            <label class="form-label">Descrição do Procedimento (Aparece no Site)</label>
+            <textarea id="srv-desc" class="form-textarea" rows="2" placeholder="Ex: Manobras suaves para redução de inchaço, retenção de líquidos e alívio imediato."></textarea>
+          </div>
+
+          <div class="form-group" style="background: #FDFBF9; border: 1.5px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 14px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.84rem; font-weight: 700; color: var(--text-main); margin-bottom: 0;">
+              <input type="checkbox" id="srv-visible-site" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+              <span>🌐 Exibir no site para agendamento online das clientes</span>
+            </label>
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px; padding-left: 26px;">
+              Se desmarcado, o procedimento fica disponível apenas no painel interno para uso da Letícia.
+            </div>
+          </div>
+
+          <button type="submit" class="form-btn-submit" id="btn-save-service">Salvar Procedimento &amp; Atualizar Site ✨</button>
         </form>
       </div>
     </div>
@@ -4100,9 +4117,9 @@ body {
 
   <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-client.js?v=38"></script>
-  <script src="js/db.js?v=38"></script>
-  <script src="js/app.js?v=38"></script>
+  <script src="js/supabase-client.js?v=39"></script>
+  <script src="js/db.js?v=39"></script>
+  <script src="js/app.js?v=39"></script>
   <script>
     // Registro do Service Worker para suporte Offline
     if ('serviceWorker' in navigator) {

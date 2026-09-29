@@ -68,15 +68,31 @@ class StudioCloudService {
         nome: 'Drenagem Linfática Corporal',
         categoria: 'Corporal',
         duracaoMin: 60,
-        preco: 100.00,
+        preco: 120.00,
         descricao: 'Redução de retenção de líquidos, desinchaço e ativação da circulação.'
+      },
+      {
+        id: 'srv_2',
+        nome: 'Drenagem Linfática Pré e Pós-Operatório',
+        categoria: 'Corporal',
+        duracaoMin: 60,
+        preco: 130.00,
+        descricao: 'Recuperação tecidual acelerada e redução de fibroses cirúrgicas.'
+      },
+      {
+        id: 'srv_3',
+        nome: 'Drenagem Linfática Método Renata França',
+        categoria: 'Corporal',
+        duracaoMin: 60,
+        preco: 160.00,
+        descricao: 'Toque diferenciado que resulta em efeito de lipoescultura manual imediata.'
       },
       {
         id: 'srv_4',
         nome: 'Massagem Modeladora Redutora',
         categoria: 'Corporal',
         duracaoMin: 60,
-        preco: 119.90,
+        preco: 140.00,
         descricao: 'Manobras vigorosas focadas em contorno corporal e celulite.'
       },
       {
@@ -84,12 +100,38 @@ class StudioCloudService {
         nome: 'Massagem Relaxante com Aromaterapia',
         categoria: 'Corporal',
         duracaoMin: 50,
-        preco: 100.00,
+        preco: 120.00,
         descricao: 'Alívio de tensões musculares, estresse e relaxamento profundo.'
+      },
+      {
+        id: 'srv_6',
+        nome: 'Limpeza de Pele Profunda',
+        categoria: 'Facial',
+        duracaoMin: 75,
+        preco: 150.00,
+        descricao: 'Extração de cravos, esfoliação e hidratação com máscara calmante.'
       }
     ];
 
-    // 1. Tenta buscar via Supabase Client
+    // 1. Tenta buscar direto via REST com cache-busting (zero dependência de biblioteca e sem cache HTTP)
+    try {
+      const res = await this._restFetch(`solicitacoes_agendamento?cliente_nome=eq.__STUDIO_CONFIG_SERVICOS__&select=observacoes&order=updated_at.desc&limit=1&_t=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0 && data[0].observacoes) {
+          const remoteServices = JSON.parse(data[0].observacoes);
+          if (Array.isArray(remoteServices) && remoteServices.length > 0) {
+            return remoteServices;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Falha REST getPublicServices:', e);
+    }
+
+    // 2. Fallback via Supabase Client
     if (this.client) {
       try {
         const { data, error } = await this.client
@@ -106,24 +148,8 @@ class StudioCloudService {
           }
         }
       } catch (err) {
-        console.warn('Falha client getPublicServices, tentando REST direto:', err);
+        console.warn('Falha client getPublicServices:', err);
       }
-    }
-
-    // 2. Fallback REST direto
-    try {
-      const res = await this._restFetch('solicitacoes_agendamento?cliente_nome=eq.__STUDIO_CONFIG_SERVICOS__&select=observacoes&order=updated_at.desc&limit=1');
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.length > 0 && data[0].observacoes) {
-          const remoteServices = JSON.parse(data[0].observacoes);
-          if (Array.isArray(remoteServices) && remoteServices.length > 0) {
-            return remoteServices;
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('Falha REST getPublicServices:', e);
     }
 
     return defaultServices;
@@ -133,6 +159,7 @@ class StudioCloudService {
   async syncServicesCatalog(services) {
     this.ensureClient();
     if (!this.isConfigured() || !services || services.length === 0) return;
+    const nowIso = new Date().toISOString();
     const payload = {
       cliente_nome: '__STUDIO_CONFIG_SERVICOS__',
       cliente_whatsapp: '00000000000',
@@ -144,10 +171,46 @@ class StudioCloudService {
       horario: '00:00',
       status: 'recusado',
       observacoes: JSON.stringify(services),
-      updated_at: new Date().toISOString()
+      updated_at: nowIso
     };
 
-    if (this.client) {
+    let synced = false;
+
+    // 1. Atualização direta via REST PATCH (100% garantido e sem travas)
+    try {
+      const res = await this._restFetch('solicitacoes_agendamento?cliente_nome=eq.__STUDIO_CONFIG_SERVICOS__', {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=representation' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          synced = true;
+        }
+      }
+    } catch (e) {
+      console.warn('Erro syncServicesCatalog REST PATCH:', e);
+    }
+
+    // 2. Se nenhuma linha existia para atualizar, insere nova linha via POST
+    if (!synced) {
+      try {
+        const res = await this._restFetch('solicitacoes_agendamento', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=representation' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          synced = true;
+        }
+      } catch (e) {
+        console.warn('Erro syncServicesCatalog REST POST:', e);
+      }
+    }
+
+    // 3. Fallback adicional via client caso o REST tenha tido problema de rede
+    if (!synced && this.client) {
       try {
         const { data: updated, error: updateErr } = await this.client
           .from('solicitacoes_agendamento')
@@ -160,27 +223,9 @@ class StudioCloudService {
             .from('solicitacoes_agendamento')
             .insert([payload]);
         }
-        return;
       } catch (e) {
-        console.warn('Erro syncServicesCatalog client, tentando REST:', e);
+        console.warn('Erro fallback syncServicesCatalog client:', e);
       }
-    }
-
-    try {
-      const res = await this._restFetch('solicitacoes_agendamento?cliente_nome=eq.__STUDIO_CONFIG_SERVICOS__', {
-        method: 'PATCH',
-        headers: { 'Prefer': 'return=representation' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (!data || data.length === 0) {
-        await this._restFetch('solicitacoes_agendamento', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-      }
-    } catch (e) {
-      console.warn('Erro ao sincronizar catálogo via REST:', e);
     }
   }
 

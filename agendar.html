@@ -617,7 +617,7 @@
   </div>
 
   <!-- SCRIPT DE AGENDAMENTO E INTEGRAÇÃO SUPABASE -->
-  <script src="js/supabase-client.js?v=38"></script>
+  <script src="js/supabase-client.js?v=39"></script>
   <script>
     class ClientBookingApp {
       constructor() {
@@ -707,7 +707,7 @@
 
         // Busca serviços configurados via Supabase ou serviços padrão
         const rawServices = await StudioCloud.getPublicServices();
-        const services = (rawServices || []).filter(s => !s.isPacote);
+        const services = (rawServices || []).filter(s => !s.isPacote && s.visivelNoSite !== false);
         this.publicServices = services;
 
         if (!Array.isArray(this.selectedServices)) {
