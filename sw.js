@@ -1,4 +1,4 @@
-const CACHE_NAME = 'studio-leticia-v37';
+const CACHE_NAME = 'studio-leticia-v38';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -40,6 +40,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('🧹 Removendo cache antigo do Service Worker:', key);
             return caches.delete(key);
           }
         })
@@ -51,7 +52,16 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (!event.request.url.startsWith('http')) return;
 
+  // 1. NUNCA interceptar requisições não-GET (POST, PUT, PATCH, DELETE)
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
+
+  // 2. NUNCA interceptar chamadas de API externas ou do Supabase
+  if (url.origin !== self.location.origin || url.pathname.includes('/rest/v1/') || url.hostname.includes('supabase')) {
+    return; // Deixa o navegador fazer fetch direto na rede sem tocar no cache
+  }
+
   const isCode = url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.endsWith('.html') || event.request.mode === 'navigate';
 
   if (isCode) {
@@ -70,7 +80,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache primeiro para mídias estáticas
+  // Cache primeiro para mídias estáticas do próprio app
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
       if (cachedResponse) return cachedResponse;
@@ -81,6 +91,24 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       });
+    })
+  );
+});
+
+// Suporte a clique de notificações push no iOS e Android
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.postMessage({ type: 'OPEN_ALERTS_PANEL' });
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./#alertas');
+      }
     })
   );
 });

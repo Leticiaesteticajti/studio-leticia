@@ -1890,27 +1890,88 @@ class StudioApp {
   }
 
   // =========================================================================
-  // CENTRAL DE ALERTAS & NOTIFICAÇÕES (SUPABASE REALTIME)
+  // CENTRAL DE ALERTAS & NOTIFICAÇÕES (SUPABASE REALTIME & RESILIENTE)
   // =========================================================================
   async startNotificationSystem() {
     this.requestNotificationPermission();
 
+    // 1. Limpeza preventiva de caches legados do Service Worker
+    if ('caches' in window) {
+      try {
+        const keys = await caches.keys();
+        for (const k of keys) {
+          if (k.startsWith('studio-leticia-') && k !== 'studio-leticia-v38') {
+            await caches.delete(k);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 2. Conexão Realtime com o Supabase
     const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
     if (cloud && cloud.subscribeToNewBookings) {
       if (this._realtimeBookingsChannel) {
-        cloud.unsubscribe(this._realtimeBookingsChannel);
+        try { cloud.unsubscribe(this._realtimeBookingsChannel); } catch (_) {}
       }
       this._realtimeBookingsChannel = cloud.subscribeToNewBookings((newReq) => {
         this.handleIncomingOnlineBooking(newReq);
       });
     }
 
-    // Checagem imediata inicial
+    // 3. Ouvintes de ciclo de vida para iOS Safari (PWA acordando de segundo plano)
+    if (!this._resumeListenersAttached) {
+      this._resumeListenersAttached = true;
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.onAppResume();
+        }
+      });
+      window.addEventListener('pageshow', () => this.onAppResume());
+      window.addEventListener('focus', () => this.onAppResume());
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'OPEN_ALERTS_PANEL') {
+            this.openOnlineRequestsModal();
+          }
+        });
+      }
+
+      if (window.location.hash === '#alertas') {
+        setTimeout(() => this.openOnlineRequestsModal(), 300);
+      }
+    }
+
+    // 4. Checagem imediata inicial
     await this.checkOnlineRequests(true);
 
-    // Polling redundante a cada 15 segundos
+    // 5. Polling redundante a cada 15 segundos
     if (this._onlinePoller) clearInterval(this._onlinePoller);
     this._onlinePoller = setInterval(() => this.checkOnlineRequests(false), 15000);
+  }
+
+  async onAppResume() {
+    console.log('📱 App retomado do segundo plano. Sincronizando notificações...');
+    const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
+    if (cloud && cloud.subscribeToNewBookings) {
+      if (this._realtimeBookingsChannel) {
+        try { cloud.unsubscribe(this._realtimeBookingsChannel); } catch (_) {}
+      }
+      this._realtimeBookingsChannel = cloud.subscribeToNewBookings((newReq) => {
+        this.handleIncomingOnlineBooking(newReq);
+      });
+    }
+
+    await this.checkOnlineRequests(false);
+    const modal = document.getElementById('modal-online-requests');
+    if (modal && modal.classList.contains('active')) {
+      const pendList = document.getElementById('online-requests-list');
+      if (pendList && pendList.style.display !== 'none') {
+        await this.renderOnlineRequests();
+      } else {
+        await this.renderOnlineHistory();
+      }
+    }
   }
 
   requestNotificationPermission() {
@@ -1930,6 +1991,10 @@ class StudioApp {
     if (newReq.cliente_nome === '__STUDIO_CONFIG_SERVICOS__' || newReq.cliente_nome === '__STUDIO_CONFIG_HORARIOS__') return;
     if (newReq.status !== 'pendente') return;
     if (newReq.observacoes && newReq.observacoes.includes('[APP_ID:')) return;
+
+    if (!this._notifiedBookingIds) this._notifiedBookingIds = new Set();
+    if (this._notifiedBookingIds.has(newReq.id)) return;
+    this._notifiedBookingIds.add(newReq.id);
 
     this.playNotificationChime();
     this.flashTabTitle('🔔 Novo Agendamento Recebido!');
@@ -1978,23 +2043,28 @@ class StudioApp {
         this.playNotificationChime();
         this.flashTabTitle(`🔔 (${count}) Pedidos Pendentes`);
       } else if (!isInitial && this._lastPendingCount !== undefined && count > this._lastPendingCount && count > 0) {
-        this.playNotificationChime();
-        this.flashTabTitle(`🔔 (${count}) Novo Agendamento!`);
-        this.showToast(`🔔 ${count} novo(s) agendamento(s) aguardando aprovação!`);
-        if ('Notification' in window && Notification.permission === 'granted') {
-          const ultimo = pending[0];
-          const [ano, mes, dia] = (ultimo.data || '').split('-');
-          const dataFmt = dia && mes ? `${dia}/${mes}/${ano}` : ultimo.data;
-          try {
-            const notif = new Notification('Studio Letícia - Novo Agendamento! ✨', {
-              body: `${ultimo.cliente_nome} solicitou ${ultimo.servico_nome} para ${dataFmt} às ${ultimo.horario}`,
-              icon: 'icons/icon-192.png'
-            });
-            notif.onclick = () => {
-              window.focus();
-              this.openOnlineRequestsModal();
-            };
-          } catch (_) {}
+        const novoItem = pending[0];
+        if (!this._notifiedBookingIds) this._notifiedBookingIds = new Set();
+        if (novoItem && !this._notifiedBookingIds.has(novoItem.id)) {
+          this._notifiedBookingIds.add(novoItem.id);
+          this.playNotificationChime();
+          this.flashTabTitle(`🔔 (${count}) Novo Agendamento!`);
+          this.showToast(`🔔 ${count} novo(s) agendamento(s) aguardando aprovação!`);
+          if ('Notification' in window && Notification.permission === 'granted') {
+            const [ano, mes, dia] = (novoItem.data || '').split('-');
+            const dataFmt = dia && mes ? `${dia}/${mes}/${ano}` : novoItem.data;
+            try {
+              const notif = new Notification('Studio Letícia - Novo Agendamento! ✨', {
+                body: `${novoItem.cliente_nome} solicitou ${novoItem.servico_nome} para ${dataFmt} às ${novoItem.horario}`,
+                icon: 'icons/icon-192.png',
+                tag: 'novo-agd-' + novoItem.id
+              });
+              notif.onclick = () => {
+                window.focus();
+                this.openOnlineRequestsModal();
+              };
+            } catch (_) {}
+          }
         }
       }
       this._lastPendingCount = count;
@@ -2132,7 +2202,7 @@ class StudioApp {
     const container = document.getElementById('online-requests-list');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando pedidos pendentes...</div>';
+    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 24px;">Carregando pedidos pendentes e notificações... ⏳</div>';
 
     try {
       const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
@@ -2149,56 +2219,26 @@ class StudioApp {
       const pending = await cloud.getPendingRequests();
       this._currentPendingRequests = pending || [];
 
-      if (!pending || pending.length === 0) {
-        let recentHtml = '';
-        try {
-          const recentReqs = await cloud.getAllRequests(3);
-          if (recentReqs && recentReqs.length > 0) {
-            recentHtml = `
-              <div style="margin-top: 16px; text-align: left; border-top: 1px solid var(--border-light); padding-top: 14px;">
-                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">
-                  🕒 ÚLTIMOS PEDIDOS PROCESSADOS:
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                  ${recentReqs.map(r => {
-                    const [ano, mes, dia] = (r.data || '').split('-');
-                    const dataFmt = dia && mes ? `${dia}/${mes}/${ano}` : r.data;
-                    const isEncaixe = r.observacoes && r.observacoes.includes('[ENCAIXE_HORARIO:');
-                    let badge = '<span style="background: #EBF8EE; color: #1E7E34; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Confirmado</span>';
-                    if (isEncaixe) {
-                      badge = '<span style="background: #E8F4FD; color: #1971C2; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Encaixe</span>';
-                    } else if (r.status === 'recusado') {
-                      badge = '<span style="background: #FBEBEB; color: #C53030; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Recusado</span>';
-                    }
-                    return `
-                      <div style="background: #FAF7F2; border: 1px solid var(--border-light); border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                          <span style="font-weight: 700; color: var(--primary);">${this.escapeHtml(r.cliente_nome || 'Cliente')}</span>
-                          <span style="color: var(--text-muted);"> • ${this.escapeHtml(r.servico_nome || 'Procedimento')} (${dataFmt} às ${r.horario})</span>
-                        </div>
-                        <div>${badge}</div>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
-            `;
-          }
-        } catch (_) {}
+      // Busca também os últimos processados para que a Letícia NUNCA veja a lista vazia
+      let recentReqs = [];
+      try {
+        recentReqs = await cloud.getAllRequests(10);
+      } catch (_) {}
 
-        container.innerHTML = `
-          <div class="card" style="text-align: center; color: var(--text-muted); padding: 26px 16px;">
-            <div style="font-size: 2.2rem; margin-bottom: 6px;">✨</div>
-            <div style="font-weight: 700; color: var(--text-main); font-size: 1rem;">Nenhum pedido pendente</div>
-            <div style="font-size: 0.82rem; margin-top: 4px; line-height: 1.4; color: var(--text-muted);">Todas as solicitações de clientes recebidas estão processadas.</div>
-            <button type="button" class="quick-btn" style="margin: 14px auto 0 auto; display: inline-flex; justify-content: center; font-size: 0.82rem; padding: 8px 14px; color: var(--primary); font-weight: 600;" onclick="app.switchAlertsTab('historico')">
-              📜 Ver Histórico Completo de Pedidos
-            </button>
-            ${recentHtml}
-          </div>
-        `;
-        this.checkOnlineRequests();
-        return;
+      // Atualiza badges das abas
+      const pBadge = document.getElementById('alerts-badge-tab');
+      if (pBadge) {
+        if (pending.length > 0) {
+          pBadge.textContent = pending.length;
+          pBadge.style.display = 'inline-block';
+        } else {
+          pBadge.style.display = 'none';
+        }
+      }
+      const hBadge = document.getElementById('alerts-history-badge-tab');
+      if (hBadge && recentReqs.length > 0) {
+        hBadge.textContent = recentReqs.length;
+        hBadge.style.display = 'inline-block';
       }
 
       const allAgendamentos = (typeof db !== 'undefined' && db && db.getAll) ? (await db.getAll('agendamentos')) : [];
@@ -2208,123 +2248,201 @@ class StudioApp {
         }
       }
 
-      const htmls = [];
+      let pendingHtml = '';
 
-      for (const req of pending) {
-        const conflict = await this.checkTimeConflict(req.data, req.horario, req.duracao_min || 60);
-        const [ano, mes, dia] = (req.data || '').split('-');
-        const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
+      if (!pending || pending.length === 0) {
+        pendingHtml = `
+          <div style="background: linear-gradient(135deg, #FAF7F2, #FFFBF6); border: 1.5px dashed var(--border-color); border-radius: var(--radius-md); text-align: center; padding: 20px 16px; margin-bottom: 14px;">
+            <div style="font-size: 2rem; margin-bottom: 4px;">✨</div>
+            <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">Nenhum pedido pendente no momento</div>
+            <div style="font-size: 0.8rem; margin-top: 4px; color: var(--text-muted); line-height: 1.3;">Todas as solicitações de clientes recebidas estão processadas e confirmadas.</div>
+          </div>
+        `;
+      } else {
+        const cards = [];
+        for (const req of pending) {
+          let conflict = { hasConflict: false };
+          try {
+            conflict = await this.checkTimeConflict(req.data, req.horario, req.duracao_min || 60);
+          } catch (_) {}
 
-        // Extrai CPF se existir
-        const rawCpf = req.cliente_cpf || (req.observacoes && req.observacoes.match(/\[CPF:\s*([0-9.\-]+)\]/i)?.[1]) || '';
-        const cleanCpf = rawCpf.replace(/\D/g, '');
-        const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
+          const [ano, mes, dia] = (req.data || '').split('-');
+          const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
 
-        // Identificação Inteligente da Cliente no Banco
-        let matchedClient = null;
-        if (Array.isArray(this.allClients)) {
-          if (cleanCpf && cleanCpf.length === 11) {
-            matchedClient = this.allClients.find(c => c && c.cpf && c.cpf.replace(/\D/g, '') === cleanCpf);
+          const rawCpf = req.cliente_cpf || (req.observacoes && req.observacoes.match(/\[CPF:\s*([0-9.\-]+)\]/i)?.[1]) || '';
+          const cleanCpf = rawCpf.replace(/\D/g, '');
+          const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
+
+          let matchedClient = null;
+          if (Array.isArray(this.allClients)) {
+            if (cleanCpf && cleanCpf.length === 11) {
+              matchedClient = this.allClients.find(c => c && c.cpf && c.cpf.replace(/\D/g, '') === cleanCpf);
+            }
+            if (!matchedClient && cleanWpp) {
+              matchedClient = this.allClients.find(c => c && c.whatsapp && c.whatsapp.replace(/\D/g, '') === cleanWpp);
+            }
+            if (!matchedClient && req.cliente_nome) {
+              matchedClient = this.allClients.find(c => c && c.nome && typeof c.nome === 'string' && c.nome.trim().toLowerCase() === req.cliente_nome.trim().toLowerCase());
+            }
           }
-          if (!matchedClient && cleanWpp) {
-            matchedClient = this.allClients.find(c => c && c.whatsapp && c.whatsapp.replace(/\D/g, '') === cleanWpp);
-          }
-          if (!matchedClient && req.cliente_nome) {
-            matchedClient = this.allClients.find(c => c && c.nome && typeof c.nome === 'string' && c.nome.trim().toLowerCase() === req.cliente_nome.trim().toLowerCase());
-          }
-        }
 
-        // Conta atendimentos concluídos anteriores
-        const pastCount = (matchedClient && Array.isArray(allAgendamentos)) ? allAgendamentos.filter(a => a && a.clienteId === matchedClient.id && a.status === 'concluido').length : 0;
+          const pastCount = (matchedClient && Array.isArray(allAgendamentos)) ? allAgendamentos.filter(a => a && a.clienteId === matchedClient.id && a.status === 'concluido').length : 0;
 
-        // Mensagem direta de WhatsApp
-        const msgWpp = encodeURIComponent(`Olá, ${req.cliente_nome}! Aqui é a Letícia do Studio Letícia sobre sua solicitação de agendamento para ${dataFormatada} às ${req.horario} (${req.servico_nome}).\n\n📍 Nosso Endereço: Rua 26, nº 135 - Colmeia Park\n🗺️ Localização no Google Maps: https://maps.google.com/?q=-17.858556,-51.716417`);
-        const linkWpp = `https://wa.me/55${cleanWpp}?text=${msgWpp}`;
+          const msgWpp = encodeURIComponent(`Olá, ${req.cliente_nome}! Aqui é a Letícia do Studio Letícia sobre sua solicitação de agendamento para ${dataFormatada} às ${req.horario} (${req.servico_nome}).\n\n📍 Nosso Endereço: Rua 26, nº 135 - Colmeia Park\n🗺️ Localização no Google Maps: https://maps.google.com/?q=-17.858556,-51.716417`);
+          const linkWpp = cleanWpp ? `https://wa.me/55${cleanWpp}?text=${msgWpp}` : '#';
 
-        // Observação limpa (sem tag [CPF:...])
-        const obsLimpa = (req.observacoes || '')
-          .replace(/\[CPF:\s*[0-9.\-]+\]/i, '')
-          .replace(/\[Procedimentos:[^\]]*\]/i, '')
-          .trim();
+          const obsLimpa = (req.observacoes || '')
+            .replace(/\[CPF:\s*[0-9.\-]+\]/i, '')
+            .replace(/\[Procedimentos:[^\]]*\]/i, '')
+            .trim();
 
-        htmls.push(`
-          <div id="req-card-${req.id}" style="background: var(--bg-card-tint); border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; position: relative;">
-            
-            <!-- Identificação de Perfil: Recorrente vs Nova -->
-            ${matchedClient ? `
-              <div style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #FAF2EA, #FFF8F0); border: 1px solid var(--accent-gold); border-radius: 8px; padding: 6px 10px; margin-bottom: 10px;">
-                <div style="font-size: 0.78rem; color: var(--accent-gold-dark); font-weight: 700;">
-                  🌟 CLIENTE RECORRENTE • ${pastCount} atendimento(s) realizado(s)
+          cards.push(`
+            <div id="req-card-${req.id}" style="background: var(--bg-card-tint); border: 2px solid var(--accent-gold); border-radius: var(--radius-md); padding: 16px; position: relative; box-shadow: var(--shadow-sm); margin-bottom: 14px;">
+              
+              <!-- Identificação de Perfil: Recorrente vs Nova -->
+              ${matchedClient ? `
+                <div style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #FAF2EA, #FFF8F0); border: 1px solid var(--accent-gold); border-radius: 8px; padding: 6px 10px; margin-bottom: 10px;">
+                  <div style="font-size: 0.78rem; color: var(--accent-gold-dark); font-weight: 700;">
+                    🌟 CLIENTE RECORRENTE • ${pastCount} atendimento(s) realizado(s)
+                  </div>
+                  <button type="button" class="btn-sm" style="font-size: 0.72rem; padding: 4px 8px; background: var(--primary); color: #fff; border-radius: 5px; border: none; cursor: pointer;" onclick="app.viewClientDetails('${matchedClient.id}')">
+                    👁️ Ver Ficha
+                  </button>
                 </div>
-                <button type="button" class="btn-sm" style="font-size: 0.72rem; padding: 4px 8px; background: var(--primary); color: #fff; border-radius: 5px; border: none; cursor: pointer;" onclick="app.viewClientDetails('${matchedClient.id}')">
-                  👁️ Ver Ficha
+              ` : `
+                <div style="display: inline-block; background: #EBF4FC; color: #1D6F93; border: 1px solid #B8E0F7; border-radius: 6px; padding: 3px 8px; font-size: 0.74rem; font-weight: 700; margin-bottom: 10px;">
+                  🆕 NOVA CLIENTE • Primeiro Atendimento
+                </div>
+              `}
+
+              <!-- Dados da Cliente -->
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <div>
+                  <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">${this.escapeHtml(req.cliente_nome || 'Cliente')}</div>
+                  <div style="font-size: 0.82rem; color: var(--text-main); margin-top: 2px;">
+                    📱 <strong>WhatsApp:</strong> ${this.formatPhone(req.cliente_whatsapp)}
+                  </div>
+                  ${cleanCpf ? `
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1px;">
+                      🪪 <strong>CPF:</strong> ${this.formatCPF(cleanCpf)}
+                    </div>
+                  ` : ''}
+                </div>
+                <span style="background: #FFF4E5; color: #925D11; font-size: 0.72rem; font-weight: bold; padding: 4px 8px; border-radius: 6px;">Pendente</span>
+              </div>
+
+              <!-- Card do Serviço Solicitado -->
+              <div style="background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; font-size: 0.85rem;">
+                <div style="font-weight: 700; color: var(--text-main);">${this.escapeHtml(req.servico_nome || 'Procedimento')}</div>
+                <div style="color: var(--text-muted); margin-top: 2px;">
+                  🗓️ <strong>${dataFormatada}</strong> às <strong>${req.horario}</strong> (${req.duracao_min || 60} min)
+                </div>
+                <div style="color: var(--primary); font-weight: bold; margin-top: 2px;">
+                  Valor: ${this.formatCurrency(req.servico_preco || 0)}
+                </div>
+                ${obsLimpa ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; background: #FAF7F2; padding: 6px; border-radius: 5px;">📝 "${this.escapeHtml(obsLimpa)}"</div>` : ''}
+              </div>
+
+              <!-- Alerta de Conflito de Horário na Agenda -->
+              ${conflict.hasConflict ? `
+                <div style="background: #FBEBEB; border: 1px solid #F5C6C6; color: var(--danger); font-size: 0.78rem; padding: 8px 10px; border-radius: 8px; margin-bottom: 12px;">
+                  ⚠️ <strong>Atenção:</strong> Você já possui agendamento neste horário (${conflict.intervalo})!
+                </div>
+              ` : `
+                <div style="background: #EBF8EE; border: 1px solid #C6EED0; color: #1E7E34; font-size: 0.78rem; padding: 6px 10px; border-radius: 8px; margin-bottom: 12px;">
+                  🟢 <strong>Horário Livre</strong> na sua agenda.
+                </div>
+              `}
+
+              <!-- Ações em 1 Toque -->
+              <div id="req-actions-${req.id}" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="btn-complete" style="flex: 1.5; min-width: 130px; padding: 10px 8px; font-size: 0.85rem;" onclick="app.confirmOnlineRequest('${req.id}')">
+                  ✅ Confirmar
+                </button>
+                <button type="button" class="quick-btn" style="flex: 1.5; min-width: 140px; justify-content: center; font-size: 0.82rem; color: var(--primary); border-color: var(--primary); padding: 10px 8px; font-weight: 700; background: rgba(190, 122, 71, 0.08);" onclick="app.openRescheduleModal('${req.id}')">
+                  🕒 Encaixar / Mudar
+                </button>
+                ${cleanWpp ? `
+                  <a href="${linkWpp}" target="_blank" class="quick-btn" style="flex: 1; min-width: 95px; text-decoration: none; justify-content: center; font-size: 0.82rem; color: var(--green-wpp-dark); border-color: rgba(37,211,102,0.4); padding: 10px 6px;">
+                    💬 WhatsApp
+                  </a>
+                ` : ''}
+                <button type="button" class="quick-btn" style="flex: 1; min-width: 80px; justify-content: center; color: var(--danger); border-color: rgba(185,55,40,0.3); padding: 10px 6px; font-size: 0.85rem;" onclick="app.openRejectModal('${req.id}')">
+                  ❌ Recusar
                 </button>
               </div>
-            ` : `
-              <div style="display: inline-block; background: #EBF4FC; color: #1D6F93; border: 1px solid #B8E0F7; border-radius: 6px; padding: 3px 8px; font-size: 0.74rem; font-weight: 700; margin-bottom: 10px;">
-                🆕 NOVA CLIENTE • Primeiro Atendimento
-              </div>
-            `}
-
-            <!-- Dados da Cliente -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-              <div>
-                <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">${this.escapeHtml(req.cliente_nome || 'Cliente')}</div>
-                <div style="font-size: 0.82rem; color: var(--text-main); margin-top: 2px;">
-                  📱 <strong>WhatsApp:</strong> ${this.formatPhone(req.cliente_whatsapp)}
-                </div>
-                ${cleanCpf ? `
-                  <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1px;">
-                    🪪 <strong>CPF:</strong> ${this.formatCPF(cleanCpf)}
-                  </div>
-                ` : ''}
-              </div>
-              <span style="background: #FFF4E5; color: #925D11; font-size: 0.72rem; font-weight: bold; padding: 4px 8px; border-radius: 6px;">Pendente</span>
             </div>
-
-            <!-- Card do Serviço Solicitado -->
-            <div style="background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; font-size: 0.85rem;">
-              <div style="font-weight: 700; color: var(--text-main);">${this.escapeHtml(req.servico_nome || 'Procedimento')}</div>
-              <div style="color: var(--text-muted); margin-top: 2px;">
-                🗓️ <strong>${dataFormatada}</strong> às <strong>${req.horario}</strong> (${req.duracao_min || 60} min)
-              </div>
-              <div style="color: var(--primary); font-weight: bold; margin-top: 2px;">
-                Valor: ${this.formatCurrency(req.servico_preco || 0)}
-              </div>
-              ${obsLimpa ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; background: #FAF7F2; padding: 6px; border-radius: 5px;">📝 "${this.escapeHtml(obsLimpa)}"</div>` : ''}
-            </div>
-
-            <!-- Alerta de Conflito de Horário na Agenda -->
-            ${conflict.hasConflict ? `
-              <div style="background: #FBEBEB; border: 1px solid #F5C6C6; color: var(--danger); font-size: 0.78rem; padding: 8px 10px; border-radius: 8px; margin-bottom: 12px;">
-                ⚠️ <strong>Atenção:</strong> Você já possui agendamento neste horário (${conflict.intervalo})!
-              </div>
-            ` : `
-              <div style="background: #EBF8EE; border: 1px solid #C6EED0; color: #1E7E34; font-size: 0.78rem; padding: 6px 10px; border-radius: 8px; margin-bottom: 12px;">
-                🟢 <strong>Horário Livre</strong> na sua agenda.
-              </div>
-            `}
-
-            <!-- Ações em 1 Toque -->
-            <div id="req-actions-${req.id}" style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button type="button" class="btn-complete" style="flex: 1.5; min-width: 130px; padding: 10px 8px; font-size: 0.85rem;" onclick="app.confirmOnlineRequest('${req.id}')">
-                ✅ Confirmar
-              </button>
-              <button type="button" class="quick-btn" style="flex: 1.5; min-width: 140px; justify-content: center; font-size: 0.82rem; color: var(--primary); border-color: var(--primary); padding: 10px 8px; font-weight: 700; background: rgba(190, 122, 71, 0.08);" onclick="app.openRescheduleModal('${req.id}')">
-                🕒 Encaixar / Mudar
-              </button>
-              <a href="${linkWpp}" target="_blank" class="quick-btn" style="flex: 1; min-width: 95px; text-decoration: none; justify-content: center; font-size: 0.82rem; color: var(--green-wpp-dark); border-color: rgba(37,211,102,0.4); padding: 10px 6px;">
-                💬 WhatsApp
-              </a>
-              <button type="button" class="quick-btn" style="flex: 1; min-width: 80px; justify-content: center; color: var(--danger); border-color: rgba(185,55,40,0.3); padding: 10px 6px; font-size: 0.85rem;" onclick="app.openRejectModal('${req.id}')">
-                ❌ Recusar
-              </button>
-            </div>
-          </div>
-        `);
+          `);
+        }
+        pendingHtml = cards.join('');
       }
 
-      container.innerHTML = htmls.join('');
+      // Renderiza também histórico recente logo abaixo para que todas as notificações existentes sejam visíveis
+      let recentHtml = '';
+      if (recentReqs && recentReqs.length > 0) {
+        recentHtml = `
+          <div style="margin-top: 8px; border-top: 1.5px solid var(--border-light); padding-top: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.3px;">
+                📜 NOTIFICAÇÕES &amp; PEDIDOS RECENTES (${recentReqs.length})
+              </div>
+              <button type="button" class="quick-btn" style="font-size: 0.72rem; padding: 4px 10px; color: var(--primary); border-color: var(--primary); font-weight: 700;" onclick="app.switchAlertsTab('historico')">
+                Ver Histórico Completo →
+              </button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              ${recentReqs.map(r => {
+                const [ano, mes, dia] = (r.data || '').split('-');
+                const dataFmt = dia && mes ? `${dia}/${mes}/${ano}` : r.data;
+                const cleanWpp = (r.cliente_whatsapp || '').replace(/\D/g, '');
+                const obs = r.observacoes || '';
+                const isEncaixe = obs.includes('[ENCAIXE_HORARIO:');
+
+                let badge = '<span style="background: #EBF8EE; color: #1E7E34; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 5px;">🟢 Confirmado</span>';
+                if (isEncaixe) {
+                  badge = '<span style="background: #E8F4FD; color: #1971C2; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 5px;">🕒 Confirmado (Encaixe)</span>';
+                } else if (r.status === 'recusado') {
+                  badge = '<span style="background: #FBEBEB; color: #C53030; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 5px;">❌ Recusado</span>';
+                } else if (r.status === 'pendente') {
+                  badge = '<span style="background: #FFF4E5; color: #925D11; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 5px;">⏳ Pendente</span>';
+                }
+
+                const msgWpp = encodeURIComponent(`Olá, ${r.cliente_nome}! Aqui é a Letícia do Studio Letícia.`);
+                const linkWpp = cleanWpp ? `https://wa.me/55${cleanWpp}?text=${msgWpp}` : '#';
+
+                return `
+                  <div style="background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px; font-size: 0.82rem; box-shadow: var(--shadow-sm);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                      <div>
+                        <div style="font-weight: 700; color: var(--primary); font-size: 0.92rem;">${this.escapeHtml(r.cliente_nome || 'Cliente')}</div>
+                        <div style="color: var(--text-muted); font-size: 0.76rem; margin-top: 2px;">
+                          📱 ${this.formatPhone(r.cliente_whatsapp)} • 🗓️ <strong>${dataFmt}</strong> às <strong>${r.horario}</strong>
+                        </div>
+                      </div>
+                      <div style="display: flex; gap: 6px; align-items: center;">
+                        ${badge}
+                        ${cleanWpp ? `<a href="${linkWpp}" target="_blank" class="icon-btn" style="width: 26px; height: 26px; font-size: 0.75rem; text-decoration: none;" title="WhatsApp">💬</a>` : ''}
+                      </div>
+                    </div>
+                    <div style="margin-top: 4px; color: var(--text-main); font-size: 0.8rem;">
+                      <strong>${this.escapeHtml(r.servico_nome || 'Procedimento')}</strong> • ${this.formatCurrency(r.servico_preco || 0)}
+                    </div>
+                    ${r.motivo_recusa ? `<div style="font-size: 0.74rem; color: var(--danger); margin-top: 3px;">❌ <em>Motivo: ${this.escapeHtml(r.motivo_recusa)}</em></div>` : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column;">
+          ${pendingHtml}
+          ${recentHtml}
+        </div>
+      `;
+
       this.checkOnlineRequests();
     } catch (err) {
       console.error('Erro ao renderizar solicitações pendentes:', err);
@@ -2337,11 +2455,13 @@ class StudioApp {
     }
   }
 
-  async renderOnlineHistory() {
+  async renderOnlineHistory(filter = 'todos') {
     const container = document.getElementById('online-history-list');
     if (!container) return;
 
-    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando histórico de pedidos...</div>';
+    if (!this._cachedOnlineHistory) {
+      container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando histórico de pedidos... ⏳</div>';
+    }
 
     try {
       const cloud = window.StudioCloud || (typeof StudioCloud !== 'undefined' ? StudioCloud : null);
@@ -2356,6 +2476,7 @@ class StudioApp {
       }
 
       const allRequests = await cloud.getAllRequests(50);
+      this._cachedOnlineHistory = allRequests || [];
 
       if (!allRequests || allRequests.length === 0) {
         container.innerHTML = `
@@ -2367,7 +2488,38 @@ class StudioApp {
         return;
       }
 
-      const htmls = allRequests.map(req => {
+      // Filtro por status
+      let filtered = allRequests;
+      if (filter === 'confirmados') {
+        filtered = allRequests.filter(r => r.status === 'confirmado' && (!r.observacoes || !r.observacoes.includes('[ENCAIXE_HORARIO:')));
+      } else if (filter === 'encaixes') {
+        filtered = allRequests.filter(r => r.observacoes && r.observacoes.includes('[ENCAIXE_HORARIO:'));
+      } else if (filter === 'recusados') {
+        filtered = allRequests.filter(r => r.status === 'recusado');
+      } else if (filter === 'pendentes') {
+        filtered = allRequests.filter(r => r.status === 'pendente');
+      }
+
+      const filterButtonsHtml = `
+        <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px;">
+          <button type="button" class="quick-btn" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 12px; ${filter === 'todos' ? 'background: var(--primary); color: #fff; font-weight: 700;' : ''}" onclick="app.renderOnlineHistory('todos')">Todos (${allRequests.length})</button>
+          <button type="button" class="quick-btn" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 12px; ${filter === 'confirmados' ? 'background: #1E7E34; color: #fff; font-weight: 700;' : ''}" onclick="app.renderOnlineHistory('confirmados')">🟢 Confirmados</button>
+          <button type="button" class="quick-btn" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 12px; ${filter === 'encaixes' ? 'background: #1971C2; color: #fff; font-weight: 700;' : ''}" onclick="app.renderOnlineHistory('encaixes')">🕒 Encaixes</button>
+          <button type="button" class="quick-btn" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 12px; ${filter === 'recusados' ? 'background: #C53030; color: #fff; font-weight: 700;' : ''}" onclick="app.renderOnlineHistory('recusados')">❌ Recusados</button>
+        </div>
+      `;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          ${filterButtonsHtml}
+          <div class="card" style="text-align: center; color: var(--text-muted); padding: 20px;">
+            <div>Nenhum pedido com este filtro.</div>
+          </div>
+        `;
+        return;
+      }
+
+      const htmls = filtered.map(req => {
         const [ano, mes, dia] = (req.data || '').split('-');
         const dataFormatada = dia && mes ? `${dia}/${mes}/${ano}` : req.data;
         const cleanWpp = (req.cliente_whatsapp || '').replace(/\D/g, '');
@@ -2376,13 +2528,13 @@ class StudioApp {
         const obs = req.observacoes || '';
         const isEncaixe = obs.includes('[ENCAIXE_HORARIO:');
 
-        let statusBadge = '<span style="background: #EBF8EE; color: #1E7E34; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">Confirmado</span>';
+        let statusBadge = '<span style="background: #EBF8EE; color: #1E7E34; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">🟢 Confirmado</span>';
         if (isEncaixe) {
           statusBadge = '<span style="background: #E8F4FD; color: #1971C2; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">🕒 Confirmado (Encaixe)</span>';
         } else if (req.status === 'recusado') {
-          statusBadge = '<span style="background: #FBEBEB; color: #C53030; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">Recusado</span>';
+          statusBadge = '<span style="background: #FBEBEB; color: #C53030; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">❌ Recusado</span>';
         } else if (req.status === 'pendente') {
-          statusBadge = '<span style="background: #FFF4E5; color: #925D11; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">Pendente</span>';
+          statusBadge = '<span style="background: #FFF4E5; color: #925D11; font-size: 0.72rem; font-weight: bold; padding: 3px 8px; border-radius: 6px;">⏳ Pendente</span>';
         }
 
         const msgWpp = encodeURIComponent(`Olá, ${req.cliente_nome}! Aqui é a Letícia do Studio Letícia.`);
@@ -2427,7 +2579,7 @@ class StudioApp {
         `;
       });
 
-      container.innerHTML = htmls.join('');
+      container.innerHTML = filterButtonsHtml + htmls.join('');
     } catch (err) {
       console.error('Erro ao renderizar histórico de pedidos:', err);
       container.innerHTML = `
